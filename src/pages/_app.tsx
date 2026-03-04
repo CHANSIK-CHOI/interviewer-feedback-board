@@ -3,7 +3,7 @@ import "@/styles/tailwind.css";
 import type { AppProps } from "next/app";
 import { ThemeProvider } from "next-themes";
 import { SessionProvider } from "@/components/session";
-import { DialogProvider } from "@/components/ui";
+import { DialogProvider, Toaster } from "@/components/ui";
 import { useState } from "react";
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -15,6 +15,7 @@ export default function App({ Component, pageProps }: AppProps) {
           <GlobalLayout>
             <Component {...pageProps} />
           </GlobalLayout>
+          <Toaster />
           <div ref={setContainer} className="z-[9999]" />
         </DialogProvider>
       </SessionProvider>
