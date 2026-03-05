@@ -49,9 +49,9 @@ export default function OAuthCallbackPage() {
 
       const { role, isNewUser } = roleSyncResult;
       applyRoleUiState({ userId: session.user.id, role, isLoading: false });
-      if (isNewUser) {
-        sessionStorage.setItem("signUpCompleteAndSkipRoleSync", "1");
-      }
+      // if (isNewUser) {
+      //   sessionStorage.setItem("signUpCompleteAndSkipRoleSync", "1");
+      // }
       await replaceSafely(router, isNewUser ? "/my" : "/");
     };
 

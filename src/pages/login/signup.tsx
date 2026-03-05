@@ -70,7 +70,7 @@ export default function SignupPage() {
 
     // 이메일 인증을 안하는 경우
     if (data.session) {
-      sessionStorage.setItem("signUpCompleteAndSkipRoleSync", "1");
+      // sessionStorage.setItem("signUpCompleteAndSkipRoleSync", "1");
       openAlert({
         description: "회원가입이 완료되었습니다.\n추가 정보를 입력해주세요.",
         onOk: () => {
