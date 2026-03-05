@@ -107,7 +107,11 @@ export default function FeedbackDetailPage({
             <Button asChild variant="outline">
               <Link href="/feedback">목록으로 이동하기</Link>
             </Button>
-            {isAuthor && <Button type="button">수정하기</Button>}
+            {isAuthor && (
+              <Button asChild>
+                <Link href={`/feedback/edit/${detailFeedbacksData.id}`}>수정하기</Link>
+              </Button>
+            )}
             {isAdmin && (
               <Button type="button" variant="outline">
                 삭제

@@ -23,3 +23,13 @@ export type ReplaceUserAvatarParams = {
 };
 
 export type ReplaceUserAvatarResult = AvatarUploadResult;
+
+export type RemoveUserAvatarParams = {
+  supabaseServer: SupabaseClient;
+  bucket: string;
+  paths: string[];
+};
+
+export type AvatarRemoveResult = {
+  isRemoveComplete: boolean;
+};

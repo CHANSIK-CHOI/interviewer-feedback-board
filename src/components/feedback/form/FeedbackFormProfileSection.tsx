@@ -2,22 +2,22 @@ import Image from "next/image";
 import { useFormContext, useWatch } from "react-hook-form";
 import { AVATAR_PLACEHOLDER_SRC, inputBaseStyle } from "@/constants";
 import { checkAvatarApiSrcPrivate } from "@/lib/avatar/path";
-import type { FeedbackNewFormValues } from "@/types";
+import type { FeedbackFormValues } from "@/types";
 
-type FeedbackNewProfileSectionProps = {
+type FeedbackFormProfileSectionProps = {
   sessionAvatar: string;
 };
 
-export default function FeedbackNewProfileSection({
+export default function FeedbackFormProfileSection({
   sessionAvatar,
-}: FeedbackNewProfileSectionProps) {
+}: FeedbackFormProfileSectionProps) {
   const {
     register,
     clearErrors,
     trigger,
     control,
     formState: { errors },
-  } = useFormContext<FeedbackNewFormValues>();
+  } = useFormContext<FeedbackFormValues>();
 
   const isCompanyPublic = useWatch({ control, name: "is_company_public" });
 
@@ -60,29 +60,26 @@ export default function FeedbackNewProfileSection({
               회원가입 시 이름을 입력하지 않으면, 이메일의 @ 앞부분이 이름으로 표시됩니다.
             </p>
           </label>
-          <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
-            회사명
-            <input
-              type="text"
-              placeholder="회사명을 입력해주세요."
-              className={inputBaseStyle}
-              disabled={!isCompanyPublic}
-              {...register("company_name", {
-                setValueAs: (v) => (typeof v === "string" ? v.trim() : v),
-                validate: (v) =>
-                  !isCompanyPublic ||
-                  (typeof v === "string" && v.trim().length > 0) ||
-                  "회사명을 입력해주세요",
-              })}
-            />
-            {errors.company_name ? (
-              <p className="text-xs text-destructive">{errors.company_name?.message}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                회사명을 공개하려면 ‘회사명 공개’ 체크박스를 선택해주세요.
-              </p>
-            )}
-          </label>
+          {isCompanyPublic && (
+            <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
+              회사명
+              <input
+                type="text"
+                placeholder="회사명을 입력해주세요."
+                className={inputBaseStyle}
+                readOnly
+                {...register("company_name")}
+              />
+              {errors.company_name ? (
+                <p className="text-xs text-destructive">{errors.company_name?.message}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  회사명을 공개하려면 ‘회사명 공개’ 체크박스를 선택해주세요.
+                </p>
+              )}
+            </label>
+          )}
+
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <input
               type="checkbox"

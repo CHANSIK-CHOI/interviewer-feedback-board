@@ -7,13 +7,13 @@ import {
   NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE,
 } from "@/constants";
 import { getUserCompany, getUserName, getAvatarUrl } from "@/lib/user/profile";
-import type { FeedbackNewFormValues } from "@/types";
+import type { FeedbackFormValues } from "@/types";
 import {
+  FeedbackFormDetailSection,
+  FeedbackFormProfileSection,
+  FeedbackFormRatingSection,
+  FeedbackFormTagsSection,
   FeedbackNewHeaderSection,
-  FeedbackNewProfileSection,
-  FeedbackNewRatingSection,
-  FeedbackNewDetailSection,
-  FeedbackNewTagsSection,
 } from "@/components/feedback";
 import { useAlert } from "@/components/ui";
 import { replaceSafely } from "@/lib/navigation/client";
@@ -27,7 +27,7 @@ export default function FeedbackNewPage() {
   const user = session?.user;
   const router = useRouter();
 
-  const formMethods = useForm<FeedbackNewFormValues>({
+  const formMethods = useForm<FeedbackFormValues>({
     mode: "onSubmit",
     defaultValues: NEW_FEEDBACK_DEFAULT_VALUES,
   });
@@ -62,7 +62,7 @@ export default function FeedbackNewPage() {
     sessionIsCompanyPublic,
   ]);
 
-  const onSubmit = async (values: FeedbackNewFormValues) => {
+  const onSubmit = async (values: FeedbackFormValues) => {
     if (!session?.access_token) {
       openAlert({
         description: "로그인이 필요합니다.",
@@ -114,10 +114,10 @@ export default function FeedbackNewPage() {
       <div className="flex flex-col gap-6">
         <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
           <FeedbackNewHeaderSection isSubmitting={isSubmitting} />
-          <FeedbackNewProfileSection sessionAvatar={sessionAvatar} />
-          <FeedbackNewRatingSection />
-          <FeedbackNewDetailSection />
-          <FeedbackNewTagsSection />
+          <FeedbackFormProfileSection sessionAvatar={sessionAvatar} />
+          <FeedbackFormRatingSection />
+          <FeedbackFormDetailSection />
+          <FeedbackFormTagsSection />
         </form>
       </div>
     </FormProvider>

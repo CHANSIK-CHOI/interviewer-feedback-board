@@ -1,5 +1,5 @@
 import { AVATAR_PLACEHOLDER_SRC } from "./avatar";
-import type { FeedbackNewFormValues } from "@/types/forms";
+import type { FeedbackFormValues } from "@/types/forms";
 
 export const APPROVED_PUBLIC_COLUMNS =
   "id, author_id, display_name, company_name, is_company_public, avatar_url, summary, strengths, questions, suggestions, rating, tags, status, is_public, revision_count, created_at, updated_at, reviewed_at, reviewed_by";
@@ -7,7 +7,7 @@ export const APPROVED_PUBLIC_COLUMNS =
 export const PREVIEWCOLUMN =
   "id, author_id, display_name, company_name, is_company_public, avatar_url, status, is_public, revision_count, created_at, updated_at, reviewed_at, reviewed_by";
 
-export const NEW_FEEDBACK_DEFAULT_VALUES: FeedbackNewFormValues = {
+export const NEW_FEEDBACK_DEFAULT_VALUES: FeedbackFormValues = {
   display_name: "",
   company_name: "",
   is_company_public: false,
@@ -53,3 +53,9 @@ export const NEW_FEEDBACK_ERROR_MESSAGES = {
 
 export const NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE =
   "피드백 등록에 실패했습니다.\n잠시 후 다시 시도해주세요.";
+
+export const FEEDBACK_EDIT_FALLBACK_ERROR_MESSAGE =
+  "피드백 수정에 실패했습니다.\n잠시 후 다시 시도해주세요.";
+
+export const FEEDBACK_NOT_FOUND_MESSAGE = "피드백을 찾을 수 없습니다.";
+export const FEEDBACK_FORBIDDEN_MESSAGE = "수정 권한이 없습니다.";

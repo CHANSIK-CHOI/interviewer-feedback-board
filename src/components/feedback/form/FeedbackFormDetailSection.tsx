@@ -1,12 +1,12 @@
 import { useFormContext } from "react-hook-form";
 import { inputBaseStyle } from "@/constants";
-import type { FeedbackNewFormValues } from "@/types";
+import type { FeedbackFormValues } from "@/types";
 
-export default function FeedbackNewDetailSection() {
+export default function FeedbackFormDetailSection() {
   const {
     register,
     formState: { errors },
-  } = useFormContext<FeedbackNewFormValues>();
+  } = useFormContext<FeedbackFormValues>();
 
   return (
     <section className="rounded-2xl border border-border/60 bg-background/80 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
@@ -23,7 +23,9 @@ export default function FeedbackNewDetailSection() {
               setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
             })}
           />
-          {errors.summary && <span className="text-xs text-destructive">{errors.summary.message}</span>}
+          {errors.summary && (
+            <span className="text-xs text-destructive">{errors.summary.message}</span>
+          )}
         </label>
         <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
           강점

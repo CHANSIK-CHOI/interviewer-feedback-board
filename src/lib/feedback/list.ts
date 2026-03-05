@@ -59,12 +59,10 @@ export const mergeFeedbackList = ({
 export const checkUpdateData = ({
   created_at,
   updated_at,
-  revision_count,
 }: {
   created_at: FeedbackPublicBase["created_at"];
   updated_at: FeedbackPublicBase["updated_at"];
-  revision_count: FeedbackPublicBase["revision_count"];
 }) => {
-  const isUpdateData = created_at !== updated_at && revision_count > 0;
+  const isUpdateData = created_at !== updated_at;
   return isUpdateData;
 };

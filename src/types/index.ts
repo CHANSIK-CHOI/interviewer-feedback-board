@@ -18,10 +18,5 @@ export type {
   RevisedPendingOwnerFeedback,
   RevisedPendingPreviewFeedback,
 } from "./feedback";
-export type {
-  FeedbackNewFormValues,
-  LoginForm,
-  MyProfileForm,
-  SignUpForm,
-} from "./forms";
+export type { FeedbackFormValues, LoginForm, MyProfileForm, SignUpForm } from "./forms";
 export type { UserRole, UserRoleSyncResponse } from "./user-role";

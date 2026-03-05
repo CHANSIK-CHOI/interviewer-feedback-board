@@ -1,5 +1,10 @@
 import { buildAvatarPath, buildAvatarProxyUrl } from "@/lib/avatar/path";
-import type { ReplaceUserAvatarParams, ReplaceUserAvatarResult } from "@/types/avatar";
+import type {
+  AvatarRemoveResult,
+  RemoveUserAvatarParams,
+  ReplaceUserAvatarParams,
+  ReplaceUserAvatarResult,
+} from "@/types/avatar";
 
 export async function replaceUserAvatar({
   supabaseServer,
@@ -19,7 +24,7 @@ export async function replaceUserAvatar({
     });
 
   if (uploadError) {
-    console.error("Failed to upload new avatar object", { bucket, uploadPath, uploadError });
+    console.error(uploadError);
     throw new Error("새 아바타 업로드에 실패했습니다.");
   }
 
@@ -47,4 +52,17 @@ export async function replaceUserAvatar({
 
     -> fetch로 직접 부르는 게 아니라, <Image src={avatarSrc}> 렌더링 시 브라우저가 GET 요청함.
   */
+}
+
+export async function removeUserAvatar({
+  supabaseServer,
+  bucket,
+  paths = [],
+}: RemoveUserAvatarParams): Promise<void> {
+  const { error: removeAvatarError } = await supabaseServer.storage.from(bucket).remove(paths);
+
+  if (removeAvatarError) {
+    console.error(removeAvatarError);
+    throw new Error(removeAvatarError.message);
+  }
 }

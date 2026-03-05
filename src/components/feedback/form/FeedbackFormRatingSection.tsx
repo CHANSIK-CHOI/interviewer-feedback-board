@@ -1,14 +1,14 @@
 import { useFormContext, useWatch } from "react-hook-form";
 import { chipButtonBaseStyle } from "@/constants";
 import { cn } from "@/lib/shared/cn";
-import type { FeedbackNewFormValues } from "@/types";
+import type { FeedbackFormValues } from "@/types";
 
-export default function FeedbackNewRatingSection() {
+export default function FeedbackFormRatingSection() {
   const {
     register,
     control,
     formState: { errors },
-  } = useFormContext<FeedbackNewFormValues>();
+  } = useFormContext<FeedbackFormValues>();
 
   const ratingValue = useWatch({ control, name: "rating" });
 

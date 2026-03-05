@@ -7,6 +7,7 @@ import { replaceSafely } from "@/lib/navigation/client";
 import { useRouter } from "next/router";
 import { inputBaseStyle } from "@/constants";
 import { getAuthProviderLabel, getAuthProviders } from "@/lib/auth/provider";
+import { getFreshAccessToken } from "@/lib/auth/client";
 
 type WithdrawForm = {
   confirm_text: string;
@@ -87,8 +88,10 @@ export default function WithdrawPage() {
       }
     }
 
-    const { data: currentSessionData } = await supabaseClient.auth.getSession();
-    const accessToken = currentSessionData.session?.access_token ?? session.access_token;
+    const accessToken = await getFreshAccessToken({
+      supabaseClient,
+      fallbackAccessToken: session.access_token,
+    });
 
     const response = await fetch("/api/auth/withdraw", {
       method: "DELETE",

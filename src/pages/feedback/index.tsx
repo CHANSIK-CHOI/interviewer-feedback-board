@@ -7,6 +7,7 @@ import { InferGetStaticPropsType } from "next";
 import { useSession } from "@/components/session";
 import { compareUpdatedAtDesc, mergeFeedbackList } from "@/lib/feedback/list";
 import { FeedbackBox, NewFeedbackLinkBtn } from "@/components/feedback";
+import { getFreshAccessToken } from "@/lib/auth/client";
 import { AdminReviewFeedback, RevisedPendingOwnerFeedback } from "@/types";
 
 const MINE_STATUS_QUERY = new URLSearchParams({
@@ -49,7 +50,7 @@ export default function FeedbackBoardPage({
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const isAlertedRef = useRef(false);
   const { openAlert } = useAlert();
-  const { session, isAdminUi, isRoleLoading } = useSession();
+  const { session, supabaseClient, isAdminUi, isRoleLoading } = useSession();
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
   const [ownerPendingFeedbacks, setOwnerPendingFeedbacks] = useState<RevisedPendingOwnerFeedback[]>(
@@ -91,10 +92,15 @@ export default function FeedbackBoardPage({
     const controller = new AbortController();
     const loadPendingCount = async () => {
       try {
+        const accessToken = await getFreshAccessToken({
+          supabaseClient,
+          fallbackAccessToken: session.access_token,
+        });
+
         const response = await fetch("/api/feedbacks/pending-count", {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           signal: controller.signal,
         });
@@ -122,7 +128,7 @@ export default function FeedbackBoardPage({
     loadPendingCount();
 
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token]);
+  }, [isRoleLoading, isAdminUi, session?.access_token, supabaseClient]);
 
   // 로그인 시 본인이 작성한 게시물 중 pending, revised_pending의 데이터를 가져와 list에 merge 하기
   useEffect(() => {
@@ -133,10 +139,15 @@ export default function FeedbackBoardPage({
     const controller = new AbortController();
     const getPendingOwnerFeedback = async () => {
       try {
+        const accessToken = await getFreshAccessToken({
+          supabaseClient,
+          fallbackAccessToken: session.access_token,
+        });
+
         const response = await fetch(`/api/feedbacks/mine?${MINE_STATUS_QUERY}`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           signal: controller.signal,
         });
@@ -159,7 +170,7 @@ export default function FeedbackBoardPage({
     getPendingOwnerFeedback();
 
     return () => controller.abort();
-  }, [session?.access_token]);
+  }, [session?.access_token, supabaseClient]);
 
   // 로그인 시 admin role 유저일 때 게시물 중 pending, revised_pending, rejected의 데이터를 가져와 list에 merge 하기
   useEffect(() => {
@@ -171,10 +182,15 @@ export default function FeedbackBoardPage({
     const controller = new AbortController();
     const getAdminReviewFeedbacks = async () => {
       try {
+        const accessToken = await getFreshAccessToken({
+          supabaseClient,
+          fallbackAccessToken: session.access_token,
+        });
+
         const response = await fetch(`/api/feedbacks?${ADMIN_REVIEW_STATUS_QUERY}`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           signal: controller.signal,
         });
@@ -197,7 +213,7 @@ export default function FeedbackBoardPage({
 
     getAdminReviewFeedbacks();
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token]);
+  }, [isRoleLoading, isAdminUi, session?.access_token, supabaseClient]);
 
   return (
     <div className="flex flex-col gap-6">

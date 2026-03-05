@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { buildAvatarPath } from "@/lib/avatar/path";
 import { getRequestAuthContext } from "@/lib/auth/request";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { removeUserAvatar } from "@/lib/avatar/storage.server";
 
 const AVATAR_BUCKET = process.env.SUPABASE_AVATAR_BUCKET;
 
@@ -37,11 +38,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const userId = auth.context.userId;
   const avatarPath = buildAvatarPath(userId);
 
-  const { error: removeAvatarError } = await supabaseServer.storage
-    .from(AVATAR_BUCKET)
-    .remove([avatarPath]);
-  if (removeAvatarError) {
-    return res.status(500).json({ error: "아바타 이미지 삭제에 실패했습니다." });
+  try {
+    await removeUserAvatar({
+      supabaseServer,
+      bucket: AVATAR_BUCKET,
+      paths: [avatarPath],
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "아바타 이미지 삭제에 실패했습니다.";
+    return res.status(500).json({ error: message });
   }
 
   const { error: deleteUserError } = await supabaseServer.auth.admin.deleteUser(userId);

@@ -18,7 +18,7 @@ export type MyProfileForm = {
   avatar: string;
 };
 
-export type FeedbackNewFormValues = {
+export type FeedbackFormValues = {
   display_name: string;
   company_name: string;
   is_company_public: boolean;
