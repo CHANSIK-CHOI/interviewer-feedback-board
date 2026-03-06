@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext } from "@/lib/auth/request";
-import { parseStatusQuery } from "@/lib/status/query";
+import { getRequestAuthContext, RequestAuthResult } from "@/lib/auth/request";
+import { parseStatusQuery, ParseStatusQueryResult } from "@/lib/status/query";
 import type { RevisedPendingOwnerFeedback } from "@/types/feedback";
 import { FeedbackMineResponse } from "@/types/response";
 
@@ -18,31 +18,31 @@ export default async function handler(
     return res.status(405).json({ data: null, error: "Method Not Allowed" });
   }
 
-  const { statuses, error: statusError } = parseStatusQuery<MineStatus>({
-    rawStatus: req.query.status,
-    allowedStatuses: ALLOWED_STATUSES,
-    defaultStatuses: ALLOWED_STATUSES,
-    usageMessage: "Use ?status=pending,revised_pending",
-  });
+  const { statuses, error: statusError }: ParseStatusQueryResult<MineStatus> =
+    parseStatusQuery<MineStatus>({
+      rawStatus: req.query.status,
+      allowedStatuses: ALLOWED_STATUSES,
+      defaultStatuses: ALLOWED_STATUSES,
+      usageMessage: "Use ?status=pending,revised_pending",
+    });
   if (statusError || !statuses) {
     return res.status(400).json({ data: null, error: statusError ?? "Invalid status query" });
   }
 
   try {
-    const auth = await getRequestAuthContext(req);
+    const auth: RequestAuthResult = await getRequestAuthContext(req);
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
-    const { context } = auth;
 
-    if (context.isAdmin) {
+    if (auth.context.isAdmin) {
       return res.status(200).json({ data: null, error: null });
     }
 
-    const { data, error: dataError } = await context.supabaseServer
+    const { data, error: dataError } = await auth.context.supabaseServer
       .from("feedbacks")
       .select()
-      .eq("author_id", context.userId)
+      .eq("author_id", auth.context.userId)
       .in("status", statuses);
 
     if (dataError || !data) {

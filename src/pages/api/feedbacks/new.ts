@@ -1,15 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext } from "@/lib/auth/request";
+import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
 import type { FeedbackFormValues } from "@/types/forms";
 import { FEEDBACK_FORM_ERROR_MESSAGES, NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE } from "@/constants";
 import { toNullableTrimmedString, toStrictBoolean, toTrimmedString } from "@/lib/shared/normalize";
-import { CreateFeedbackResponse, RequestAuthOptions, RequestAuthResult } from "@/types/response";
+import { EditFeedbackResponse } from "@/types/response";
 import { FeedbackPublicBase } from "@/types/feedback";
 import { SupabaseError } from "@/types/common";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<CreateFeedbackResponse>
+  res: NextApiResponse<EditFeedbackResponse>
 ) {
   res.setHeader("Cache-Control", "no-store");
 
@@ -19,11 +19,10 @@ export default async function handler(
   }
 
   try {
-    const authOption: RequestAuthOptions = {
+    const auth: RequestAuthResult = await getRequestAuthContext(req, {
       missingAccessTokenError: "로그인이 필요합니다.",
       unauthorizedError: "로그인 상태를 확인해주세요.",
-    };
-    const auth: RequestAuthResult = await getRequestAuthContext(req, authOption);
+    } satisfies RequestAuthOptions);
 
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });

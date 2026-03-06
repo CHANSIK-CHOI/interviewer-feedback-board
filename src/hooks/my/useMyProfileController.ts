@@ -181,7 +181,7 @@ export const useMyProfileController = () => {
     openAlert({
       description: "내 정보가 저장되었습니다.",
       onOk: () => {
-        void replaceSafely(router, "/");
+        replaceSafely(router, "/");
       },
     });
   };

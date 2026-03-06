@@ -3,10 +3,9 @@ import Link from "next/link";
 import { Button, Select } from "@/components/ui";
 import { compareUpdatedAtDesc } from "@/lib/feedback/list";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
-import { getAuthContextByAccessToken } from "@/lib/auth/server";
-import { getFeedbackRowsByStatuses } from "@/lib/feedback/server";
+import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
+import { FeedbackRowsByStatusesParams, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
 import AdminFeedbackBox from "@/components/admin/AdminFeedbackBox";
-import { AuthContextResult, FeedbackRowsByStatusesParams } from "@/types/response";
 import { FeedbackPublicAndEmailRow } from "@/types/feedback";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
@@ -15,20 +14,20 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     if (!accessToken) throw new Error("Access Token Error");
 
     const authResult: AuthContextResult = await getAuthContextByAccessToken(accessToken);
+
     const { context: authContext, error: authError } = authResult;
 
     if (authError || !authContext) throw new Error("Auth Context Error");
 
     if (!authContext.isAdmin) return { notFound: true };
 
-    const params: FeedbackRowsByStatusesParams = {
+    const feedbacks: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses({
       supabaseClient: authContext.supabaseServer,
       statuses: ["pending", "approved", "rejected", "revised_pending"],
-    };
-    const feedbackData: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses(params);
+    } satisfies FeedbackRowsByStatusesParams);
 
     return {
-      props: { feedbackData },
+      props: { feedbackData: feedbacks },
     };
   } catch (error) {
     console.error(error);

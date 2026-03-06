@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext } from "@/lib/auth/request";
+import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
 import { PendingCountResponse } from "@/types/response";
 
 export default async function handler(
@@ -14,14 +14,16 @@ export default async function handler(
   }
 
   try {
-    const auth = await getRequestAuthContext(req, { requireAdmin: true });
+    const auth: RequestAuthResult = await getRequestAuthContext(req, {
+      requireAdmin: true,
+    } satisfies RequestAuthOptions);
+
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
-    const { context } = auth;
 
     // status = 'pending' | 'revised_pending' 개수만 조회
-    const { count, error: countError } = await context.supabaseServer
+    const { count, error: countError } = await auth.context.supabaseServer
       .from("feedbacks")
       .select("id", { count: "exact", head: true })
       // 데이터는 가져오지 않고 “개수만” 세기 위한 Supabase 쿼리 옵션

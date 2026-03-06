@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext } from "@/lib/auth/request";
+import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
 import { getApprovedFeedbacks, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
 import type {
   AdminReviewFeedback,
   ApprovedFeedback,
   FeedbackPublicAndEmailRow,
 } from "@/types/feedback";
-import { parseStatusQuery } from "@/lib/status/query";
-import { FeedbackResponse, ParseStatusQueryResult, RequestAuthResult } from "@/types/response";
+import { parseStatusQuery, ParseStatusQueryResult } from "@/lib/status/query";
+import { FeedbackResponse } from "@/types/response";
 
 /*
   전체 역할 : 해당 API는 GET /api/feedbacks?status=...로 피드백 목록을 가져옴
@@ -53,14 +53,16 @@ export default async function handler(
     }
 
     // 관리자 전용 조회 분기 (isRequiresAdmin)
-    const auth: RequestAuthResult = await getRequestAuthContext(req, { requireAdmin: true });
+    const auth: RequestAuthResult = await getRequestAuthContext(req, {
+      requireAdmin: true,
+    } satisfies RequestAuthOptions);
+
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
-    const { context } = auth;
 
     const feedbackRows: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses({
-      supabaseClient: context.supabaseServer,
+      supabaseClient: auth.context.supabaseServer,
       statuses,
     });
 

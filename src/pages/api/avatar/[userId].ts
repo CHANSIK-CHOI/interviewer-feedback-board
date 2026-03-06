@@ -76,7 +76,7 @@ export default async function handler(
     return respondWithPlaceholder(res);
   }
 
-  const mimeType: AvatarMimeType | null = getNormalizedAvatarMimeType(data.type || "");
+  const mimeType: AvatarMimeType | null = getNormalizedAvatarMimeType(data.type);
   if (!mimeType) {
     return respondWithPlaceholder(res);
   }

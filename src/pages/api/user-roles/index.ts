@@ -1,17 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import type { ApiResponse, SupabaseError } from "@/types/common";
+import type { SupabaseError } from "@/types/common";
 import type { UserRole } from "@/types/user-role";
-import { getRequestAccessToken } from "@/lib/auth/request";
-
-type UserRoleSyncData = {
-  role: UserRole["role"];
-  isNewUser: boolean;
-};
-type UserRoleSyncResponse = ApiResponse<UserRoleSyncData>;
+import { getRequestAccessToken, RequestAccessTokenResult } from "@/lib/auth/request";
+import { UserRoleSyncResponse } from "@/types/response";
 
 // POST: role 없으면 reviewer로 생성(201), 있으면 기존 role 반환(200)
-export default async function handler(req: NextApiRequest, res: NextApiResponse<UserRoleSyncResponse>) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<UserRoleSyncResponse>
+) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "POST") {
@@ -26,11 +24,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
   }
 
-  const tokenResult = getRequestAccessToken(req);
-  if (tokenResult.error || !tokenResult.accessToken) {
-    return res.status(tokenResult.status).json({ data: null, error: tokenResult.error });
+  const {
+    accessToken,
+    error: tokenError,
+    status: tokenStatus,
+  }: RequestAccessTokenResult = getRequestAccessToken(req);
+
+  if (tokenError || !accessToken) {
+    return res.status(tokenStatus).json({ data: null, error: tokenError });
   }
-  const { accessToken } = tokenResult;
 
   try {
     const { data: authData, error: authError } = await supabaseServer.auth.getUser(accessToken);
@@ -68,13 +70,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const {
       data: existingRole,
       error: existingError,
-    }: { data: Pick<UserRole, "user_id" | "role"> | null; error: SupabaseError } =
-      await supabaseServer
-        .from("user_roles")
-        .select("user_id, role")
-        .eq("user_id", authData.user.id)
-        .limit(1) // 조회 결과 row 개수를 최대 1개로 제한
-        .maybeSingle(); // 0개면 null, 1개면 객체로 전달 받음
+    }: { data: { role: UserRole["role"] } | null; error: SupabaseError } = await supabaseServer
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", authData.user.id)
+      .limit(1) // 조회 결과 row 개수를 최대 1개로 제한
+      .maybeSingle(); // 0개면 null, 1개면 객체로 전달 받음
 
     if (existingError) {
       return res

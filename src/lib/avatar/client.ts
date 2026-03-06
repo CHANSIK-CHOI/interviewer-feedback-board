@@ -1,19 +1,11 @@
 import { AVATAR_MAX_FILE_SIZE } from "@/constants";
 import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
-
-export type AvatarUploadResult = {
-  avatarUrl: string;
-  bucket: string;
-  path: string;
-};
-
-type AvatarUploadResponse = {
-  data: AvatarUploadResult | null;
-  error: string | null;
-};
+import { AvatarMimeType } from "@/types/avatar";
+import { ApiResponse } from "@/types/common";
 
 export const validateAvatarFile = (file: File) => {
-  const isAvatarMimeTypeAllowed = getNormalizedAvatarMimeType(file.type) !== null;
+  const mimeType: AvatarMimeType | null = getNormalizedAvatarMimeType(file.type);
+  const isAvatarMimeTypeAllowed = mimeType !== null;
 
   if (!isAvatarMimeTypeAllowed) {
     throw new Error("프로필 이미지는 JPG/PNG 파일만 업로드할 수 있습니다. (SVG 불가)");
@@ -23,6 +15,13 @@ export const validateAvatarFile = (file: File) => {
     throw new Error("프로필 이미지는 2MB 이하만 업로드할 수 있습니다.");
   }
 };
+
+export type AvatarUploadResult = {
+  avatarUrl: string;
+  bucket: string;
+  path: string;
+};
+type AvatarUploadResponse = ApiResponse<AvatarUploadResult>;
 
 export async function uploadAvatarToSupabase(
   file: File,
@@ -37,7 +36,7 @@ export async function uploadAvatarToSupabase(
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const uploadRes = await fetch("/api/avatar/upload", {
+  const response = await fetch("/api/avatar/upload", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -45,12 +44,14 @@ export async function uploadAvatarToSupabase(
     body: formData,
   });
 
-  const uploadBody: AvatarUploadResponse | null = await uploadRes.json().catch(() => null);
+  const { data, error }: AvatarUploadResponse = await response
+    .json()
+    .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!uploadRes.ok || !uploadBody || uploadBody.error || !uploadBody.data) {
-    const errorMessage = uploadBody?.error ?? "아바타 업로드에 실패했습니다.";
+  if (!response.ok || error || !data) {
+    const errorMessage = error ?? "아바타 업로드에 실패했습니다.";
     throw new Error(errorMessage);
   }
 
-  return uploadBody.data;
+  return data;
 }

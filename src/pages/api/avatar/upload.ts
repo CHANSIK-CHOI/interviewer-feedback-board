@@ -4,10 +4,11 @@ import formidable, { type File as FormidableFile } from "formidable";
 import { AVATAR_MAX_FILE_SIZE } from "@/constants";
 import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
 import { getDetectedAvatarMimeTypeFromBuffer } from "@/lib/avatar/signature";
-import { replaceUserAvatar } from "@/lib/avatar/storage.server";
-import { getRequestAuthContext } from "@/lib/auth/request";
+import { replaceUserAvatar, ReplaceUserAvatarResult } from "@/lib/avatar/storage.server";
+import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { ApiResponse } from "@/types/common";
+import { AvatarMimeType } from "@/types/avatar";
 
 type AvatarUploadData = {
   avatarUrl: string;
@@ -159,19 +160,21 @@ export default async function handler(
     return res.status(405).json({ data: null, error: "Method Not Allowed" });
   }
 
-  const auth = await getRequestAuthContext(req, {
+  const auth: RequestAuthResult = await getRequestAuthContext(req, {
     missingAccessTokenError: "로그인이 필요합니다.",
     unauthorizedError: "로그인 상태를 확인해주세요.",
-  });
+  } satisfies RequestAuthOptions);
+
   if (auth.error || !auth.context) {
     return res
       .status(auth.status)
       .json({ data: null, error: auth.error ?? "로그인 상태를 확인해주세요." });
   }
-  const { context } = auth;
 
   if (!AVATAR_BUCKET) {
-    return res.status(500).json({ data: null, error: "SUPABASE_AVATAR_BUCKET 환경변수가 필요합니다." });
+    return res
+      .status(500)
+      .json({ data: null, error: "SUPABASE_AVATAR_BUCKET 환경변수가 필요합니다." });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -232,34 +235,45 @@ export default async function handler(
       .json({ data: null, error: "프로필 이미지는 2MB 이하만 업로드할 수 있습니다." });
   }
 
+  if (!avatarFile.mimetype) {
+    return res.status(400).json({
+      data: null,
+      error: "프로필 이미지는 JPG/PNG 파일만 업로드할 수 있습니다. (SVG 불가)",
+    });
+  }
+
   try {
-    const normalizedMimeType = getNormalizedAvatarMimeType(avatarFile.mimetype ?? "");
+    const normalizedMimeType: AvatarMimeType | null = getNormalizedAvatarMimeType(
+      avatarFile.mimetype
+    );
     if (!normalizedMimeType) {
-      return res
-        .status(400)
-        .json({ data: null, error: "프로필 이미지는 JPG/PNG 파일만 업로드할 수 있습니다. (SVG 불가)" });
+      return res.status(400).json({
+        data: null,
+        error: "프로필 이미지는 JPG/PNG 파일만 업로드할 수 있습니다. (SVG 불가)",
+      });
     }
 
     const fileBuffer = await fs.readFile(avatarFile.filepath);
     // avatarFile.filepath : 서버 디스크에 임시 저장된 업로드 파일
     // 메모리로 읽어서 Buffer(바이너리 데이터)로 만드는 코드
     // 임시 저장은 form.parse(req, ...) 안에서 일어나.
-    const detectedMimeType = getDetectedAvatarMimeTypeFromBuffer(fileBuffer);
+    const detectedMimeType: AvatarMimeType | null = getDetectedAvatarMimeTypeFromBuffer(fileBuffer);
     if (!detectedMimeType || detectedMimeType !== normalizedMimeType) {
-      return res
-        .status(400)
-        .json({ data: null, error: "파일 형식이 올바르지 않습니다. JPG/PNG만 업로드할 수 있습니다." });
+      return res.status(400).json({
+        data: null,
+        error: "파일 형식이 올바르지 않습니다. JPG/PNG만 업로드할 수 있습니다.",
+      });
     }
 
-    const replacedAvatar = await replaceUserAvatar({
+    const replaceUserAvatarResult: ReplaceUserAvatarResult = await replaceUserAvatar({
       supabaseServer,
       bucket: AVATAR_BUCKET,
-      userId: context.userId,
+      userId: auth.context.userId,
       fileBuffer,
       contentType: detectedMimeType,
     });
 
-    return res.status(200).json({ data: replacedAvatar, error: null });
+    return res.status(200).json({ data: replaceUserAvatarResult, error: null });
   } catch (error) {
     console.error("Avatar upload API failed", error);
     const message = error instanceof Error ? error.message : "아바타 업로드에 실패했습니다.";

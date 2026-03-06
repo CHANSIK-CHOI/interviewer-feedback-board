@@ -16,6 +16,12 @@ type WithdrawForm = {
   isAgreementChecked: boolean;
 };
 
+const WITHD_RAW_FORM: WithdrawForm = {
+  confirm_text: "",
+  password: "",
+  isAgreementChecked: false,
+};
+
 const WITHDRAW_CONFIRM_TEXT = "회원탈퇴";
 
 export default function WithdrawPage() {
@@ -35,17 +41,13 @@ export default function WithdrawPage() {
     formState: { errors, isSubmitting },
   } = useForm<WithdrawForm>({
     mode: "onSubmit",
-    defaultValues: {
-      confirm_text: "",
-      password: "",
-      isAgreementChecked: false,
-    },
+    defaultValues: WITHD_RAW_FORM,
   });
 
   useEffect(() => {
     if (!isInitSessionComplete) return;
     if (session?.access_token) return;
-    void replaceSafely(router, "/login?next=/my/withdraw");
+    replaceSafely(router, "/login?next=/my/withdraw");
   }, [isInitSessionComplete, router, session?.access_token]);
 
   const onSubmit = async (values: WithdrawForm) => {
@@ -101,13 +103,13 @@ export default function WithdrawPage() {
       },
     });
 
-    const payload: WithdrawResponse = await response.json().catch(() => ({
+    const result: WithdrawResponse = await response.json().catch(() => ({
       data: null,
-      error: "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
+      error: "Invalid response",
     }));
-    if (!response.ok || payload.error) {
+    if (!response.ok || result.error) {
       openAlert({
-        description: payload.error ?? "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        description: result.error ?? "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
       });
       return;
     }

@@ -6,7 +6,7 @@ import { useSession } from "@/components/session";
 import { useAlert } from "@/components/ui";
 import { replaceSafely } from "@/lib/navigation/client";
 import { getFeedbackDetailById } from "@/lib/feedback/server";
-import { getAuthContextByAccessToken } from "@/lib/auth/server";
+import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
 import { getFreshAccessToken } from "@/lib/auth/client";
 import {
   AVATAR_PLACEHOLDER_SRC,
@@ -24,7 +24,7 @@ import {
   FeedbackEditHeaderSection,
 } from "@/components/feedback";
 import { FeedbackPublicRow } from "@/types/feedback";
-import { AuthContextResult, UpdateFeedbackResponse } from "@/types/response";
+import { EditFeedbackResponse } from "@/types/response";
 
 const feedbackEditErrorMessages = new Set<string>([
   ...Object.values(FEEDBACK_FORM_ERROR_MESSAGES),
@@ -61,10 +61,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       };
     }
 
-    const feedback: FeedbackPublicRow | null = await getFeedbackDetailById(feedbackId);
-    if (!feedback) {
-      return { notFound: true };
-    }
+    const feedback: FeedbackPublicRow = await getFeedbackDetailById(feedbackId);
 
     if (feedback.author_id !== authContext.userId) {
       return { notFound: true };
@@ -117,7 +114,7 @@ export default function FeedbackEditPage({
       openAlert({
         description: "로그인이 필요합니다.",
         onOk: () => {
-          void replaceSafely(router, `/login?next=/feedback/edit/${feedbackId}`);
+          replaceSafely(router, `/login?next=/feedback/edit/${feedbackId}`);
         },
       });
       return;
@@ -142,7 +139,7 @@ export default function FeedbackEditPage({
         body: JSON.stringify(values),
       });
 
-      const result: UpdateFeedbackResponse = await response
+      const result: EditFeedbackResponse = await response
         .json()
         .catch(() => ({ data: null, error: "Invalid response" }));
 

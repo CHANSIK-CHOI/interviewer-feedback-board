@@ -10,7 +10,7 @@ type ReplaceUserAvatarParams = {
   contentType: AvatarMimeType;
 };
 
-type ReplaceUserAvatarResult = {
+export type ReplaceUserAvatarResult = {
   avatarUrl: string;
   bucket: string;
   path: string;

@@ -8,7 +8,7 @@ import type {
 import type { SupabaseError } from "@/types/common";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { APPROVED_PUBLIC_COLUMNS, PREVIEWCOLUMN } from "@/constants";
-import type { FeedbackRowsByStatusesParams } from "@/types/response";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 const getRequiredSupabaseServer = () => {
   const supabaseServer = getSupabaseServer();
@@ -42,6 +42,11 @@ export const getApprovedFeedbacks = async (): Promise<ApprovedFeedback[]> => {
   });
 };
 
+type FeedbackStatus = FeedbackPublicRow["status"];
+export type FeedbackRowsByStatusesParams = {
+  supabaseClient: SupabaseClient;
+  statuses: FeedbackStatus[];
+};
 export const getFeedbackRowsByStatuses = async ({
   supabaseClient,
   statuses,
@@ -88,7 +93,7 @@ export const getRevisedPendingPreviewFeedbacks = async (): Promise<
 
 export const getFeedbackDetailById = async (
   id: FeedbackPublicBase["id"]
-): Promise<FeedbackPublicRow | null> => {
+): Promise<FeedbackPublicRow> => {
   const supabaseServer = getRequiredSupabaseServer();
 
   const { data, error } = await supabaseServer
@@ -97,7 +102,7 @@ export const getFeedbackDetailById = async (
     .eq("id", id)
     .maybeSingle();
 
-  if (error) {
+  if (error || !data) {
     throw new Error("Failed fetch getFeedbackDetailById");
   }
 

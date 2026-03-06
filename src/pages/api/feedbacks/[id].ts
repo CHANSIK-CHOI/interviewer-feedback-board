@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext } from "@/lib/auth/request";
+import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
 import type { SupabaseError } from "@/types/common";
-import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
+import type { FeedbackPublicAndEmailRow, FeedbackPublicBase } from "@/types/feedback";
 import type { FeedbackFormValues } from "@/types/forms";
 import {
   FEEDBACK_FORM_ERROR_MESSAGES,
@@ -10,7 +10,7 @@ import {
   NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE,
 } from "@/constants";
 import { toNullableTrimmedString, toStrictBoolean, toTrimmedString } from "@/lib/shared/normalize";
-import { RequestAuthOptions, RequestAuthResult, UpdateFeedbackResponse } from "@/types/response";
+import { EditFeedbackResponse } from "@/types/response";
 
 type UpdataCompleteReturnData = {
   id: FeedbackPublicAndEmailRow["id"];
@@ -21,7 +21,7 @@ type UpdataCompleteReturnData = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<UpdateFeedbackResponse>
+  res: NextApiResponse<EditFeedbackResponse>
 ) {
   res.setHeader("Cache-Control", "no-store");
 
@@ -36,11 +36,10 @@ export default async function handler(
   }
 
   try {
-    const parms: RequestAuthOptions = {
+    const auth: RequestAuthResult = await getRequestAuthContext(req, {
       missingAccessTokenError: "로그인이 필요합니다.",
       unauthorizedError: "로그인 상태를 확인해주세요.",
-    };
-    const auth: RequestAuthResult = await getRequestAuthContext(req, parms);
+    } satisfies RequestAuthOptions);
 
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
@@ -116,31 +115,32 @@ export default async function handler(
     }
 
     const nextStatus = feedbackRow.status === "pending" ? "pending" : "revised_pending";
-    const nextRevisionCount = feedbackRow.revision_count + 1;
+    const nextRevisionCount: FeedbackPublicBase["revision_count"] = feedbackRow.revision_count + 1;
 
-    const { data, error } = await auth.context.supabaseServer
-      .from("feedbacks")
-      .update({
-        display_name,
-        company_name,
-        is_company_public,
-        avatar_url,
-        summary,
-        strengths,
-        questions,
-        suggestions,
-        rating,
-        tags,
-        status: nextStatus,
-        is_public: false,
-        revision_count: nextRevisionCount,
-        reviewed_at: null,
-        reviewed_by: null,
-      })
-      .eq("id", feedbackId)
-      .eq("author_id", auth.context.userId)
-      .select("id")
-      .single();
+    const { data, error }: { data: { id: FeedbackPublicBase["id"] } | null; error: SupabaseError } =
+      await auth.context.supabaseServer
+        .from("feedbacks")
+        .update({
+          display_name,
+          company_name,
+          is_company_public,
+          avatar_url,
+          summary,
+          strengths,
+          questions,
+          suggestions,
+          rating,
+          tags,
+          status: nextStatus,
+          is_public: false,
+          revision_count: nextRevisionCount,
+          reviewed_at: null,
+          reviewed_by: null,
+        })
+        .eq("id", feedbackId)
+        .eq("author_id", auth.context.userId)
+        .select("id")
+        .single();
 
     if (error || !data) {
       console.error("Update feedback failed", error);

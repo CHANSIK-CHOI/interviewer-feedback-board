@@ -1,6 +1,5 @@
 import type { NextApiRequest } from "next";
-import { getAuthContextByAccessToken } from "@/lib/auth/server";
-import { RequestAuthOptions, RequestAuthResult } from "@/types/response";
+import { AuthContext, AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
 
 type RequestAccessTokenOptions = {
   missingAccessTokenError?: string;
@@ -37,6 +36,20 @@ export const getRequestAccessToken = (
   };
 };
 
+export type RequestAuthOptions = {
+  missingAccessTokenError?: string;
+  unauthorizedError?: string;
+  requireAdmin?: boolean;
+  forbiddenError?: string;
+};
+
+export type RequestAuthResult = {
+  context: AuthContext | null;
+  accessToken: string | null;
+  error: string | null;
+  status: number;
+};
+
 export const getRequestAuthContext = async (
   req: NextApiRequest,
   options: RequestAuthOptions = {}
@@ -48,22 +61,27 @@ export const getRequestAuthContext = async (
     forbiddenError = "Forbidden",
   } = options;
 
-  const tokenResult = getRequestAccessToken(req, { missingAccessTokenError });
-  if (tokenResult.error || !tokenResult.accessToken) {
+  const {
+    accessToken,
+    error: tokenError,
+    status: tokenStatus,
+  }: RequestAccessTokenResult = getRequestAccessToken(req, {
+    missingAccessTokenError,
+  } satisfies RequestAccessTokenOptions);
+  if (tokenError || !accessToken) {
     return {
       context: null,
       accessToken: null,
-      error: tokenResult.error,
-      status: tokenResult.status,
+      error: tokenError,
+      status: tokenStatus,
     };
   }
-  const { accessToken } = tokenResult;
 
   const {
     context,
     error: authError,
     status: authStatus,
-  } = await getAuthContextByAccessToken(accessToken);
+  }: AuthContextResult = await getAuthContextByAccessToken(accessToken);
   if (authError || !context) {
     return {
       context: null,

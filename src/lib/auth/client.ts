@@ -14,10 +14,10 @@ export async function getFreshAccessToken({
   }
 
   const { data, error } = await supabaseClient.auth.getSession();
-  if (error) {
+  if (!data || !data.session || !data.session.access_token || error) {
     console.error(error);
     return fallbackAccessToken;
   }
 
-  return data.session?.access_token ?? fallbackAccessToken;
+  return data.session.access_token;
 }

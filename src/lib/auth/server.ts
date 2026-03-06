@@ -1,7 +1,21 @@
 import { getSupabaseServerByAccessToken } from "@/lib/supabase/server";
 import type { SupabaseError } from "@/types/common";
 import type { UserRole } from "@/types/user-role";
-import { AuthContextResult } from "@/types/response";
+import { SupabaseClient, User } from "@supabase/supabase-js";
+
+export type AuthContext = {
+  supabaseServer: SupabaseClient;
+  userId: string;
+  role: UserRole["role"] | null;
+  isAdmin: boolean;
+  authData: { user: User | null };
+};
+
+export type AuthContextResult = {
+  context: AuthContext | null;
+  error: string | null;
+  status: number;
+};
 
 export const getAuthContextByAccessToken = async (
   accessToken: string
@@ -27,7 +41,7 @@ export const getAuthContextByAccessToken = async (
   const {
     data: roleData,
     error: roleError,
-  }: { data: Pick<UserRole, "role"> | null; error: SupabaseError } = await supabaseServer
+  }: { data: { role: UserRole["role"] } | null; error: SupabaseError } = await supabaseServer
     .from("user_roles")
     .select("role")
     .eq("user_id", authData.user.id)

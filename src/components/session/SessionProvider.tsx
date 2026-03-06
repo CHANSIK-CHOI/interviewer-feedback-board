@@ -158,7 +158,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
 
       const payload: SessionCookieSyncResponse = await response
         .json()
-        .catch(() => ({ data: null, error: "Failed to sync session cookie" }));
+        .catch(() => ({ data: null, error: "Invalid response" }));
       if (!response.ok || payload.error) {
         throw new Error(payload.error ?? "Failed to sync session cookie");
       }

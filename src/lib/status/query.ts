@@ -1,4 +1,7 @@
-import { ParseStatusQueryResult } from "@/types/response";
+export type ParseStatusQueryResult<T extends string> = {
+  statuses: T[] | null;
+  error: string | null;
+};
 
 type ParseStatusQueryParams<T extends string> = {
   rawStatus: string | string[] | undefined;

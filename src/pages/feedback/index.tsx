@@ -26,14 +26,14 @@ const ADMIN_REVIEW_STATUS_QUERY = new URLSearchParams({
 
 export const getStaticProps = async () => {
   try {
-    const approvedFeedbacksData: ApprovedFeedback[] = await getApprovedFeedbacks();
-    const revisedPendingPreviewData: RevisedPendingPreviewFeedback[] =
+    const approvedFeedbacks: ApprovedFeedback[] = await getApprovedFeedbacks();
+    const revisedPendingPreviews: RevisedPendingPreviewFeedback[] =
       await getRevisedPendingPreviewFeedbacks();
 
     return {
       props: {
-        approvedFeedbacksData,
-        revisedPendingPreviewData,
+        approvedFeedbacks,
+        revisedPendingPreviews,
         alertMessage: null,
       },
     };
@@ -42,8 +42,8 @@ export const getStaticProps = async () => {
 
     return {
       props: {
-        approvedFeedbacksData: [],
-        revisedPendingPreviewData: [],
+        approvedFeedbacks: [],
+        revisedPendingPreviews: [],
         alertMessage: "데이터를 정상적으로 불러올 수 없습니다.",
       },
     };
@@ -51,8 +51,8 @@ export const getStaticProps = async () => {
 };
 
 export default function FeedbackBoardPage({
-  approvedFeedbacksData,
-  revisedPendingPreviewData,
+  approvedFeedbacks,
+  revisedPendingPreviews,
   alertMessage,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const isAlertedRef = useRef(false);
@@ -67,12 +67,12 @@ export default function FeedbackBoardPage({
   const feedbackData = useMemo(
     () =>
       mergeFeedbackList({
-        approved: approvedFeedbacksData,
-        revisedPreview: revisedPendingPreviewData,
+        approved: approvedFeedbacks,
+        revisedPreview: revisedPendingPreviews,
         revisedMine: ownerPendingFeedbacks,
         adminReview: adminReviewFeedbacks,
       }),
-    [approvedFeedbacksData, revisedPendingPreviewData, ownerPendingFeedbacks, adminReviewFeedbacks]
+    [approvedFeedbacks, revisedPendingPreviews, ownerPendingFeedbacks, adminReviewFeedbacks]
   );
   const sortedFeedbackData = useMemo(() => {
     return [...feedbackData].sort((a, b) =>
@@ -114,7 +114,7 @@ export default function FeedbackBoardPage({
 
         const result: PendingCountResponse = await response
           .json()
-          .catch(() => ({ data: null, error: "Failed to fetch pending count" }));
+          .catch(() => ({ data: null, error: "Invalid response" }));
 
         if (!response.ok || result.error) {
           throw new Error(result.error ?? "Failed to fetch pending count");
@@ -161,7 +161,7 @@ export default function FeedbackBoardPage({
 
         const result: FeedbackMineResponse = await response
           .json()
-          .catch(() => ({ data: null, error: "Select failed Owner Pending Data" }));
+          .catch(() => ({ data: null, error: "Invalid response" }));
 
         if (!response.ok || result.error) {
           throw new Error(result.error ?? "Select failed Owner Pending Data");
@@ -205,7 +205,7 @@ export default function FeedbackBoardPage({
 
         const result: FeedbackResponse<AdminReviewFeedback[]> = await response
           .json()
-          .catch(() => ({ data: null, error: "Failed to fetch admin review feedbacks" }));
+          .catch(() => ({ data: null, error: "Invalid response" }));
 
         if (!response.ok || result.error) {
           throw new Error(result.error ?? "Failed to fetch admin review feedbacks");
@@ -275,7 +275,7 @@ export default function FeedbackBoardPage({
             승인됨
           </p>
           <strong className="mt-2 block text-2xl font-semibold text-foreground">
-            {approvedFeedbacksData.length}
+            {approvedFeedbacks.length}
           </strong>
         </div>
         {isAdminUi && (

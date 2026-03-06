@@ -57,5 +57,5 @@ export default async function handler(
 
   // 1시간짜리 access token을 기준으로 짧게 유지하고, 갱신 시마다 다시 덮어쓴다.
   res.setHeader("Set-Cookie", buildCookie(accessToken, 60 * 60));
-  return res.status(200).json({ data: null, error: null });
+  return res.status(200).json({ data: { success: true }, error: null });
 }
