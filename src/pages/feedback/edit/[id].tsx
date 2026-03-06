@@ -23,7 +23,8 @@ import {
   FeedbackFormTagsSection,
   FeedbackEditHeaderSection,
 } from "@/components/feedback";
-import { UpdateFeedbackResponse } from "@/types/feedback";
+import { FeedbackPublicRow } from "@/types/feedback";
+import { AuthContextResult, UpdateFeedbackResponse } from "@/types/response";
 
 const feedbackEditErrorMessages = new Set<string>([
   ...Object.values(FEEDBACK_FORM_ERROR_MESSAGES),
@@ -48,8 +49,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   }
 
   try {
-    const { context: authContext, error: authError } =
-      await getAuthContextByAccessToken(accessToken);
+    const authResult: AuthContextResult = await getAuthContextByAccessToken(accessToken);
+    const { context: authContext, error: authError } = authResult;
+
     if (authError || !authContext) {
       return {
         redirect: {
@@ -59,7 +61,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       };
     }
 
-    const feedback = await getFeedbackDetailById(feedbackId);
+    const feedback: FeedbackPublicRow | null = await getFeedbackDetailById(feedbackId);
     if (!feedback) {
       return { notFound: true };
     }

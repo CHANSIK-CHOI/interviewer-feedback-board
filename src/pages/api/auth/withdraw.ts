@@ -3,18 +3,12 @@ import { buildAvatarPath } from "@/lib/avatar/path";
 import { getRequestAuthContext } from "@/lib/auth/request";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { removeUserAvatar } from "@/lib/avatar/storage.server";
-import type { ApiResponse } from "@/types/common";
+
+import { WithdrawResponse } from "@/types/response";
 
 const AVATAR_BUCKET = process.env.SUPABASE_AVATAR_BUCKET;
 
-type WithdrawResponse = {
-  success: true;
-};
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiResponse<WithdrawResponse>>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<WithdrawResponse>) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "DELETE") {
@@ -32,11 +26,15 @@ export default async function handler(
 
   const supabaseServer = getSupabaseServer();
   if (!supabaseServer) {
-    return res.status(500).json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
+    return res
+      .status(500)
+      .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
   }
 
   if (!AVATAR_BUCKET) {
-    return res.status(500).json({ data: null, error: "SUPABASE_AVATAR_BUCKET 환경변수가 필요합니다." });
+    return res
+      .status(500)
+      .json({ data: null, error: "SUPABASE_AVATAR_BUCKET 환경변수가 필요합니다." });
   }
 
   const userId = auth.context.userId;

@@ -1,14 +1,14 @@
 import type {
   ApprovedFeedback,
-  FeedbackPrivateRow,
+  FeedbackPublicAndEmailRow,
   FeedbackPublicBase,
   FeedbackPublicRow,
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
 import type { SupabaseError } from "@/types/common";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { APPROVED_PUBLIC_COLUMNS, PREVIEWCOLUMN } from "@/constants";
+import type { FeedbackRowsByStatusesParams } from "@/types/response";
 
 const getRequiredSupabaseServer = () => {
   const supabaseServer = getSupabaseServer();
@@ -42,17 +42,11 @@ export const getApprovedFeedbacks = async (): Promise<ApprovedFeedback[]> => {
   });
 };
 
-type FeedbackStatus = FeedbackPublicRow["status"];
-type FeedbackRowsByStatusesParams = {
-  supabaseClient: SupabaseClient;
-  statuses: FeedbackStatus[];
-};
-
 export const getFeedbackRowsByStatuses = async ({
   supabaseClient,
   statuses,
-}: FeedbackRowsByStatusesParams): Promise<FeedbackPrivateRow[]> => {
-  const { data, error }: { data: FeedbackPrivateRow[] | null; error: SupabaseError } =
+}: FeedbackRowsByStatusesParams): Promise<FeedbackPublicAndEmailRow[]> => {
+  const { data, error }: { data: FeedbackPublicAndEmailRow[] | null; error: SupabaseError } =
     await supabaseClient
       .from("feedbacks")
       .select("*")
@@ -97,12 +91,11 @@ export const getFeedbackDetailById = async (
 ): Promise<FeedbackPublicRow | null> => {
   const supabaseServer = getRequiredSupabaseServer();
 
-  const { data, error }: { data: FeedbackPublicRow | null; error: SupabaseError } =
-    await supabaseServer
-      .from("feedbacks")
-      .select(APPROVED_PUBLIC_COLUMNS)
-      .eq("id", id)
-      .maybeSingle();
+  const { data, error } = await supabaseServer
+    .from("feedbacks")
+    .select(APPROVED_PUBLIC_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
 
   if (error) {
     throw new Error("Failed fetch getFeedbackDetailById");

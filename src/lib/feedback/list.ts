@@ -7,7 +7,7 @@ import type {
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
 
-type WithUpdatedAt = { updated_at?: string | null };
+type WithUpdatedAt = { updated_at?: FeedbackPublicBase["updated_at"] | null };
 
 export const compareUpdatedAtDesc = (a: WithUpdatedAt, b: WithUpdatedAt) => {
   if (!a.updated_at || !b.updated_at) {

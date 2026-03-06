@@ -6,23 +6,26 @@ import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { getFeedbackRowsByStatuses } from "@/lib/feedback/server";
 import AdminFeedbackBox from "@/components/admin/AdminFeedbackBox";
+import { AuthContextResult, FeedbackRowsByStatusesParams } from "@/types/response";
+import { FeedbackPublicAndEmailRow } from "@/types/feedback";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
   try {
     const accessToken = context.req.cookies["sb-access-token"];
     if (!accessToken) throw new Error("Access Token Error");
 
-    const { context: authContext, error: authError } =
-      await getAuthContextByAccessToken(accessToken);
+    const authResult: AuthContextResult = await getAuthContextByAccessToken(accessToken);
+    const { context: authContext, error: authError } = authResult;
+
     if (authError || !authContext) throw new Error("Auth Context Error");
 
-    const { isAdmin } = authContext;
-    if (!isAdmin) return { notFound: true };
+    if (!authContext.isAdmin) return { notFound: true };
 
-    const feedbackData = await getFeedbackRowsByStatuses({
+    const params: FeedbackRowsByStatusesParams = {
       supabaseClient: authContext.supabaseServer,
       statuses: ["pending", "approved", "rejected", "revised_pending"],
-    });
+    };
+    const feedbackData: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses(params);
 
     return {
       props: { feedbackData },

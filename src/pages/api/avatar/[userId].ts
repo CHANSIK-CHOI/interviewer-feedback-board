@@ -4,6 +4,7 @@ import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
 import { buildAvatarPath } from "@/lib/avatar/path";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { ApiResponse } from "@/types/common";
+import { AvatarMimeType } from "@/types/avatar";
 
 const AVATAR_BUCKET = process.env.SUPABASE_AVATAR_BUCKET;
 type AvatarProxyErrorResponse = ApiResponse<null> | Buffer<ArrayBuffer>;
@@ -75,7 +76,7 @@ export default async function handler(
     return respondWithPlaceholder(res);
   }
 
-  const mimeType = getNormalizedAvatarMimeType(data.type || "");
+  const mimeType: AvatarMimeType | null = getNormalizedAvatarMimeType(data.type || "");
   if (!mimeType) {
     return respondWithPlaceholder(res);
   }

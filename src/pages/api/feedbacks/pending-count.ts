@@ -1,12 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext } from "@/lib/auth/request";
-import type { ApiResponse } from "@/types/common";
+import { PendingCountResponse } from "@/types/response";
 
-type PendingCountResponse = ApiResponse<{
-  count: number;
-}>;
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse<PendingCountResponse>) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<PendingCountResponse>
+) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "GET") {

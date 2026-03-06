@@ -5,7 +5,11 @@ import { useRouter } from "next/router";
 import { useSession } from "@/components/session";
 import { useAlert } from "@/components/ui";
 import { replaceSafely } from "@/lib/navigation/client";
-import { uploadAvatarToSupabase, validateAvatarFile } from "@/lib/avatar/client";
+import {
+  AvatarUploadResult,
+  uploadAvatarToSupabase,
+  validateAvatarFile,
+} from "@/lib/avatar/client";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { getAuthProviders } from "@/lib/auth/provider";
 import { getUserCompany, getUserName, getAvatarUrl } from "@/lib/user/profile";
@@ -138,7 +142,10 @@ export const useMyProfileController = () => {
     if (pendingAvatarFile) {
       setIsUploadingAvatar(true);
       try {
-        const { avatarUrl } = await uploadAvatarToSupabase(pendingAvatarFile, session.access_token);
+        const { avatarUrl }: AvatarUploadResult = await uploadAvatarToSupabase(
+          pendingAvatarFile,
+          session.access_token
+        );
 
         nextAvatar = avatarUrl || AVATAR_PLACEHOLDER_SRC;
         clearPendingAvatar();

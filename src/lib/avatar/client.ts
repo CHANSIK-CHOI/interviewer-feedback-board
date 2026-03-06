@@ -1,7 +1,7 @@
 import { AVATAR_MAX_FILE_SIZE } from "@/constants";
 import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
 
-type AvatarUploadResult = {
+export type AvatarUploadResult = {
   avatarUrl: string;
   bucket: string;
   path: string;

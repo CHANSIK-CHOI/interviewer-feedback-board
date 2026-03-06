@@ -8,7 +8,13 @@ import { useSession } from "@/components/session";
 import { compareUpdatedAtDesc, mergeFeedbackList } from "@/lib/feedback/list";
 import { FeedbackBox, NewFeedbackLinkBtn } from "@/components/feedback";
 import { getFreshAccessToken } from "@/lib/auth/client";
-import { AdminReviewFeedback, RevisedPendingOwnerFeedback } from "@/types/feedback";
+import {
+  AdminReviewFeedback,
+  ApprovedFeedback,
+  RevisedPendingOwnerFeedback,
+  RevisedPendingPreviewFeedback,
+} from "@/types/feedback";
+import { FeedbackMineResponse, FeedbackResponse, PendingCountResponse } from "@/types/response";
 
 const MINE_STATUS_QUERY = new URLSearchParams({
   status: "pending,revised_pending",
@@ -20,8 +26,9 @@ const ADMIN_REVIEW_STATUS_QUERY = new URLSearchParams({
 
 export const getStaticProps = async () => {
   try {
-    const approvedFeedbacksData = await getApprovedFeedbacks();
-    const revisedPendingPreviewData = await getRevisedPendingPreviewFeedbacks();
+    const approvedFeedbacksData: ApprovedFeedback[] = await getApprovedFeedbacks();
+    const revisedPendingPreviewData: RevisedPendingPreviewFeedback[] =
+      await getRevisedPendingPreviewFeedbacks();
 
     return {
       props: {
@@ -105,9 +112,9 @@ export default function FeedbackBoardPage({
           signal: controller.signal,
         });
 
-        const result: { data: { count: number } | null; error: string | null } = await response
+        const result: PendingCountResponse = await response
           .json()
-          .catch(() => ({}));
+          .catch(() => ({ data: null, error: "Failed to fetch pending count" }));
 
         if (!response.ok || result.error) {
           throw new Error(result.error ?? "Failed to fetch pending count");
@@ -152,8 +159,9 @@ export default function FeedbackBoardPage({
           signal: controller.signal,
         });
 
-        const result: { data: RevisedPendingOwnerFeedback[] | null; error: string | null } =
-          await response.json().catch(() => ({}));
+        const result: FeedbackMineResponse = await response
+          .json()
+          .catch(() => ({ data: null, error: "Select failed Owner Pending Data" }));
 
         if (!response.ok || result.error) {
           throw new Error(result.error ?? "Select failed Owner Pending Data");
@@ -195,9 +203,9 @@ export default function FeedbackBoardPage({
           signal: controller.signal,
         });
 
-        const result: { data: AdminReviewFeedback[] | null; error: string | null } = await response
+        const result: FeedbackResponse<AdminReviewFeedback[]> = await response
           .json()
-          .catch(() => ({}));
+          .catch(() => ({ data: null, error: "Failed to fetch admin review feedbacks" }));
 
         if (!response.ok || result.error) {
           throw new Error(result.error ?? "Failed to fetch admin review feedbacks");

@@ -18,6 +18,7 @@ import {
 import { useAlert } from "@/components/ui";
 import { replaceSafely } from "@/lib/navigation/client";
 import { useRouter } from "next/router";
+import { CreateFeedbackResponse } from "@/types/response";
 
 const newFeedbackErrorMessages = new Set<string>(Object.values(FEEDBACK_FORM_ERROR_MESSAGES));
 
@@ -83,7 +84,7 @@ export default function FeedbackNewPage() {
         body: JSON.stringify(values),
       });
 
-      const result: { data: { id: string } | null; error: string | null } = await response
+      const result: CreateFeedbackResponse = await response
         .json()
         .catch(() => ({ data: null, error: "Invalid response" }));
 

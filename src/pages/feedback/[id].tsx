@@ -9,10 +9,7 @@ import { getFeedbackDetailById, getFeedbackEmailById } from "@/lib/feedback/serv
 import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
-
-type FeedbackDetailData = NonNullable<Awaited<ReturnType<typeof getFeedbackDetailById>>> & {
-  email?: string;
-};
+import { FeedbackPublicAndEmailRow, FeedbackPublicRow } from "@/types/feedback";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
   const id = context.params?.id;
@@ -21,13 +18,13 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   }
 
   try {
-    const detailFeedbacksData = await getFeedbackDetailById(id);
+    const detailFeedbacksData: FeedbackPublicRow | null = await getFeedbackDetailById(id);
     if (!detailFeedbacksData) throw new Error("detailFeedbacksData is blank");
 
     const accessToken = context.req.cookies["sb-access-token"];
     let isAuthor = false;
     let isAdmin = false;
-    let mergedDetailData: FeedbackDetailData = detailFeedbacksData;
+    let mergedDetailData: FeedbackPublicAndEmailRow = detailFeedbacksData;
 
     if (!accessToken) {
       if (detailFeedbacksData.status !== "approved") return { notFound: true };
@@ -44,7 +41,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
         return { notFound: true };
 
       if (isAuthor || isAdmin) {
-        const email = await getFeedbackEmailById(id).catch(() => null);
+        const email: string | null = await getFeedbackEmailById(id).catch(() => null);
         if (email) {
           mergedDetailData = {
             ...detailFeedbacksData,

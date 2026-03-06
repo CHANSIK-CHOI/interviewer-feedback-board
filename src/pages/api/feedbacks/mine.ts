@@ -2,11 +2,15 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext } from "@/lib/auth/request";
 import { parseStatusQuery } from "@/lib/status/query";
 import type { RevisedPendingOwnerFeedback } from "@/types/feedback";
+import { FeedbackMineResponse } from "@/types/response";
 
 const ALLOWED_STATUSES = ["pending", "revised_pending"] as const;
 type MineStatus = (typeof ALLOWED_STATUSES)[number];
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<FeedbackMineResponse>
+) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "GET") {

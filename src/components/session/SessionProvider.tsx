@@ -2,8 +2,9 @@ import React, { ReactNode, useCallback, useEffect, useRef, useState } from "reac
 import { SessionContext } from "./useSession";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { syncUserRole } from "@/lib/user-role/client";
+import { syncUserRole, SyncUserRoleResult } from "@/lib/user-role/client";
 import type { UserRole } from "@/types/user-role";
+import { SessionCookieSyncResponse } from "@/types/response";
 
 type SessionProviderProps = {
   children: ReactNode;
@@ -121,7 +122,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     // 세션 생성 시 user_roles를 동기화한다. (github 로그인시 oauth-callback 페이지에서 진행)
     const runRoleSync = async () => {
       setIsRoleLoading(true);
-      const { role } = await syncUserRole(session.access_token);
+      const { role }: SyncUserRoleResult = await syncUserRole(session.access_token);
       applyRoleUiState({ userId: session.user.id, role });
     };
 
@@ -155,7 +156,9 @@ export default function SessionProvider({ children }: SessionProviderProps) {
         },
       });
 
-      const payload: { data?: null; error?: string | null } = await response.json().catch(() => ({}));
+      const payload: SessionCookieSyncResponse = await response
+        .json()
+        .catch(() => ({ data: null, error: "Failed to sync session cookie" }));
       if (!response.ok || payload.error) {
         throw new Error(payload.error ?? "Failed to sync session cookie");
       }

@@ -1,13 +1,10 @@
+import { ParseStatusQueryResult } from "@/types/response";
+
 type ParseStatusQueryParams<T extends string> = {
   rawStatus: string | string[] | undefined;
   allowedStatuses: readonly T[];
   defaultStatuses: readonly T[];
   usageMessage: string;
-};
-
-type ParseStatusQueryResult<T extends string> = {
-  statuses: T[] | null;
-  error: string | null;
 };
 
 export const parseStatusQuery = <T extends string>({

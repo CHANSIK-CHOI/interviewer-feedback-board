@@ -1,11 +1,12 @@
 import type { NextApiRequest } from "next";
 import { getAuthContextByAccessToken } from "@/lib/auth/server";
+import { RequestAuthOptions, RequestAuthResult } from "@/types/response";
 
 type RequestAccessTokenOptions = {
   missingAccessTokenError?: string;
 };
 
-type RequestAccessTokenResult = {
+export type RequestAccessTokenResult = {
   accessToken: string | null;
   error: string | null;
   status: number;
@@ -34,23 +35,6 @@ export const getRequestAccessToken = (
     error: null,
     status: 200,
   };
-};
-
-type RequestAuthOptions = {
-  missingAccessTokenError?: string;
-  unauthorizedError?: string;
-  requireAdmin?: boolean;
-  forbiddenError?: string;
-};
-
-type ServerAuthResult = Awaited<ReturnType<typeof getAuthContextByAccessToken>>;
-type RequestAuthContext = NonNullable<ServerAuthResult["context"]>;
-
-type RequestAuthResult = {
-  context: RequestAuthContext | null;
-  accessToken: string | null;
-  error: string | null;
-  status: number;
 };
 
 export const getRequestAuthContext = async (

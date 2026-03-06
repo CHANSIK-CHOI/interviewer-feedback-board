@@ -1,8 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext } from "@/lib/auth/request";
 import { getApprovedFeedbacks, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
-import type { AdminReviewFeedback } from "@/types/feedback";
+import type {
+  AdminReviewFeedback,
+  ApprovedFeedback,
+  FeedbackPublicAndEmailRow,
+} from "@/types/feedback";
 import { parseStatusQuery } from "@/lib/status/query";
+import { FeedbackResponse, ParseStatusQueryResult, RequestAuthResult } from "@/types/response";
 
 /*
   전체 역할 : 해당 API는 GET /api/feedbacks?status=...로 피드백 목록을 가져옴
@@ -13,7 +18,10 @@ import { parseStatusQuery } from "@/lib/status/query";
 const ALLOWED_STATUSES = ["pending", "approved", "rejected", "revised_pending"] as const;
 type FeedbackStatus = (typeof ALLOWED_STATUSES)[number];
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<FeedbackResponse<ApprovedFeedback[] | AdminReviewFeedback[]>>
+) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "GET") {
@@ -21,12 +29,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ data: null, error: "Method Not Allowed" });
   }
 
-  const { statuses, error: statusError } = parseStatusQuery<FeedbackStatus>({
-    rawStatus: req.query.status,
-    allowedStatuses: ALLOWED_STATUSES,
-    defaultStatuses: ["approved"],
-    usageMessage: "Use ?status=approved or ?status=pending,revised_pending",
-  });
+  const { statuses, error: statusError }: ParseStatusQueryResult<FeedbackStatus> =
+    parseStatusQuery<FeedbackStatus>({
+      rawStatus: req.query.status,
+      allowedStatuses: ALLOWED_STATUSES,
+      defaultStatuses: ["approved"],
+      usageMessage: "Use ?status=approved or ?status=pending,revised_pending",
+    });
   if (statusError || !statuses) {
     // status 쿼리가 이상하면 바로 400으로 막음
     return res.status(400).json({ data: null, error: statusError ?? "Invalid status query" });
@@ -38,28 +47,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 공개 조회 분기 (!isRequiresAdmin)
     if (!isRequiresAdmin) {
-      const publicFeedbacks = await getApprovedFeedbacks();
+      const publicFeedbacks: ApprovedFeedback[] = await getApprovedFeedbacks();
 
       return res.status(200).json({ data: publicFeedbacks, error: null });
     }
 
     // 관리자 전용 조회 분기 (isRequiresAdmin)
-    const auth = await getRequestAuthContext(req, { requireAdmin: true });
+    const auth: RequestAuthResult = await getRequestAuthContext(req, { requireAdmin: true });
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
     const { context } = auth;
 
-    const feedbackRows = await getFeedbackRowsByStatuses({
+    const feedbackRows: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses({
       supabaseClient: context.supabaseServer,
       statuses,
     });
 
     const adminReviewFeedbacks: AdminReviewFeedback[] = feedbackRows.map((item) => {
-      const { email, ...withoutEmail } = item;
+      const { email, ...rest } = item;
       void email;
       return {
-        ...withoutEmail,
+        ...rest,
         isPreview: false,
       };
     });

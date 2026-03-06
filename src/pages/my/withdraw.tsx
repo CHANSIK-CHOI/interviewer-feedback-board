@@ -8,6 +8,7 @@ import { useRouter } from "next/router";
 import { inputBaseStyle } from "@/constants";
 import { getAuthProviderLabel, getAuthProviders } from "@/lib/auth/provider";
 import { getFreshAccessToken } from "@/lib/auth/client";
+import { WithdrawResponse } from "@/types/response";
 
 type WithdrawForm = {
   confirm_text: string;
@@ -100,10 +101,10 @@ export default function WithdrawPage() {
       },
     });
 
-    const payload: {
-      data: { success: true } | null;
-      error: string | null;
-    } = await response.json().catch(() => ({ data: null, error: null }));
+    const payload: WithdrawResponse = await response.json().catch(() => ({
+      data: null,
+      error: "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
+    }));
     if (!response.ok || payload.error) {
       openAlert({
         description: payload.error ?? "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",

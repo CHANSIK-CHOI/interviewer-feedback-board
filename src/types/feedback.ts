@@ -23,8 +23,8 @@ export type FeedbackPublicRow = FeedbackPublicBase & {
   status: "pending" | "approved" | "rejected" | "revised_pending";
 };
 
-export type FeedbackPrivateRow = FeedbackPublicRow & {
-  email: string;
+export type FeedbackPublicAndEmailRow = FeedbackPublicRow & {
+  email?: string;
 };
 
 export type ApprovedFeedback = FeedbackPublicBase & {
@@ -54,7 +54,7 @@ export type RevisedPendingOwnerFeedback = FeedbackPublicBase & {
   tags: string[];
 };
 
-type AdminReviewBase = FeedbackPrivateRow & {
+type AdminReviewBase = FeedbackPublicAndEmailRow & {
   isPreview: false;
 };
 
@@ -66,9 +66,3 @@ export type FeedbackListItem =
   | RevisedPendingPreviewFeedback
   | RevisedPendingOwnerFeedback
   | AdminReviewFeedback;
-
-// api router response
-export type UpdateFeedbackResponse = {
-  data: { id: string } | null;
-  error: string | null;
-};

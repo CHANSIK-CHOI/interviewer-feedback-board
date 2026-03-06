@@ -1,11 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getSupabaseServerByAccessToken } from "@/lib/supabase/server";
-import { getRequestAccessToken } from "@/lib/auth/request";
-import type { ApiResponse } from "@/types/common";
+import { getRequestAccessToken, RequestAccessTokenResult } from "@/lib/auth/request";
+import { SessionCookieSyncResponse } from "@/types/response";
 
 // 옵션: HttpOnly, SameSite=Lax, (prod에서 Secure), Path=/, Max-Age=3600
 const ACCESS_TOKEN_COOKIE = "sb-access-token";
-type SessionCookieSyncResponse = ApiResponse<null>;
 
 const buildCookie = (value: string, maxAge: number) =>
   [
@@ -19,7 +18,10 @@ const buildCookie = (value: string, maxAge: number) =>
     .filter(Boolean) // 빈 문자열 제거
     .join("; "); // 쿠키 표준 포맷으로 합침
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<SessionCookieSyncResponse>) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<SessionCookieSyncResponse>
+) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method === "DELETE") {
@@ -32,13 +34,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(405).json({ data: null, error: "Method Not Allowed" });
   }
 
-  const tokenResult = getRequestAccessToken(req);
-  if (tokenResult.error || !tokenResult.accessToken) {
+  const {
+    accessToken,
+    error: tokenError,
+    status: tokenStatus,
+  }: RequestAccessTokenResult = getRequestAccessToken(req);
+  if (tokenError || !accessToken) {
     return res
-      .status(tokenResult.status)
-      .json({ data: null, error: tokenResult.error ?? "Missing access token" });
+      .status(tokenStatus)
+      .json({ data: null, error: tokenError ?? "Missing access token" });
   }
-  const { accessToken } = tokenResult;
 
   const supabaseServer = getSupabaseServerByAccessToken(accessToken);
   if (!supabaseServer) {

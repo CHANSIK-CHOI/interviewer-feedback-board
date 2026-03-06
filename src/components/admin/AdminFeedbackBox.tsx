@@ -2,14 +2,14 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui";
-import type { FeedbackPrivateRow } from "@/types/feedback";
+import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
 import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 
 type AdminFeedbackBoxProps = {
-  data: FeedbackPrivateRow;
+  data: FeedbackPublicAndEmailRow;
 };
 export default function AdminFeedbackBox({ data }: AdminFeedbackBoxProps) {
   const avatarSrc = data.avatar_url || AVATAR_PLACEHOLDER_SRC;
@@ -51,7 +51,7 @@ export default function AdminFeedbackBox({ data }: AdminFeedbackBoxProps) {
           )}
           <span className="text-xs">수정 {data.revision_count}회</span>
         </div>
-        <p className="text-sm text-muted-foreground">작성자 이메일: {data.email}</p>
+        <p className="text-sm text-muted-foreground">작성자 이메일: {data.email ?? "-"}</p>
         <p className="text-base text-foreground">{data.summary}</p>
       </div>
 

@@ -3,11 +3,9 @@ import { getRequestAuthContext } from "@/lib/auth/request";
 import type { FeedbackFormValues } from "@/types/forms";
 import { FEEDBACK_FORM_ERROR_MESSAGES, NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE } from "@/constants";
 import { toNullableTrimmedString, toStrictBoolean, toTrimmedString } from "@/lib/shared/normalize";
-
-type CreateFeedbackResponse = {
-  data: { id: string } | null;
-  error: string | null;
-};
+import { CreateFeedbackResponse, RequestAuthOptions, RequestAuthResult } from "@/types/response";
+import { FeedbackPublicBase } from "@/types/feedback";
+import { SupabaseError } from "@/types/common";
 
 export default async function handler(
   req: NextApiRequest,
@@ -21,10 +19,12 @@ export default async function handler(
   }
 
   try {
-    const auth = await getRequestAuthContext(req, {
+    const authOption: RequestAuthOptions = {
       missingAccessTokenError: "로그인이 필요합니다.",
       unauthorizedError: "로그인 상태를 확인해주세요.",
-    });
+    };
+    const auth: RequestAuthResult = await getRequestAuthContext(req, authOption);
+
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
@@ -64,7 +64,9 @@ export default async function handler(
     }
 
     if (is_company_public === null) {
-      return res.status(400).json({ data: null, error: FEEDBACK_FORM_ERROR_MESSAGES.companyPublic });
+      return res
+        .status(400)
+        .json({ data: null, error: FEEDBACK_FORM_ERROR_MESSAGES.companyPublic });
     }
 
     if (is_company_public && !company_name) {
@@ -76,29 +78,30 @@ export default async function handler(
       return res.status(400).json({ data: null, error: FEEDBACK_FORM_ERROR_MESSAGES.email });
     }
 
-    const { data, error } = await auth.context.supabaseServer
-      .from("feedbacks")
-      .insert({
-        author_id: auth.context.userId,
-        display_name,
-        company_name,
-        is_company_public,
-        avatar_url,
-        email,
-        summary,
-        strengths,
-        questions,
-        suggestions,
-        rating,
-        tags,
-        status: "pending",
-        is_public: false,
-        revision_count: 0,
-        reviewed_at: null,
-        reviewed_by: null,
-      })
-      .select("id")
-      .single();
+    const { data, error }: { data: { id: FeedbackPublicBase["id"] } | null; error: SupabaseError } =
+      await auth.context.supabaseServer
+        .from("feedbacks")
+        .insert({
+          author_id: auth.context.userId,
+          display_name,
+          company_name,
+          is_company_public,
+          avatar_url,
+          email,
+          summary,
+          strengths,
+          questions,
+          suggestions,
+          rating,
+          tags,
+          status: "pending",
+          is_public: false,
+          revision_count: 0,
+          reviewed_at: null,
+          reviewed_by: null,
+        })
+        .select("id")
+        .single();
 
     if (error || !data) {
       console.error("Create feedback insert failed", error);

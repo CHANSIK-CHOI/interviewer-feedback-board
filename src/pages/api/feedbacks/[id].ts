@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext } from "@/lib/auth/request";
 import type { SupabaseError } from "@/types/common";
-import type { FeedbackPrivateRow, UpdateFeedbackResponse } from "@/types/feedback";
+import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import type { FeedbackFormValues } from "@/types/forms";
 import {
   FEEDBACK_FORM_ERROR_MESSAGES,
@@ -10,12 +10,13 @@ import {
   NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE,
 } from "@/constants";
 import { toNullableTrimmedString, toStrictBoolean, toTrimmedString } from "@/lib/shared/normalize";
+import { RequestAuthOptions, RequestAuthResult, UpdateFeedbackResponse } from "@/types/response";
 
 type UpdataCompleteReturnData = {
-  id: FeedbackPrivateRow["id"];
-  author_id: FeedbackPrivateRow["author_id"];
-  status: FeedbackPrivateRow["status"];
-  revision_count: FeedbackPrivateRow["revision_count"];
+  id: FeedbackPublicAndEmailRow["id"];
+  author_id: FeedbackPublicAndEmailRow["author_id"];
+  status: FeedbackPublicAndEmailRow["status"];
+  revision_count: FeedbackPublicAndEmailRow["revision_count"];
 };
 
 export default async function handler(
@@ -35,10 +36,12 @@ export default async function handler(
   }
 
   try {
-    const auth = await getRequestAuthContext(req, {
+    const parms: RequestAuthOptions = {
       missingAccessTokenError: "로그인이 필요합니다.",
       unauthorizedError: "로그인 상태를 확인해주세요.",
-    });
+    };
+    const auth: RequestAuthResult = await getRequestAuthContext(req, parms);
+
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
@@ -78,7 +81,9 @@ export default async function handler(
     }
 
     if (is_company_public === null) {
-      return res.status(400).json({ data: null, error: FEEDBACK_FORM_ERROR_MESSAGES.companyPublic });
+      return res
+        .status(400)
+        .json({ data: null, error: FEEDBACK_FORM_ERROR_MESSAGES.companyPublic });
     }
 
     if (is_company_public && !company_name) {
