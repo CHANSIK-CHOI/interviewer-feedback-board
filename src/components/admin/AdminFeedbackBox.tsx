@@ -7,14 +7,15 @@ import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/fee
 import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
-import { ReviewFeedbackResult } from "@/lib/feedback/client";
-import { ReviewControls } from "../common";
+import { DeleteFeedbackResult, ReviewFeedbackResult } from "@/lib/feedback/client";
+import { DeleteFeedbackButton, ReviewControls } from "../common";
 
 type AdminFeedbackBoxProps = {
   data: FeedbackPublicAndEmailRow;
   onReviewed: (result: ReviewFeedbackResult) => void;
+  onDeleted: (result: DeleteFeedbackResult) => void;
 };
-export default function AdminFeedbackBox({ data, onReviewed }: AdminFeedbackBoxProps) {
+export default function AdminFeedbackBox({ data, onReviewed, onDeleted }: AdminFeedbackBoxProps) {
   const avatarSrc = data.avatar_url || AVATAR_PLACEHOLDER_SRC;
   const isUpdateData = checkUpdateData(data);
 
@@ -63,9 +64,7 @@ export default function AdminFeedbackBox({ data, onReviewed }: AdminFeedbackBoxP
           <Link href={`/feedback/${data.id}`}>상세 보기</Link>
         </Button>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm">
-            삭제
-          </Button>
+          <DeleteFeedbackButton id={data.id} size="sm" onSuccess={onDeleted} />
           <ReviewControls id={data.id} status={data.status} size="sm" onSuccess={onReviewed} />
         </div>
       </div>

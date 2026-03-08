@@ -5,7 +5,7 @@ import { compareUpdatedAtDesc } from "@/lib/feedback/list";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
 import { FeedbackRowsByStatusesParams, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
-import { ReviewFeedbackResult } from "@/lib/feedback/client";
+import { DeleteFeedbackResult, ReviewFeedbackResult } from "@/lib/feedback/client";
 import AdminFeedbackBox from "@/components/admin/AdminFeedbackBox";
 import { FeedbackPublicAndEmailRow } from "@/types/feedback";
 
@@ -57,6 +57,10 @@ export default function AdminFeedbackPage({
           : item
       )
     );
+  };
+
+  const handleDeleted = (result: DeleteFeedbackResult) => {
+    setFeedbackItems((prev) => prev.filter((item) => item.id !== result.id));
   };
 
   const feedbackLists = useMemo(() => {
@@ -166,7 +170,12 @@ export default function AdminFeedbackPage({
         )}
 
         {feedbackLists.map((item) => (
-          <AdminFeedbackBox data={item} key={item.id} onReviewed={handleReviewed} />
+          <AdminFeedbackBox
+            data={item}
+            key={item.id}
+            onReviewed={handleReviewed}
+            onDeleted={handleDeleted}
+          />
         ))}
       </section>
     </div>

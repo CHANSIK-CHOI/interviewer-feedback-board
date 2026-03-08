@@ -11,7 +11,7 @@ import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 import { getAuthUserNameById } from "@/lib/user/profile.server";
 import { FeedbackPublicAndEmailRow, FeedbackPublicRow } from "@/types/feedback";
-import { ReviewControls } from "@/components/common";
+import { DeleteFeedbackButton, ReviewControls } from "@/components/common";
 import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
@@ -117,10 +117,8 @@ export default function FeedbackDetailPage({
                 <Link href={`/feedback/edit/${currentDetailFeedback.id}`}>수정하기</Link>
               </Button>
             )}
-            {isAdmin && (
-              <Button type="button" variant="outline">
-                삭제
-              </Button>
+            {(isAdmin || isAuthor) && (
+              <DeleteFeedbackButton id={currentDetailFeedback.id} redirectTo="/feedback" />
             )}
             {isAdmin && (
               <ReviewControls

@@ -56,6 +56,9 @@ export const NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE =
 
 export const FEEDBACK_EDIT_FALLBACK_ERROR_MESSAGE =
   "피드백 수정에 실패했습니다.\n잠시 후 다시 시도해주세요.";
+export const FEEDBACK_DELETE_FALLBACK_ERROR_MESSAGE =
+  "피드백 삭제에 실패했습니다.\n잠시 후 다시 시도해주세요.";
 
 export const FEEDBACK_NOT_FOUND_MESSAGE = "피드백을 찾을 수 없습니다.";
 export const FEEDBACK_FORBIDDEN_MESSAGE = "수정 권한이 없습니다.";
+export const FEEDBACK_DELETE_FORBIDDEN_MESSAGE = "삭제 권한이 없습니다.";

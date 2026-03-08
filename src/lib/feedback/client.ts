@@ -1,5 +1,5 @@
 import type { FeedbackPublicBase, FeedbackPublicRow } from "@/types/feedback";
-import type { ReviewFeedbackResponse } from "@/types/response";
+import type { DeleteFeedbackResponse, ReviewFeedbackResponse } from "@/types/response";
 
 export type ReviewFeedbackAction = "approve" | "reject" | "reopen";
 
@@ -45,6 +45,41 @@ export async function reviewFeedback({
 
   if (!response.ok || result.error || !result.data) {
     throw new Error(result.error ?? "피드백 검토 처리에 실패했습니다.");
+  }
+
+  return result.data;
+}
+
+export type DeleteFeedbackResult = {
+  id: FeedbackPublicBase["id"];
+};
+
+export type DeleteFeedbackParams = {
+  feedbackId: FeedbackPublicBase["id"];
+  accessToken: string;
+};
+
+export async function deleteFeedback({
+  feedbackId,
+  accessToken,
+}: DeleteFeedbackParams): Promise<DeleteFeedbackResult> {
+  if (!accessToken) {
+    throw new Error("Missing access token");
+  }
+
+  const response = await fetch(`/api/feedbacks/${encodeURIComponent(feedbackId)}/delete`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const result: DeleteFeedbackResponse = await response
+    .json()
+    .catch(() => ({ data: null, error: "Invalid response" }));
+
+  if (!response.ok || result.error || !result.data) {
+    throw new Error(result.error ?? "피드백 삭제에 실패했습니다.");
   }
 
   return result.data;

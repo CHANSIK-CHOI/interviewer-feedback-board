@@ -1,0 +1,92 @@
+import React, { useState } from "react";
+import { useRouter } from "next/router";
+import { useSession } from "@/components/session";
+import { getFreshAccessToken } from "@/lib/auth/client";
+import { replaceSafely } from "@/lib/navigation/client";
+import { DeleteFeedbackResult, deleteFeedback } from "@/lib/feedback/client";
+import { Button, useAlert, useConfirm } from "../ui";
+
+type DeleteFeedbackButtonProps = {
+  id: string;
+  size?: React.ComponentProps<typeof Button>["size"];
+  disabled?: boolean;
+  redirectTo?: string;
+  onSuccess?: (result: DeleteFeedbackResult) => void;
+};
+
+export default function DeleteFeedbackButton({
+  id,
+  size,
+  disabled = false,
+  redirectTo,
+  onSuccess,
+}: DeleteFeedbackButtonProps) {
+  const router = useRouter();
+  const { openAlert } = useAlert();
+  const { openConfirm } = useConfirm();
+  const { session, supabaseClient } = useSession();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleDelete = async () => {
+    if (disabled || isSubmitting) return;
+
+    const isConfirmed = await openConfirm({
+      title: "피드백 삭제 확인",
+      description: "삭제한 피드백은 복구할 수 없습니다.\n정말 삭제하시겠어요?",
+      actionText: "삭제",
+      cancelText: "취소",
+    });
+
+    if (!isConfirmed) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const accessToken = await getFreshAccessToken({
+        supabaseClient,
+        fallbackAccessToken: session?.access_token ?? null,
+      });
+
+      if (!accessToken) {
+        openAlert({
+          description: "로그인 상태를 확인해주세요.",
+        });
+        return;
+      }
+
+      const result = await deleteFeedback({
+        feedbackId: id,
+        accessToken,
+      });
+
+      onSuccess?.(result);
+
+      openAlert({
+        description: "피드백을 삭제했습니다.",
+        onOk: redirectTo
+          ? () => {
+              void replaceSafely(router, redirectTo);
+            }
+          : undefined,
+      });
+    } catch (error) {
+      openAlert({
+        description: error instanceof Error ? error.message : "피드백 삭제에 실패했습니다.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="destructive"
+      size={size}
+      disabled={disabled || isSubmitting}
+      onClick={() => void handleDelete()}
+    >
+      삭제
+    </Button>
+  );
+}

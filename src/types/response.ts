@@ -19,6 +19,9 @@ export type EditFeedbackResponse = ApiResponse<{ id: FeedbackPublicBase["id"] }>
 // api/feedbacks/[id]/review
 export type ReviewFeedbackResponse = ApiResponse<ReviewFeedbackResultWithReviewerName>;
 
+// api/feedbacks/[id]/delete
+export type DeleteFeedbackResponse = ApiResponse<{ id: FeedbackPublicBase["id"] }>;
+
 // api/feedbacks
 export type FeedbackResponse<T> = ApiResponse<T>;
 
