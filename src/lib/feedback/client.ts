@@ -1,7 +1,7 @@
 import type { FeedbackPublicBase, FeedbackPublicRow } from "@/types/feedback";
 import type { ReviewFeedbackResponse } from "@/types/response";
 
-export type ReviewFeedbackAction = "approve" | "reject";
+export type ReviewFeedbackAction = "approve" | "reject" | "reopen";
 
 export type ReviewFeedbackResult = {
   id: FeedbackPublicBase["id"];

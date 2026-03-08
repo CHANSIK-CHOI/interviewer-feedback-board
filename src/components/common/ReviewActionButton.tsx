@@ -24,6 +24,10 @@ const reviewActionButtonConfig: Record<
     label: "반려",
     variant: "outline",
   },
+  reopen: {
+    label: "검토 대기",
+    variant: "secondary",
+  },
 };
 
 export default function ReviewActionButton({

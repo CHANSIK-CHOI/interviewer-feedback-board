@@ -1,8 +1,28 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui";
 import { useSession } from "@/components/session";
 import { getUserName } from "@/lib/user/profile";
 import { NewFeedbackLinkBtn } from "@/components/feedback";
+
+type StackBadge = {
+  label: string;
+  iconSrc?: string;
+  isInvertedInDarkMode?: boolean;
+};
+
+const CORE_STACK_BADGES: StackBadge[] = [
+  { label: "Next.js Page Router", iconSrc: "/icons/nextjs.svg", isInvertedInDarkMode: true },
+  { label: "Supabase", iconSrc: "/icons/supabase.svg" },
+  { label: "TypeScript" },
+  { label: "shadcn/ui" },
+  { label: "Tailwind CSS" },
+];
+
+const DELIVERY_BADGES: StackBadge[] = [
+  { label: "Vercel", iconSrc: "/icons/vercel.svg", isInvertedInDarkMode: true },
+  { label: "GitHub", iconSrc: "/icons/github.svg", isInvertedInDarkMode: true },
+];
 
 export default function MainPage() {
   const { session, isAdminUi, isRoleLoading } = useSession();
@@ -11,6 +31,82 @@ export default function MainPage() {
 
   return (
     <div className="grid gap-6">
+      <section className="relative grid gap-6 overflow-hidden rounded-3xl border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(235,235,235,0.96))] p-6 shadow-lg dark:border-white/10 dark:bg-[linear-gradient(135deg,rgba(12,12,12,0.95),rgba(24,24,24,0.95))] lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-center">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-32 -top-40 h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(160,160,160,0.16),transparent_70%)] dark:bg-[radial-gradient(circle,rgba(160,160,160,0.12),transparent_70%)]"
+        />
+        <div className="relative z-10 flex flex-col gap-4">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary dark:bg-primary/20 dark:text-primary-foreground">
+            Project Specs
+          </span>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+            Next.js + Supabase로 만든
+            <br />
+            권한 기반 피드백 보드
+          </h1>
+          <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Auth, RLS, CRUD, 승인 워크플로우를 중심으로 구성했습니다.
+          </p>
+        </div>
+        <aside className="relative z-10 grid gap-3">
+          <div className="rounded-2xl border border-border/60 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Core Stack
+            </span>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {CORE_STACK_BADGES.map((stack) => (
+                <span
+                  key={stack.label}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-xs font-medium text-foreground dark:border-white/10 dark:bg-neutral-800/70"
+                >
+                  {stack.iconSrc && (
+                    <Image
+                      src={stack.iconSrc}
+                      alt={`${stack.label} icon`}
+                      width={12}
+                      height={12}
+                      className={stack.isInvertedInDarkMode ? "dark:invert" : undefined}
+                    />
+                  )}
+                  {stack.label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Delivery
+            </span>
+            <strong className="mt-2 block text-lg font-semibold text-foreground">
+              Vercel 배포 · GitHub 형상관리
+            </strong>
+            <span className="mt-1 block text-sm text-muted-foreground">
+              환경변수 기반 구성, API Route 기반 백엔드, 역할 분리 정책을 적용했습니다.
+            </span>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {DELIVERY_BADGES.map((item) => (
+                <span
+                  key={item.label}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-xs font-medium text-foreground dark:border-white/10 dark:bg-neutral-800/70"
+                >
+                  {item.iconSrc && (
+                    <Image
+                      src={item.iconSrc}
+                      alt={`${item.label} icon`}
+                      width={12}
+                      height={12}
+                      className={item.isInvertedInDarkMode ? "dark:invert" : undefined}
+                    />
+                  )}
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </section>
+
       <section className="rounded-3xl border border-border/60 bg-background/80 p-8 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Portfolio Home

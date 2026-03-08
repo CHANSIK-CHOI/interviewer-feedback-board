@@ -11,7 +11,7 @@ import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 import { getAuthUserNameById } from "@/lib/user/profile.server";
 import { FeedbackPublicAndEmailRow, FeedbackPublicRow } from "@/types/feedback";
-import { ReviewActionButtons } from "@/components/common";
+import { ReviewControls } from "@/components/common";
 import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
@@ -122,11 +122,13 @@ export default function FeedbackDetailPage({
                 삭제
               </Button>
             )}
-            {isAdmin &&
-              (currentDetailFeedback.status === "pending" ||
-                currentDetailFeedback.status === "revised_pending") && (
-                <ReviewActionButtons id={currentDetailFeedback.id} onSuccess={handleReviewed} />
-              )}
+            {isAdmin && (
+              <ReviewControls
+                id={currentDetailFeedback.id}
+                status={currentDetailFeedback.status}
+                onSuccess={handleReviewed}
+              />
+            )}
           </div>
         </div>
       </section>

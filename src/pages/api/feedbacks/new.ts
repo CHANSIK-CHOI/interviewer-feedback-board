@@ -98,6 +98,7 @@ export default async function handler(
           revision_count: 0,
           reviewed_at: null,
           reviewed_by: null,
+          review_queue_status: null,
         })
         .select("id")
         .single();

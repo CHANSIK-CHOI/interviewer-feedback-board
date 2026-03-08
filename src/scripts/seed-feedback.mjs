@@ -95,6 +95,13 @@ function buildRows({ items, authorId, reviewerId }) {
       item.reviewed_at ??
       (isReviewRequired ? new Date(baseTime - index * 500).toISOString() : null);
     const reviewedBy = item.reviewed_by ?? (isReviewRequired ? reviewerId ?? null : null);
+    const reviewQueueStatus =
+      item.review_queue_status ??
+      (status === "approved" || status === "rejected"
+        ? revisionCount > 0
+          ? "revised_pending"
+          : "pending"
+        : null);
 
     const resolvedAuthorId = item.author_id ?? authorId;
     if (!resolvedAuthorId) {
@@ -121,6 +128,7 @@ function buildRows({ items, authorId, reviewerId }) {
       updated_at: updatedAt,
       reviewed_at: reviewedAt,
       reviewed_by: reviewedBy,
+      review_queue_status: reviewQueueStatus,
     };
   });
 }

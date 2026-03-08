@@ -8,7 +8,7 @@ import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 import { ReviewFeedbackResult } from "@/lib/feedback/client";
-import { ReviewActionButtons } from "../common";
+import { ReviewControls } from "../common";
 
 type AdminFeedbackBoxProps = {
   data: FeedbackPublicAndEmailRow;
@@ -66,9 +66,7 @@ export default function AdminFeedbackBox({ data, onReviewed }: AdminFeedbackBoxP
           <Button type="button" variant="outline" size="sm">
             삭제
           </Button>
-          {(data.status === "pending" || data.status === "revised_pending") && (
-            <ReviewActionButtons id={data.id} size="sm" onSuccess={onReviewed} />
-          )}
+          <ReviewControls id={data.id} status={data.status} size="sm" onSuccess={onReviewed} />
         </div>
       </div>
     </article>

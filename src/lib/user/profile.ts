@@ -7,7 +7,7 @@ export const getUserName = (user: User | undefined) => {
     user?.user_metadata?.full_name ||
     user?.user_metadata?.user_name ||
     user?.email?.split("@")[0];
-  const userName = rawName ? String(rawName) : "사용자";
+  const userName = rawName ? String(rawName) : "알 수 없는 사용자";
 
   return userName;
 };

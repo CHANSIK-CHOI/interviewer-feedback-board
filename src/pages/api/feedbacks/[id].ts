@@ -136,6 +136,7 @@ export default async function handler(
           revision_count: nextRevisionCount,
           reviewed_at: null,
           reviewed_by: null,
+          review_queue_status: null,
         })
         .eq("id", feedbackId)
         .eq("author_id", auth.context.userId)
