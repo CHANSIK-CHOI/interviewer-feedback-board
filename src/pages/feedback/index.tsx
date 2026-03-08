@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { startTransition, useEffect, useRef, useState } from "react";
 import { useAlert } from "@/components/ui";
 import { getApprovedFeedbacks, getRevisedPendingPreviewFeedbacks } from "@/lib/feedback/server";
 import { InferGetStaticPropsType } from "next";
@@ -55,8 +55,10 @@ export default function FeedbackBoardPage({
 
   useEffect(() => {
     if (alertMessage && !isAlertedRef.current) {
-      openAlert({
-        description: alertMessage,
+      startTransition(() => {
+        openAlert({
+          description: alertMessage,
+        });
       });
       isAlertedRef.current = true;
     }

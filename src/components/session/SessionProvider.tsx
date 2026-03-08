@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import React, { ReactNode, startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { SessionContext } from "./useSession";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -21,6 +21,20 @@ export default function SessionProvider({ children }: SessionProviderProps) {
   const [isRoleLoading, setIsRoleLoading] = useState(false);
   const syncedTokenRef = useRef<string | null>(null);
 
+  const updateSessionState = useCallback((nextSession: Session | null, isInitComplete: boolean) => {
+    startTransition(() => {
+      setSession(nextSession);
+      setIsInitSessionComplete(isInitComplete);
+    });
+  }, []);
+
+  const updateRoleState = useCallback((role: UserRole["role"] | null, isLoading: boolean) => {
+    startTransition(() => {
+      setIsAdminUi(role === "admin");
+      setIsRoleLoading(isLoading);
+    });
+  }, []);
+
   /*
     applyRoleUiState
     - userId & role
@@ -39,47 +53,48 @@ export default function SessionProvider({ children }: SessionProviderProps) {
       isLoading?: boolean;
       isCacheWriteEnabled?: boolean;
     }) => {
-      setIsAdminUi(role === "admin");
-      setIsRoleLoading(isLoading);
+      updateRoleState(role, isLoading);
 
       if (isCacheWriteEnabled) {
         const cacheKey = CACHE_KEY(userId);
         sessionStorage.setItem(cacheKey, JSON.stringify({ role, ts: Date.now() }));
       }
     },
-    []
+    [updateRoleState]
   );
 
   /* session 업데이트, session init 상태 업데이트 */
   useEffect(() => {
     if (!supabaseClient) {
-      setIsInitSessionComplete(false);
+      startTransition(() => {
+        setIsInitSessionComplete(false);
+      });
       return;
     }
     let isMounted = true;
 
     supabaseClient.auth.getSession().then(({ data }) => {
       if (!isMounted) return;
-      setSession(data.session ?? null);
-      setIsInitSessionComplete(true);
+      updateSessionState(data.session ?? null, true);
     });
 
     const { data: subscription } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setIsInitSessionComplete(true);
+      updateSessionState(nextSession, true);
     });
 
     return () => {
       isMounted = false;
       subscription.subscription.unsubscribe();
     };
-  }, [supabaseClient]);
+  }, [supabaseClient, updateSessionState]);
 
   /* 유저의 role 업데이트, role 부여 여부 업데이트 */
   useEffect(() => {
     // /login/oauth-callback 페이지에서만 해당 로직 막음
     if (typeof window !== "undefined" && window.location.pathname === "/login/oauth-callback") {
-      setIsRoleLoading(false);
+      startTransition(() => {
+        setIsRoleLoading(false);
+      });
       return;
     }
 
@@ -93,8 +108,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     // }
 
     if (!session?.user?.id || !session.access_token) {
-      setIsAdminUi(false);
-      setIsRoleLoading(false);
+      updateRoleState(null, false);
       return;
     }
 
@@ -121,17 +135,18 @@ export default function SessionProvider({ children }: SessionProviderProps) {
 
     // 세션 생성 시 user_roles를 동기화한다. (github 로그인시 oauth-callback 페이지에서 진행)
     const runRoleSync = async () => {
-      setIsRoleLoading(true);
+      startTransition(() => {
+        setIsRoleLoading(true);
+      });
       const { role }: SyncUserRoleResult = await syncUserRole(session.access_token);
       applyRoleUiState({ userId: session.user.id, role });
     };
 
     runRoleSync().catch((error) => {
       console.error(error);
-      setIsAdminUi(false);
-      setIsRoleLoading(false);
+      updateRoleState(null, false);
     });
-  }, [session?.user?.id, session?.access_token, applyRoleUiState]);
+  }, [session?.user?.id, session?.access_token, applyRoleUiState, updateRoleState]);
 
   /* 클라이언트 세션(access token)”을 “서버용 HttpOnly 쿠키”로 동기화 */
   useEffect(() => {
