@@ -5,7 +5,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3fcf8e?logo=supabase)](https://supabase.com/)
-[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-black?logo=vercel)](https://vercel.com/)
 
 ---
 
@@ -22,12 +22,10 @@
 
 ## 2) 데모
 
-- Live: `https://<your-vercel-domain>`
+- Live: `https://next-js-page-router-fetch-api.vercel.app/`
 - Test Account (선택):
-  - Reviewer: `<email>` / `<password>`
-  - Admin: `<email>` / `<password>`
-
-> 포트폴리오 공개 시 테스트 계정이 어렵다면, GIF/스크린샷 + 시나리오로 대체해도 좋습니다.
+  - Reviewer: `reviewer@gmail.com` / `Reviewer1!`
+  - Admin: `admin@gmail.com` / `adminadmin1!`
 
 ---
 
@@ -43,7 +41,7 @@
 
 - 피드백 작성
 - 본인 피드백 수정
-- 본인 글의 pending / revised_pending 상태 확인
+- 본인 글의 승인, 승인 대기중 상태 확인
 
 ### Admin
 
@@ -104,3 +102,46 @@
     ├─ user_roles
     └─ feedbacks
 ```
+
+---
+
+## 7) 폴더 구조
+
+```
+src/
+  components/      # UI/도메인 컴포넌트
+  pages/           # Page Router + API Routes
+  lib/             # auth, feedback, supabase 유틸
+  constants/       # 상수/문구/컬럼 정의
+  types/           # 타입 정의
+  scripts/         # 시드/스토리지 리셋 스크립트
+```
+
+---
+
+## 8) API 엔드포인트 요약
+
+| Method | Endpoint                       | 설명             | 권한                       |
+| ------ | ------------------------------ | ---------------- | -------------------------- |
+| GET    | `/api/feedbacks?status=...`    | 상태별 목록 조회 | approved 공개, 그 외 admin |
+| GET    | `/api/feedbacks/mine`          | 내 피드백 조회   | 로그인                     |
+| POST   | `/api/feedbacks/new`           | 피드백 생성      | 로그인                     |
+| PATCH  | `/api/feedbacks/:id`           | 피드백 수정      | 작성자                     |
+| PATCH  | `/api/feedbacks/:id/review`    | 승인/반려/재검토 | admin                      |
+| GET    | `/api/feedbacks/pending-count` | 승인 대기 건수   | admin                      |
+
+---
+
+## 9) 회고
+
+- 권한 모델과 상태 전이를 API 단에서 강제하며, UI는 해당 정책을 반영하는 구조로 설계했습니다.
+- "보이는 기능"뿐 아니라 인증/인가, 데이터 가시성, 동시성 경합 등 실서비스 이슈를 다뤘습니다.
+
+---
+
+## 10) 작성자
+
+- 이름: 최찬식
+- GitHub: https://github.com/CHANSIK-CHOI
+- Velog: https://velog.io/@ckstlr0828/posts
+- Email: ccsik0828@gmail.com
