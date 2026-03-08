@@ -13,6 +13,7 @@ import {
   FeedbackSummarySection,
   FeedbackSummarySectionSkeleton,
 } from "@/features/feedback/sections";
+import type { FeedbackSortType } from "@/features/feedback/types";
 
 export const getStaticProps = async () => {
   try {
@@ -48,7 +49,7 @@ export default function FeedbackBoardPage({
   const isAlertedRef = useRef(false);
   const { openAlert } = useAlert();
   const { session, supabaseClient, isAdminUi, isRoleLoading } = useSession();
-  const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
+  const [sortType, setSortType] = useState<FeedbackSortType>("updated_desc");
   const viewerId = session?.user?.id ?? null;
   const sessionAccessToken = session?.access_token ?? null;
 
