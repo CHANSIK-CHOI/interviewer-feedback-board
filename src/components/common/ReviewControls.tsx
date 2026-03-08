@@ -8,15 +8,13 @@ import {
   reviewFeedback,
 } from "@/lib/feedback/client";
 import type { FeedbackPublicRow } from "@/types/feedback";
-import { useAlert } from "../ui";
-import ApprovalButton from "./ApprovalButton";
+import { Button, useAlert } from "../ui";
 import ReviewActionButton from "./ReviewActionButton";
-import RejectButton from "./RejectButton";
 
 type ReviewControlsProps = {
   id: string;
   status: FeedbackPublicRow["status"];
-  size?: React.ComponentProps<typeof ApprovalButton>["size"];
+  size?: React.ComponentProps<typeof Button>["size"];
   disabled?: boolean;
   onSuccess?: (result: ReviewFeedbackResultWithReviewerName) => void;
 };
@@ -89,28 +87,30 @@ export default function ReviewControls({
   };
 
   const isDisabled = disabled || isSubmitting;
-  const canApproveOrReject = APPROVABLE_STATUSES.includes(
+  const isCanApproveOrReject = APPROVABLE_STATUSES.includes(
     status as (typeof APPROVABLE_STATUSES)[number]
   );
-  const canReopen = REOPENABLE_STATUSES.includes(status as (typeof REOPENABLE_STATUSES)[number]);
+  const isCanReopen = REOPENABLE_STATUSES.includes(status as (typeof REOPENABLE_STATUSES)[number]);
 
   return (
     <>
-      {canApproveOrReject && (
+      {isCanApproveOrReject && (
         <>
-          <RejectButton
+          <ReviewActionButton
+            action="reject"
             size={size}
             disabled={isDisabled}
             onClick={() => void handleReview("reject")}
           />
-          <ApprovalButton
+          <ReviewActionButton
+            action="approve"
             size={size}
             disabled={isDisabled}
             onClick={() => void handleReview("approve")}
           />
         </>
       )}
-      {canReopen && (
+      {isCanReopen && (
         <ReviewActionButton
           action="reopen"
           size={size}
