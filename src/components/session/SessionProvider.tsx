@@ -84,13 +84,13 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     }
 
     // 회원가입 후 첫 login은 skip -> 회원가입 후 자동 로그인 처리가 되기 떄문에 session이 감지가 됨 그 경우 스킵 처리 후 유저가 로그인을 직접 했을 때 아래 로직 수행
-    // const isSignUpComplete = sessionStorage.getItem("signUpCompleteAndSkipRoleSync") === "1";
-    // if (isSignUpComplete) {
-    //   sessionStorage.removeItem("signUpCompleteAndSkipRoleSync");
-    //   setIsAdminUi(false);
-    //   setIsRoleLoading(false);
-    //   return;
-    // }
+    const isSignUpComplete = sessionStorage.getItem("signUpCompleteAndSkipRoleSync") === "1";
+    if (isSignUpComplete) {
+      sessionStorage.removeItem("signUpCompleteAndSkipRoleSync");
+      setIsAdminUi(false);
+      setIsRoleLoading(false);
+      return;
+    }
 
     if (!session?.user?.id || !session.access_token) {
       setIsAdminUi(false);
