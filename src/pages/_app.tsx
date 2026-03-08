@@ -5,25 +5,20 @@ import { ThemeProvider } from "next-themes";
 import { SessionProvider } from "@/components/session";
 import { DialogProvider, Toaster } from "@/components/ui";
 import { useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export default function App({ Component, pageProps }: AppProps) {
   const [container, setContainer] = useState<HTMLElement | null>(null);
-  const [queryClient] = useState(() => new QueryClient());
-
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <QueryClientProvider client={queryClient}>
-        <SessionProvider>
-          <DialogProvider container={container}>
-            <GlobalLayout>
-              <Component {...pageProps} />
-            </GlobalLayout>
-            <Toaster />
-            <div ref={setContainer} className="z-[9999]" />
-          </DialogProvider>
-        </SessionProvider>
-      </QueryClientProvider>
+      <SessionProvider>
+        <DialogProvider container={container}>
+          <GlobalLayout>
+            <Component {...pageProps} />
+          </GlobalLayout>
+          <Toaster />
+          <div ref={setContainer} className="z-[9999]" />
+        </DialogProvider>
+      </SessionProvider>
     </ThemeProvider>
   );
 }
