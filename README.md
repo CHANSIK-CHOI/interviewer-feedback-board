@@ -37,6 +37,13 @@
 - 최신순/오래된순 정렬
 - 프로필/아바타 반영
 
+### Auth / Profile
+
+- 이메일/비밀번호 로그인, 회원가입, 비밀번호 재설정
+- GitHub OAuth 로그인
+- 프로필 아바타 업로드 (JPG/PNG, 최대 2MB)
+- 회원 탈퇴
+
 ### Reviewer
 
 - 피드백 작성
@@ -94,8 +101,10 @@
 
 [API Routes]
     ├─ /api/auth/*
+    ├─ /api/user-roles
     ├─ /api/feedbacks/*
-    └─ /api/avatar/*
+    ├─ /api/avatar/*
+    └─ /api/revalidate-list
 
 [Supabase]
     ├─ auth.users
@@ -121,14 +130,42 @@ src/
 
 ## 8) API 엔드포인트 요약
 
-| Method | Endpoint                       | 설명             | 권한                       |
-| ------ | ------------------------------ | ---------------- | -------------------------- |
-| GET    | `/api/feedbacks?status=...`    | 상태별 목록 조회 | approved 공개, 그 외 admin |
-| GET    | `/api/feedbacks/mine`          | 내 피드백 조회   | 로그인                     |
-| POST   | `/api/feedbacks/new`           | 피드백 생성      | 로그인                     |
-| PATCH  | `/api/feedbacks/:id`           | 피드백 수정      | 작성자                     |
-| PATCH  | `/api/feedbacks/:id/review`    | 승인/반려/재검토 | admin                      |
-| GET    | `/api/feedbacks/pending-count` | 승인 대기 건수   | admin                      |
+### Feedbacks
+
+| Method | Endpoint                                         | 설명                                 | 권한                    |
+| ------ | ------------------------------------------------ | ------------------------------------ | ----------------------- |
+| GET    | `/api/feedbacks?status=approved`                 | 공개 피드백 목록 조회                | 공개                    |
+| GET    | `/api/feedbacks?status=pending,revised_pending`  | 관리자 검토 큐 조회                  | admin                   |
+| GET    | `/api/feedbacks?status=rejected`                 | 반려 목록 조회                       | admin                   |
+| GET    | `/api/feedbacks/mine?status=pending,revised_pending` | 내 검토 대기/수정 대기 피드백 조회 (`admin`은 `null` 반환) | 로그인 |
+| POST   | `/api/feedbacks/new`                             | 피드백 생성                          | 로그인                  |
+| PATCH  | `/api/feedbacks/:id`                             | 피드백 수정 후 재검토 대기 전환      | 작성자                  |
+| DELETE | `/api/feedbacks/:id/delete`                      | 피드백 삭제                          | 작성자 또는 admin       |
+| PATCH  | `/api/feedbacks/:id/review`                      | 승인(`approve`)/반려(`reject`)/재검토(`reopen`) | admin |
+| GET    | `/api/feedbacks/pending-count`                   | 승인 대기 건수 조회                  | admin                   |
+
+### Auth / User / Avatar
+
+| Method | Endpoint                | 설명                                        | 권한          |
+| ------ | ----------------------- | ------------------------------------------- | ------------- |
+| POST   | `/api/auth/session`     | access token 검증 후 HttpOnly 세션 쿠키 동기화 | 로그인      |
+| DELETE | `/api/auth/session`     | 세션 쿠키 삭제                              | 공개          |
+| DELETE | `/api/auth/withdraw`    | 회원 탈퇴 및 저장된 아바타 정리             | 로그인        |
+| POST   | `/api/user-roles`       | 사용자 role 생성/동기화 (`reviewer` 기본값) | 로그인        |
+| POST   | `/api/avatar/upload`    | 프로필 아바타 업로드                        | 로그인        |
+| GET    | `/api/avatar/:userId`   | 아바타 프록시 조회 (없으면 placeholder 반환) | 공개         |
+
+### Infra
+
+| Method | Endpoint               | 설명                             | 권한                  |
+| ------ | ---------------------- | -------------------------------- | --------------------- |
+| POST   | `/api/revalidate-list` | `/feedback` ISR 캐시 무효화      | secret header 필요    |
+
+- 보호 API는 `Authorization: Bearer <accessToken>` 기반으로 동작합니다.
+- `GET /api/feedbacks`의 기본 조회 상태는 `approved`입니다.
+- `GET /api/feedbacks/mine`의 기본 조회 상태는 `pending,revised_pending`입니다.
+- `admin`이 `GET /api/feedbacks/mine`을 호출하면 목록 대신 `data: null`을 반환합니다.
+- `POST /api/revalidate-list`는 `x-revalidate-secret` 헤더가 필요합니다.
 
 ---
 
