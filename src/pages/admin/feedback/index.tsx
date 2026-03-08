@@ -5,6 +5,7 @@ import { compareUpdatedAtDesc } from "@/lib/feedback/list";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
 import { FeedbackRowsByStatusesParams, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
+import { ReviewFeedbackResult } from "@/lib/feedback/client";
 import AdminFeedbackBox from "@/components/admin/AdminFeedbackBox";
 import { FeedbackPublicAndEmailRow } from "@/types/feedback";
 
@@ -38,27 +39,44 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 export default function AdminFeedbackPage({
   feedbackData,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const [feedbackItems, setFeedbackItems] = useState<FeedbackPublicAndEmailRow[]>(feedbackData);
   const [viewType, setViewType] = useState<"all" | "pending">("all");
   const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
+
+  const handleReviewed = (result: ReviewFeedbackResult) => {
+    setFeedbackItems((prev) =>
+      prev.map((item) =>
+        item.id === result.id
+          ? {
+              ...item,
+              status: result.status,
+              is_public: result.is_public,
+              reviewed_at: result.reviewed_at,
+              reviewed_by: result.reviewed_by,
+            }
+          : item
+      )
+    );
+  };
 
   const feedbackLists = useMemo(() => {
     const filteredData =
       viewType === "pending"
-        ? feedbackData.filter(
+        ? feedbackItems.filter(
             (item) => item.status === "pending" || item.status === "revised_pending"
           )
-        : feedbackData;
+        : feedbackItems;
 
     return [...filteredData].sort((a, b) =>
       sortType === "updated_desc" ? compareUpdatedAtDesc(a, b) : compareUpdatedAtDesc(b, a)
     );
-  }, [feedbackData, sortType, viewType]);
+  }, [feedbackItems, sortType, viewType]);
 
-  const pendingCount = feedbackData.filter((item) => item.status === "pending").length;
-  const revisedPendingCount = feedbackData.filter(
+  const pendingCount = feedbackItems.filter((item) => item.status === "pending").length;
+  const revisedPendingCount = feedbackItems.filter(
     (item) => item.status === "revised_pending"
   ).length;
-  const rejectedCount = feedbackData.filter((item) => item.status === "rejected").length;
+  const rejectedCount = feedbackItems.filter((item) => item.status === "rejected").length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -111,7 +129,7 @@ export default function AdminFeedbackPage({
             전체
           </p>
           <strong className="mt-2 block text-2xl font-semibold text-foreground">
-            {feedbackData.length}
+            {feedbackItems.length}
           </strong>
         </div>
         <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
@@ -148,7 +166,7 @@ export default function AdminFeedbackPage({
         )}
 
         {feedbackLists.map((item) => (
-          <AdminFeedbackBox data={item} key={item.id} />
+          <AdminFeedbackBox data={item} key={item.id} onReviewed={handleReviewed} />
         ))}
       </section>
     </div>

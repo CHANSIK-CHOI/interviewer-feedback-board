@@ -7,11 +7,14 @@ import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/fee
 import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
+import { ReviewFeedbackResult } from "@/lib/feedback/client";
+import { ApprovalButton, RejectButton } from "../common";
 
 type AdminFeedbackBoxProps = {
   data: FeedbackPublicAndEmailRow;
+  onReviewed: (result: ReviewFeedbackResult) => void;
 };
-export default function AdminFeedbackBox({ data }: AdminFeedbackBoxProps) {
+export default function AdminFeedbackBox({ data, onReviewed }: AdminFeedbackBoxProps) {
   const avatarSrc = data.avatar_url || AVATAR_PLACEHOLDER_SRC;
   const isUpdateData = checkUpdateData(data);
 
@@ -65,12 +68,8 @@ export default function AdminFeedbackBox({ data }: AdminFeedbackBoxProps) {
           </Button>
           {(data.status === "pending" || data.status === "revised_pending") && (
             <>
-              <Button type="button" variant="outline" size="sm">
-                반려
-              </Button>
-              <Button type="button" size="sm">
-                승인
-              </Button>
+              <RejectButton id={data.id} size="sm" onSuccess={onReviewed} />
+              <ApprovalButton id={data.id} size="sm" onSuccess={onReviewed} />
             </>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
 import type { ApiResponse } from "./common";
 import type { FeedbackPublicBase, RevisedPendingOwnerFeedback } from "./feedback";
 import { UserRole } from "./user-role";
@@ -14,6 +15,9 @@ export type WithdrawResponse = ApiResponse<{
 
 // api/feedbacks/[id] & api/feedbacks/new
 export type EditFeedbackResponse = ApiResponse<{ id: FeedbackPublicBase["id"] }>;
+
+// api/feedbacks/[id]/review
+export type ReviewFeedbackResponse = ApiResponse<ReviewFeedbackResultWithReviewerName>;
 
 // api/feedbacks
 export type FeedbackResponse<T> = ApiResponse<T>;
