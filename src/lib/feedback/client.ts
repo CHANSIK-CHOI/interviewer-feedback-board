@@ -15,7 +15,7 @@ export type ReviewFeedbackResultWithReviewerName = ReviewFeedbackResult & {
   reviewer_name: string | null;
 };
 
-type ReviewFeedbackParams = {
+export type ReviewFeedbackParams = {
   feedbackId: FeedbackPublicBase["id"];
   action: ReviewFeedbackAction;
   accessToken: string;

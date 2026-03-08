@@ -11,7 +11,7 @@ import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 import { getAuthUserNameById } from "@/lib/user/profile.server";
 import { FeedbackPublicAndEmailRow, FeedbackPublicRow } from "@/types/feedback";
-import { ApprovalButton, RejectButton } from "@/components/common";
+import { ReviewActionButtons } from "@/components/common";
 import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
@@ -125,10 +125,7 @@ export default function FeedbackDetailPage({
             {isAdmin &&
               (currentDetailFeedback.status === "pending" ||
                 currentDetailFeedback.status === "revised_pending") && (
-                <>
-                  <RejectButton id={currentDetailFeedback.id} onSuccess={handleReviewed} />
-                  <ApprovalButton id={currentDetailFeedback.id} onSuccess={handleReviewed} />
-                </>
+                <ReviewActionButtons id={currentDetailFeedback.id} onSuccess={handleReviewed} />
               )}
           </div>
         </div>
