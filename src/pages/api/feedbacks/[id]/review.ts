@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
+import { getRequiredSupabaseServer } from "@/lib/supabase/server";
 import { getUserName } from "@/lib/user/profile";
 import type { SupabaseError } from "@/types/common";
 import type { FeedbackPublicRow } from "@/types/feedback";
@@ -95,6 +96,7 @@ export default async function handler(
   if (auth.error || !auth.context) {
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }
+  const supabaseServer = getRequiredSupabaseServer();
 
   const { action }: { action?: ReviewFeedbackAction } = req.body ?? {};
   if (action !== "approve" && action !== "reject" && action !== "reopen") {
@@ -104,7 +106,7 @@ export default async function handler(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: ReviewTargetRow | null; error: SupabaseError } = await auth.context.supabaseServer
+  }: { data: ReviewTargetRow | null; error: SupabaseError } = await supabaseServer
     .from("feedbacks")
     .select("status, review_queue_status, revision_count")
     .eq("id", feedbackId)
@@ -158,7 +160,7 @@ export default async function handler(
   }: {
     data: ReviewFeedbackResult | null;
     error: SupabaseError;
-  } = await auth.context.supabaseServer
+  } = await supabaseServer
     .from("feedbacks")
     .update({
       status: nextStatus,

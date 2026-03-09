@@ -5,7 +5,10 @@ type RevalidateResponse = ApiResponse<{ revalidated: true }>;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<RevalidateResponse>) {
   const headerSecret = req.headers["x-revalidate-secret"];
-  const secret = Array.isArray(headerSecret) ? headerSecret[0] : headerSecret;
+  const querySecret = req.query.secret;
+  const secretFromHeader = Array.isArray(headerSecret) ? headerSecret[0] : headerSecret;
+  const secretFromQuery = Array.isArray(querySecret) ? querySecret[0] : querySecret;
+  const secret = secretFromHeader ?? secretFromQuery;
   const expectedSecret = process.env.REVALIDATE_SECRET;
 
   if (req.method !== "POST") {

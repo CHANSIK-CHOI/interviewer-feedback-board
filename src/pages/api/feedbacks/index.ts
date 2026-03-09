@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
 import { getApprovedFeedbacks, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
+import { getRequiredSupabaseServer } from "@/lib/supabase/server";
 import type {
   AdminReviewFeedback,
   ApprovedFeedback,
@@ -60,9 +61,10 @@ export default async function handler(
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
+    const supabaseServer = getRequiredSupabaseServer();
 
     const feedbackRows: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses({
-      supabaseClient: auth.context.supabaseServer,
+      supabaseClient: supabaseServer,
       statuses,
     });
 

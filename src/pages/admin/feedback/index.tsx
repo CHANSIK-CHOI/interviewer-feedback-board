@@ -5,6 +5,7 @@ import { compareUpdatedAtDesc } from "@/lib/feedback/list";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
 import { FeedbackRowsByStatusesParams, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
+import { getRequiredSupabaseServer } from "@/lib/supabase/server";
 import { DeleteFeedbackResult, ReviewFeedbackResult } from "@/lib/feedback/client";
 import AdminFeedbackBox from "@/components/admin/AdminFeedbackBox";
 import { FeedbackPublicAndEmailRow } from "@/types/feedback";
@@ -21,9 +22,10 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     if (authError || !authContext) throw new Error("Auth Context Error");
 
     if (!authContext.isAdmin) return { notFound: true };
+    const supabaseServer = getRequiredSupabaseServer();
 
     const feedbacks: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses({
-      supabaseClient: authContext.supabaseServer,
+      supabaseClient: supabaseServer,
       statuses: ["pending", "approved", "rejected", "revised_pending"],
     } satisfies FeedbackRowsByStatusesParams);
 

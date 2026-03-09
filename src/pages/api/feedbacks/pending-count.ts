@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
+import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
+import { getRequiredSupabaseServer } from "@/lib/supabase/server";
 import { PendingCountResponse } from "@/types/response";
 
 export default async function handler(
@@ -21,9 +23,10 @@ export default async function handler(
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
+    const supabaseServer = getRequiredSupabaseServer();
 
     // status = 'pending' | 'revised_pending' 개수만 조회
-    const { count, error: countError } = await auth.context.supabaseServer
+    const { count, error: countError } = await supabaseServer
       .from("feedbacks")
       .select("id", { count: "exact", head: true })
       // 데이터는 가져오지 않고 “개수만” 세기 위한 Supabase 쿼리 옵션
@@ -35,7 +38,10 @@ export default async function handler(
     if (countError || count === null) {
       return res
         .status(500)
-        .json({ data: null, error: countError?.message ?? "Select failed Pending Data Count" });
+        .json({
+          data: null,
+          error: resolveSupabaseErrorMessage(countError, "Select failed Pending Data Count"),
+        });
     }
 
     return res.status(200).json({ data: { count }, error: null });

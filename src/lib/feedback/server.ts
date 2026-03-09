@@ -6,17 +6,10 @@ import type {
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
 import type { SupabaseError } from "@/types/common";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getRequiredSupabaseServer } from "@/lib/supabase/server";
+import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import { APPROVED_PUBLIC_COLUMNS, PREVIEWCOLUMN } from "@/constants";
 import { SupabaseClient } from "@supabase/supabase-js";
-
-const getRequiredSupabaseServer = () => {
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
-  }
-  return supabaseServer;
-};
 
 export const getApprovedFeedbacks = async (): Promise<ApprovedFeedback[]> => {
   const supabaseServer = getRequiredSupabaseServer();
@@ -31,7 +24,7 @@ export const getApprovedFeedbacks = async (): Promise<ApprovedFeedback[]> => {
     });
 
   if (error || !data) {
-    throw new Error("Failed fetch getApprovedFeedbacks");
+    throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getApprovedFeedbacks"));
   }
 
   return data.map((item) => {
@@ -59,7 +52,7 @@ export const getFeedbackRowsByStatuses = async ({
       .order("updated_at", { ascending: false });
 
   if (error || !data) {
-    throw new Error("Failed fetch getFeedbackRowsByStatuses");
+    throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getFeedbackRowsByStatuses"));
   }
 
   return data;
@@ -80,7 +73,9 @@ export const getRevisedPendingPreviewFeedbacks = async (): Promise<
     });
 
   if (error || !data) {
-    throw new Error("Failed fetch getRevisedPendingPreviewFeedbacks");
+    throw new Error(
+      resolveSupabaseErrorMessage(error, "Failed fetch getRevisedPendingPreviewFeedbacks")
+    );
   }
 
   return data.map((item) => {
@@ -103,7 +98,7 @@ export const getFeedbackDetailById = async (
     .maybeSingle();
 
   if (error || !data) {
-    throw new Error("Failed fetch getFeedbackDetailById");
+    throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getFeedbackDetailById"));
   }
 
   return data;
@@ -117,7 +112,7 @@ export const getFeedbackEmailById = async (
   const { data, error }: { data: { email: string } | null; error: SupabaseError } =
     await supabaseServer.from("feedbacks").select("email").eq("id", id).maybeSingle();
   if (error) {
-    throw new Error("Failed fetch getFeedbackEmailById");
+    throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getFeedbackEmailById"));
   }
 
   return data?.email ?? null;
