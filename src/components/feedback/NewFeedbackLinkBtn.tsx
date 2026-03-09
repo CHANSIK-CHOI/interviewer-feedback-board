@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, useAlert } from "@/components/ui";
-import { pushSafely } from "@/lib/navigation/client";
+import { buildLoginHref, pushSafely } from "@/lib/navigation/client";
 import { useRouter } from "next/router";
 import { useSession } from "@/components/session";
 
@@ -14,7 +14,7 @@ export default function NewFeedbackLinkBtn() {
       openAlert({
         description: "피드백을 남기기 위해서는 로그인을 해야합니다.",
         onOk: () => {
-          void pushSafely(router, "/login?next=/feedback/new");
+          void pushSafely(router, buildLoginHref("/feedback/new"));
         },
       });
       return;

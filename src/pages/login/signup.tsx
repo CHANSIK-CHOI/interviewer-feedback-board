@@ -6,6 +6,7 @@ import { EMAIL_PATTERN, inputBaseStyle } from "@/constants";
 import { useRouter } from "next/router";
 import { Button, useAlert } from "@/components/ui";
 import { useSession } from "@/components/session";
+import { markSignUpRoleSyncSkip } from "@/lib/auth/signup-flow";
 import { replaceSafely } from "@/lib/navigation/client";
 
 type SignUpForm = {
@@ -63,11 +64,14 @@ export default function SignupPage() {
 
     if (trimmedName) userMetadata.name = trimmedName;
 
+    const emailConfirmRedirectUrl = new URL("/login/email-confirmed", window.location.origin);
+    emailConfirmRedirectUrl.searchParams.set("next", "/my");
+
     const { data, error } = await supabaseClient.auth.signUp({
       email: values.signup_email,
       password: values.signup_password,
       options: {
-        emailRedirectTo: `${window.location.origin}/my`,
+        emailRedirectTo: emailConfirmRedirectUrl.toString(),
         data: userMetadata,
       },
     });
@@ -81,7 +85,7 @@ export default function SignupPage() {
 
     // 이메일 인증을 안하는 경우
     if (data.session) {
-      sessionStorage.setItem("signUpCompleteAndSkipRoleSync", "1");
+      markSignUpRoleSyncSkip();
       openAlert({
         description: "회원가입이 완료되었습니다.\n추가 정보를 입력해주세요.",
         onOk: () => {
@@ -93,9 +97,6 @@ export default function SignupPage() {
 
     openAlert({
       description: "이메일 인증 후 추가 정보를 입력해주세요.",
-      onOk: () => {
-        void replaceSafely(router, "/login?next=/my");
-      },
     });
   };
 

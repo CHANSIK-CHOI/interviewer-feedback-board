@@ -30,23 +30,30 @@ export default function GlobalLayout({ children }: { children: ReactNode }) {
       />
 
       <header className="border-b border-border/60 bg-white/70 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-neutral-950/70">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-white/70 px-3.5 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-neutral-900/70"
-          >
-            <Image
-              aria-hidden
-              src="/icons/home.svg"
-              alt="Home icon"
-              width={16}
-              height={16}
-              className="dark:invert"
-            />
-            <span className="text-base tracking-tight sm:text-lg">홈으로 가기</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-6 py-3">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:gap-3">
+            <Link
+              href="/"
+              className="inline-flex w-fit shrink-0 items-center gap-0 rounded-full border border-transparent bg-transparent px-2 py-2 text-sm font-semibold text-foreground shadow-none transition hover:bg-muted/40 dark:border-transparent dark:bg-transparent sm:gap-2 sm:border-border/60 sm:bg-white/70 sm:px-3.5 sm:py-2 sm:shadow-sm sm:hover:bg-white/80 sm:hover:shadow-md dark:sm:border-white/10 dark:sm:bg-neutral-900/70"
+            >
+              <Image
+                aria-hidden
+                src="/icons/home.svg"
+                alt="Home icon"
+                width={16}
+                height={16}
+                className="shrink-0 dark:invert"
+              />
+              <span className="hidden text-base tracking-tight sm:inline sm:text-lg">
+                홈으로 가기
+              </span>
+            </Link>
+            <div className="ml-auto min-w-0 max-w-full">
+              <AuthActions />
+            </div>
+          </div>
+          <div className="flex w-full justify-end">
+            <div className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-transparent bg-transparent px-2 py-2 text-xs font-medium text-foreground shadow-none dark:border-transparent dark:bg-transparent sm:border-border/60 sm:bg-white/70 sm:px-3 sm:py-1.5 sm:shadow-sm dark:sm:border-white/10 dark:sm:bg-neutral-900/70">
               <span>Dark</span>
               <Switch
                 checked={isThemeMounted ? isDarkMode : false}
@@ -55,7 +62,6 @@ export default function GlobalLayout({ children }: { children: ReactNode }) {
                 onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
               />
             </div>
-            <AuthActions />
           </div>
         </div>
       </header>

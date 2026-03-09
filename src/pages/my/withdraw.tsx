@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { Button, useAlert, useConfirm } from "@/components/ui";
 import { useSession } from "@/components/session";
-import { replaceSafely } from "@/lib/navigation/client";
+import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { useRouter } from "next/router";
 import { inputBaseStyle } from "@/constants";
 import { getAuthProviderLabel, getAuthProviders } from "@/lib/auth/provider";
@@ -47,7 +47,7 @@ export default function WithdrawPage() {
   useEffect(() => {
     if (!isInitSessionComplete) return;
     if (session?.access_token) return;
-    replaceSafely(router, "/login?next=/my/withdraw");
+    replaceSafely(router, buildLoginHref("/my/withdraw"));
   }, [isInitSessionComplete, router, session?.access_token]);
 
   const onSubmit = async (values: WithdrawForm) => {

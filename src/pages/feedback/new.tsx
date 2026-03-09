@@ -16,7 +16,7 @@ import {
   FeedbackNewHeaderSection,
 } from "@/components/feedback";
 import { useAlert } from "@/components/ui";
-import { replaceSafely } from "@/lib/navigation/client";
+import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { useRouter } from "next/router";
 import { EditFeedbackResponse } from "@/types/response";
 
@@ -68,7 +68,7 @@ export default function FeedbackNewPage() {
       openAlert({
         description: "로그인이 필요합니다.",
         onOk: () => {
-          void replaceSafely(router, "/login?next=/feedback/new");
+          void replaceSafely(router, buildLoginHref("/feedback/new"));
         },
       });
       return;

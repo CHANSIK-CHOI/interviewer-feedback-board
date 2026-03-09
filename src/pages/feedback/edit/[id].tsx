@@ -4,7 +4,7 @@ import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
 import { useSession } from "@/components/session";
 import { useAlert } from "@/components/ui";
-import { replaceSafely } from "@/lib/navigation/client";
+import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { getFeedbackDetailById } from "@/lib/feedback/server";
 import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
 import { getFreshAccessToken } from "@/lib/auth/client";
@@ -42,7 +42,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   if (!accessToken) {
     return {
       redirect: {
-        destination: `/login?next=/feedback/edit/${feedbackId}`,
+        destination: buildLoginHref(`/feedback/edit/${feedbackId}`),
         permanent: false, // 영구 이동 아님 이라고 알려서 캐시 고정하지 않게 함
       },
     };
@@ -55,7 +55,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     if (authError || !authContext) {
       return {
         redirect: {
-          destination: `/login?next=/feedback/edit/${feedbackId}`,
+          destination: buildLoginHref(`/feedback/edit/${feedbackId}`),
           permanent: false,
         },
       };
@@ -114,7 +114,7 @@ export default function FeedbackEditPage({
       openAlert({
         description: "로그인이 필요합니다.",
         onOk: () => {
-          replaceSafely(router, `/login?next=/feedback/edit/${feedbackId}`);
+          replaceSafely(router, buildLoginHref(`/feedback/edit/${feedbackId}`));
         },
       });
       return;

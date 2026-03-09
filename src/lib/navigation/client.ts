@@ -1,5 +1,19 @@
 import type { NextRouter } from "next/router";
 
+export const getSafeNextPath = (
+  next: string | string[] | undefined,
+  fallbackPath: string = "/"
+) => {
+  if (typeof next !== "string") return fallbackPath;
+  if (!next.startsWith("/") || next.startsWith("//")) return fallbackPath;
+  return next;
+};
+
+export const buildLoginHref = (next: string | string[] | undefined, fallbackPath: string = "/") => {
+  const nextPath = getSafeNextPath(next, fallbackPath);
+  return `/login?next=${encodeURIComponent(nextPath)}`;
+};
+
 /*
   checkNavigationCancelledError
   - 에러가 “실패”가 아니라 “라우팅 취소”인지 판별하는 필터

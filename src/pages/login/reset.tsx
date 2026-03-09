@@ -17,10 +17,10 @@ const RESET_PASSWORD_FORM: ResetPassword = {
 
 export default function PasswordResetPage() {
   const { openAlert } = useAlert();
-  const { supabaseClient } = useSession();
+  const { session, supabaseClient } = useSession();
   const router = useRouter();
-  const [email, setEmail] = useState("");
   const [isRecovery, setIsRecovery] = useState(false);
+  const email = session?.user?.email ?? "";
 
   /* 비밀번호 재설정 링크로 들어온 정상 진입인지 확인 코드 */
   useEffect(() => {
@@ -29,20 +29,6 @@ export default function PasswordResetPage() {
     const isCodeIncluded = new URLSearchParams(window.location.search).has("code");
     if (isCodeIncluded) setIsRecovery(true);
   }, []);
-
-  useEffect(() => {
-    if (!supabaseClient) return;
-
-    const {
-      data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
-        setEmail(session?.user?.email ?? "");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabaseClient]);
 
   const {
     register,

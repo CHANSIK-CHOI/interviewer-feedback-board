@@ -7,6 +7,8 @@
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3fcf8e?logo=supabase)](https://supabase.com/)
 [![Vercel](https://img.shields.io/badge/Vercel-black?logo=vercel)](https://vercel.com/)
 
+> 코드 구조, API 설계, UX 개선 포인트에 대한 피드백을 편하게 남겨주시면 감사하겠습니다.
+
 ---
 
 ## 1) 프로젝트 소개
@@ -23,7 +25,7 @@
 ## 2) 데모
 
 - Live: `https://next-js-page-router-fetch-api.vercel.app/`
-- Test Account (선택):
+- Test Account:
   - Reviewer: `reviewer@gmail.com` / `Reviewer1!`
   - Admin: `admin@gmail.com` / `adminadmin1!`
 
@@ -132,34 +134,34 @@ src/
 
 ### Feedbacks
 
-| Method | Endpoint                                         | 설명                                 | 권한                    |
-| ------ | ------------------------------------------------ | ------------------------------------ | ----------------------- |
-| GET    | `/api/feedbacks?status=approved`                 | 공개 피드백 목록 조회                | 공개                    |
-| GET    | `/api/feedbacks?status=pending,revised_pending`  | 관리자 검토 큐 조회                  | admin                   |
-| GET    | `/api/feedbacks?status=rejected`                 | 반려 목록 조회                       | admin                   |
-| GET    | `/api/feedbacks/mine?status=pending,revised_pending` | 내 검토 대기/수정 대기 피드백 조회 (`admin`은 `null` 반환) | 로그인 |
-| POST   | `/api/feedbacks/new`                             | 피드백 생성                          | 로그인                  |
-| PATCH  | `/api/feedbacks/:id`                             | 피드백 수정 후 재검토 대기 전환      | 작성자                  |
-| DELETE | `/api/feedbacks/:id/delete`                      | 피드백 삭제                          | 작성자 또는 admin       |
-| PATCH  | `/api/feedbacks/:id/review`                      | 승인(`approve`)/반려(`reject`)/재검토(`reopen`) | admin |
-| GET    | `/api/feedbacks/pending-count`                   | 승인 대기 건수 조회                  | admin                   |
+| Method | Endpoint                                             | 설명                                                       | 권한              |
+| ------ | ---------------------------------------------------- | ---------------------------------------------------------- | ----------------- |
+| GET    | `/api/feedbacks?status=approved`                     | 공개 피드백 목록 조회                                      | 공개              |
+| GET    | `/api/feedbacks?status=pending,revised_pending`      | 관리자 검토 큐 조회                                        | admin             |
+| GET    | `/api/feedbacks?status=rejected`                     | 반려 목록 조회                                             | admin             |
+| GET    | `/api/feedbacks/mine?status=pending,revised_pending` | 내 검토 대기/수정 대기 피드백 조회 (`admin`은 `null` 반환) | 로그인            |
+| POST   | `/api/feedbacks/new`                                 | 피드백 생성                                                | 로그인            |
+| PATCH  | `/api/feedbacks/:id`                                 | 피드백 수정 후 재검토 대기 전환                            | 작성자            |
+| DELETE | `/api/feedbacks/:id/delete`                          | 피드백 삭제                                                | 작성자 또는 admin |
+| PATCH  | `/api/feedbacks/:id/review`                          | 승인(`approve`)/반려(`reject`)/재검토(`reopen`)            | admin             |
+| GET    | `/api/feedbacks/pending-count`                       | 승인 대기 건수 조회                                        | admin             |
 
 ### Auth / User / Avatar
 
-| Method | Endpoint                | 설명                                        | 권한          |
-| ------ | ----------------------- | ------------------------------------------- | ------------- |
-| POST   | `/api/auth/session`     | access token 검증 후 HttpOnly 세션 쿠키 동기화 | 로그인      |
-| DELETE | `/api/auth/session`     | 세션 쿠키 삭제                              | 공개          |
-| DELETE | `/api/auth/withdraw`    | 회원 탈퇴 및 저장된 아바타 정리             | 로그인        |
-| POST   | `/api/user-roles`       | 사용자 role 생성/동기화 (`reviewer` 기본값) | 로그인        |
-| POST   | `/api/avatar/upload`    | 프로필 아바타 업로드                        | 로그인        |
-| GET    | `/api/avatar/:userId`   | 아바타 프록시 조회 (없으면 placeholder 반환) | 공개         |
+| Method | Endpoint              | 설명                                           | 권한   |
+| ------ | --------------------- | ---------------------------------------------- | ------ |
+| POST   | `/api/auth/session`   | access token 검증 후 HttpOnly 세션 쿠키 동기화 | 로그인 |
+| DELETE | `/api/auth/session`   | 세션 쿠키 삭제                                 | 공개   |
+| DELETE | `/api/auth/withdraw`  | 회원 탈퇴 및 저장된 아바타 정리                | 로그인 |
+| POST   | `/api/user-roles`     | 사용자 role 생성/동기화 (`reviewer` 기본값)    | 로그인 |
+| POST   | `/api/avatar/upload`  | 프로필 아바타 업로드                           | 로그인 |
+| GET    | `/api/avatar/:userId` | 아바타 프록시 조회 (없으면 placeholder 반환)   | 공개   |
 
 ### Infra
 
-| Method | Endpoint               | 설명                             | 권한                  |
-| ------ | ---------------------- | -------------------------------- | --------------------- |
-| POST   | `/api/revalidate-list` | `/feedback` ISR 캐시 무효화      | secret header 필요    |
+| Method | Endpoint               | 설명                        | 권한               |
+| ------ | ---------------------- | --------------------------- | ------------------ |
+| POST   | `/api/revalidate-list` | `/feedback` ISR 캐시 무효화 | secret header 필요 |
 
 - 보호 API는 `Authorization: Bearer <accessToken>` 기반으로 동작합니다.
 - `GET /api/feedbacks`의 기본 조회 상태는 `approved`입니다.
@@ -176,7 +178,14 @@ src/
 
 ---
 
-## 10) 작성자
+## 10) 추후 계획
+
+- React Suspense를 학습한 뒤 `/feedback` 목록 페이지에 역할별 비동기 경계를 적용해보고 싶습니다. 전체 공개 게시물, 작성자가 확인할 수 있는 승인 대기 게시물, 관리자가 확인할 수 있는 검토용 전체 게시물을 분리 로딩해 사용자에게 필요한 데이터를 더 자연스럽게 보여주는 방향으로 UX를 개선할 계획입니다.
+- Suspense뿐 아니라 Recoil, React Query(TanStack Query) 같은 상태 관리/서버 상태 라이브러리도 함께 스터디 중입니다. 현재 권한 모델과 승인 워크플로우에 어떤 방식이 더 적합한지 비교해본 뒤, 데이터 패칭 구조 개선에 반영해보려 합니다.
+
+---
+
+## 11) 작성자
 
 - 이름: 최찬식
 - GitHub: https://github.com/CHANSIK-CHOI

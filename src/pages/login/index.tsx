@@ -6,7 +6,7 @@ import { EMAIL_PATTERN, inputBaseStyle } from "@/constants";
 import { useRouter } from "next/router";
 import { Button, useAlert } from "@/components/ui";
 import { useSession } from "@/components/session";
-import { replaceSafely } from "@/lib/navigation/client";
+import { getSafeNextPath, replaceSafely } from "@/lib/navigation/client";
 
 type LoginForm = {
   login_email: string;
@@ -36,16 +36,7 @@ export default function LoginPage() {
   const { openAlert } = useAlert();
   const { supabaseClient } = useSession();
   const router = useRouter();
-  const nextQuery = router.query.next; // URL 쿼리의 next 값을 가져옴 (예: /login?next=/feedback/new)
-  /*
-    - 문자열이어야 함
-    - /로 시작해야 함 (사이트 내부 경로)
-    - //로 시작하면 안 됨 (외부 URL 우회 방지)
-  */
-  const nextPath =
-    typeof nextQuery === "string" && nextQuery.startsWith("/") && !nextQuery.startsWith("//")
-      ? nextQuery
-      : "/";
+  const nextPath = getSafeNextPath(router.query.next); // 예: /login?next=/feedback/new
   const {
     register,
     handleSubmit,

@@ -43,13 +43,13 @@ export default function AuthActions() {
   const userName = getUserName(user);
   const avatarSrc = getAvatarUrl(user);
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
       {!session?.access_token ? (
         <Button
           type="button"
           variant="outline"
           size="sm"
-          className="rounded-full"
+          className="h-auto w-fit shrink-0 rounded-full border-transparent bg-transparent px-2 py-2 shadow-none hover:bg-muted/40 dark:border-transparent dark:bg-transparent sm:h-7 sm:border-input sm:bg-input/30 sm:px-2.5 sm:py-0 sm:shadow-none sm:hover:bg-input/50"
           onClick={handleClickLogin}
           disabled={isLogging}
         >
@@ -57,8 +57,8 @@ export default function AuthActions() {
         </Button>
       ) : (
         <>
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-white/70 px-3 py-1.5 text-sm shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
-            <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted text-xs font-semibold text-primary">
+          <div className="hidden min-w-0 max-w-full items-center gap-2 rounded-full border border-transparent bg-transparent px-1 py-1 text-sm shadow-none dark:border-transparent dark:bg-transparent sm:inline-flex sm:border-border/60 sm:bg-white/70 sm:px-3 sm:py-1.5 sm:shadow-sm dark:sm:border-white/10 dark:sm:bg-neutral-900/70">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-transparent bg-transparent text-xs font-semibold text-primary sm:border-border/60 sm:bg-muted">
               <Image
                 className="h-full w-full object-cover"
                 src={avatarSrc}
@@ -72,12 +72,24 @@ export default function AuthActions() {
                 }
               />
             </span>
-            <span className="text-sm font-medium text-foreground">{userName} 님</span>
+            <span className="min-w-0 max-w-[10rem] truncate whitespace-nowrap text-sm font-medium text-foreground sm:max-w-[14rem]">
+              {userName} 님
+            </span>
           </div>
-          <Button asChild variant="outline" size="sm" className="rounded-full">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="h-auto w-fit shrink-0 rounded-full border-transparent bg-transparent px-2 py-2 shadow-none hover:bg-muted/40 dark:border-transparent dark:bg-transparent sm:h-7 sm:border-input sm:bg-input/30 sm:px-2.5 sm:py-0 sm:shadow-none sm:hover:bg-input/50"
+          >
             <Link href="/my">마이페이지</Link>
           </Button>
-          <Button variant="outline" size="sm" className="rounded-full" onClick={handleLogout}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-auto w-fit shrink-0 rounded-full border-transparent bg-transparent px-2 py-2 shadow-none hover:bg-muted/40 dark:border-transparent dark:bg-transparent sm:h-7 sm:border-input sm:bg-input/30 sm:px-2.5 sm:py-0 sm:shadow-none sm:hover:bg-input/50"
+            onClick={handleLogout}
+          >
             로그아웃
           </Button>
         </>

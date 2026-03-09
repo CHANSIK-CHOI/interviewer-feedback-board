@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 import { useSession } from "@/components/session";
 import { useAlert } from "@/components/ui";
-import { replaceSafely } from "@/lib/navigation/client";
+import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import {
   AvatarUploadResult,
   uploadAvatarToSupabase,
@@ -50,7 +50,7 @@ export const useMyProfileController = () => {
   useEffect(() => {
     if (!isInitSessionComplete) return;
     if (session?.access_token) return;
-    void replaceSafely(router, "/login?next=/my");
+    void replaceSafely(router, buildLoginHref("/my"));
   }, [isInitSessionComplete, router, session?.access_token]);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export const useMyProfileController = () => {
 
     if (!session?.access_token) {
       event.target.value = "";
-      void replaceSafely(router, "/login?next=/my");
+      void replaceSafely(router, buildLoginHref("/my"));
       return;
     }
 

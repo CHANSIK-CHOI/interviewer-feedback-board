@@ -3,6 +3,7 @@ import { SessionContext } from "./useSession";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { syncUserRole, SyncUserRoleResult } from "@/lib/user-role/client";
+import { consumeSignUpRoleSyncSkip } from "@/lib/auth/signup-flow";
 import type { UserRole } from "@/types/user-role";
 import { SessionCookieSyncResponse } from "@/types/response";
 
@@ -77,16 +78,19 @@ export default function SessionProvider({ children }: SessionProviderProps) {
 
   /* 유저의 role 업데이트, role 부여 여부 업데이트 */
   useEffect(() => {
-    // /login/oauth-callback 페이지에서만 해당 로직 막음
-    if (typeof window !== "undefined" && window.location.pathname === "/login/oauth-callback") {
+    // OAuth 콜백과 이메일 인증 완료 페이지에서는 별도 흐름으로 처리한다.
+    if (
+      typeof window !== "undefined" &&
+      (window.location.pathname === "/login/oauth-callback" ||
+        window.location.pathname === "/login/email-confirmed")
+    ) {
       setIsRoleLoading(false);
       return;
     }
 
     // 회원가입 후 첫 login은 skip -> 회원가입 후 자동 로그인 처리가 되기 떄문에 session이 감지가 됨 그 경우 스킵 처리 후 유저가 로그인을 직접 했을 때 아래 로직 수행
-    const isSignUpComplete = sessionStorage.getItem("signUpCompleteAndSkipRoleSync") === "1";
+    const isSignUpComplete = consumeSignUpRoleSyncSkip();
     if (isSignUpComplete) {
-      sessionStorage.removeItem("signUpCompleteAndSkipRoleSync");
       setIsAdminUi(false);
       setIsRoleLoading(false);
       return;
