@@ -23,6 +23,7 @@ import {
   FeedbackFormTagsSection,
   FeedbackEditHeaderSection,
 } from "@/components/feedback";
+import { PageMeta } from "@/components/common";
 import { FeedbackPublicRow } from "@/types/feedback";
 import { EditFeedbackResponse } from "@/types/response";
 
@@ -168,6 +169,12 @@ export default function FeedbackEditPage({
 
   return (
     <FormProvider {...formMethods}>
+      <PageMeta
+        title="피드백 수정"
+        ogTitle="피드백 수정"
+        description="작성한 피드백을 수정하고 다시 검토를 요청할 수 있습니다."
+      />
+
       <div className="flex flex-col gap-6">
         <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
           <FeedbackEditHeaderSection feedbackId={feedbackId} isSubmitting={isSubmitting} />

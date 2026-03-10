@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+import { PageMeta } from "@/components/common";
 import { useSession } from "@/components/session";
 import { markSignUpRoleSyncSkip } from "@/lib/auth/signup-flow";
 import { replaceSafely } from "@/lib/navigation/client";
@@ -82,10 +83,18 @@ export default function OAuthCallbackPage() {
   }, [router, router.isReady, session?.access_token, session?.user, applyRoleUiState]);
 
   return (
-    <div className="mx-auto w-full max-w-xl">
-      <section className="rounded-2xl border border-border/60 bg-white/80 p-7 text-sm text-muted-foreground shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
-        GitHub 로그인 정보를 확인하고 있습니다.
-      </section>
-    </div>
+    <>
+      <PageMeta
+        title="GitHub 로그인 처리 중"
+        ogTitle="GitHub 로그인 처리 중"
+        description="GitHub 로그인 정보를 확인하고 세션을 초기화하고 있습니다."
+      />
+
+      <div className="mx-auto w-full max-w-xl">
+        <section className="rounded-2xl border border-border/60 bg-white/80 p-7 text-sm text-muted-foreground shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
+          GitHub 로그인 정보를 확인하고 있습니다.
+        </section>
+      </div>
+    </>
   );
 }

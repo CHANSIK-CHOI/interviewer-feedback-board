@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+import { PageMeta } from "@/components/common";
 import { useSession } from "@/components/session";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 
@@ -48,10 +49,18 @@ export default function EmailConfirmedPage() {
   }, [router, router.isReady, router.query.next, session?.user, supabaseClient]);
 
   return (
-    <div className="mx-auto w-full max-w-xl">
-      <section className="rounded-2xl border border-border/60 bg-white/80 p-7 text-sm text-muted-foreground shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
-        이메일 인증을 확인하고 로그인 화면으로 이동하고 있습니다.
-      </section>
-    </div>
+    <>
+      <PageMeta
+        title="이메일 인증 확인"
+        ogTitle="이메일 인증 확인"
+        description="이메일 인증 완료 후 로그인 화면으로 이동하는 중입니다."
+      />
+
+      <div className="mx-auto w-full max-w-xl">
+        <section className="rounded-2xl border border-border/60 bg-white/80 p-7 text-sm text-muted-foreground shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
+          이메일 인증을 확인하고 로그인 화면으로 이동하고 있습니다.
+        </section>
+      </div>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import { PageMeta } from "@/components/common";
 import { useSession } from "@/components/session";
 import {
   FEEDBACK_FORM_ERROR_MESSAGES,
@@ -112,6 +113,12 @@ export default function FeedbackNewPage() {
 
   return (
     <FormProvider {...formMethods}>
+      <PageMeta
+        title="피드백 작성"
+        ogTitle="피드백 작성"
+        description="새 인터뷰어 피드백을 작성하고 제출할 수 있습니다."
+      />
+
       <div className="flex flex-col gap-6">
         <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
           <FeedbackNewHeaderSection isSubmitting={isSubmitting} />
