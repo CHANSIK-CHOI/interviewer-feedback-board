@@ -54,7 +54,7 @@ export default function DeleteFeedbackButton({
         return;
       }
 
-      const result = await deleteFeedback({
+      const result: DeleteFeedbackResult = await deleteFeedback({
         feedbackId: id,
         accessToken,
       });

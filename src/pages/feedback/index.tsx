@@ -5,12 +5,17 @@ import { getApprovedFeedbacks, getRevisedPendingPreviewFeedbacks } from "@/lib/f
 import { cn } from "@/lib/shared/cn";
 import { InferGetStaticPropsType } from "next";
 import { useSession } from "@/components/session";
-import { compareUpdatedAtDesc, mergeFeedbackList } from "@/lib/feedback/list";
+import {
+  compareUpdatedAtDesc,
+  mergeFeedbackList,
+  MergeFeedbackListParams,
+} from "@/lib/feedback/list";
 import { FeedbackBox, NewFeedbackLinkBtn } from "@/components/feedback";
 import { getFreshAccessToken } from "@/lib/auth/client";
 import {
   AdminReviewFeedback,
   ApprovedFeedback,
+  FeedbackListItem,
   RevisedPendingOwnerFeedback,
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
@@ -64,14 +69,14 @@ export default function FeedbackBoardPage({
     []
   );
   const [adminReviewFeedbacks, setAdminReviewFeedbacks] = useState<AdminReviewFeedback[]>([]);
-  const feedbackData = useMemo(
+  const feedbackData = useMemo<FeedbackListItem[]>(
     () =>
       mergeFeedbackList({
         approved: approvedFeedbacks,
         revisedPreview: revisedPendingPreviews,
         revisedMine: ownerPendingFeedbacks,
         adminReview: adminReviewFeedbacks,
-      }),
+      } satisfies MergeFeedbackListParams),
     [approvedFeedbacks, revisedPendingPreviews, ownerPendingFeedbacks, adminReviewFeedbacks]
   );
   const sortedFeedbackData = useMemo(() => {

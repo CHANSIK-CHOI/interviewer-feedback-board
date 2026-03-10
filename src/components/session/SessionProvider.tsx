@@ -1,5 +1,5 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { SessionContext } from "./useSession";
+import { ApplyRoleUiStateParams, SessionContext } from "./useSession";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { syncUserRole, SyncUserRoleResult } from "@/lib/user-role/client";
@@ -29,17 +29,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     - isCacheWriteEnabled : sessionStorage에 user id & role 저장 여부
   */
   const applyRoleUiState = useCallback(
-    ({
-      userId,
-      role,
-      isLoading = false,
-      isCacheWriteEnabled = true,
-    }: {
-      userId: string;
-      role: UserRole["role"] | null;
-      isLoading?: boolean;
-      isCacheWriteEnabled?: boolean;
-    }) => {
+    ({ userId, role, isLoading = false, isCacheWriteEnabled = true }: ApplyRoleUiStateParams) => {
       setIsAdminUi(role === "admin");
       setIsRoleLoading(isLoading);
 
@@ -114,7 +104,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
           role: role ?? null,
           isLoading: false,
           isCacheWriteEnabled: false,
-        });
+        } satisfies ApplyRoleUiStateParams);
 
         const isFresh = typeof ts === "number" && Date.now() - ts < CACHE_TTL;
         if (isFresh) return;
@@ -127,7 +117,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     const runRoleSync = async () => {
       setIsRoleLoading(true);
       const { role }: SyncUserRoleResult = await syncUserRole(session.access_token);
-      applyRoleUiState({ userId: session.user.id, role });
+      applyRoleUiState({ userId: session.user.id, role } satisfies ApplyRoleUiStateParams);
     };
 
     runRoleSync().catch((error) => {

@@ -26,17 +26,19 @@ export const compareUpdatedAtDesc = (a: WithUpdatedAt, b: WithUpdatedAt) => {
   return bTime - aTime;
 };
 
+export type MergeFeedbackListParams = {
+  approved: ApprovedFeedback[];
+  revisedPreview: RevisedPendingPreviewFeedback[];
+  revisedMine: RevisedPendingOwnerFeedback[];
+  adminReview: AdminReviewFeedback[];
+};
+
 export const mergeFeedbackList = ({
   approved,
   revisedPreview,
   revisedMine,
   adminReview,
-}: {
-  approved: ApprovedFeedback[];
-  revisedPreview: RevisedPendingPreviewFeedback[];
-  revisedMine: RevisedPendingOwnerFeedback[];
-  adminReview: AdminReviewFeedback[];
-}): FeedbackListItem[] => {
+}: MergeFeedbackListParams): FeedbackListItem[] => {
   const mergedById = new Map<string, FeedbackListItem>();
 
   [...approved, ...revisedPreview].forEach((publicItem) => {

@@ -6,13 +6,16 @@ import type {
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
 import type { SupabaseError } from "@/types/common";
-import { getRequiredSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServer } from "@/lib/supabase/server";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import { APPROVED_PUBLIC_COLUMNS, PREVIEWCOLUMN } from "@/constants";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 export const getApprovedFeedbacks = async (): Promise<ApprovedFeedback[]> => {
-  const supabaseServer = getRequiredSupabaseServer();
+  const supabaseServer = getSupabaseServer();
+  if (!supabaseServer) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
 
   const { data, error } = await supabaseServer
     .from("feedbacks")
@@ -61,7 +64,10 @@ export const getFeedbackRowsByStatuses = async ({
 export const getRevisedPendingPreviewFeedbacks = async (): Promise<
   RevisedPendingPreviewFeedback[]
 > => {
-  const supabaseServer = getRequiredSupabaseServer();
+  const supabaseServer = getSupabaseServer();
+  if (!supabaseServer) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
 
   const { data, error } = await supabaseServer
     .from("feedbacks")
@@ -89,7 +95,10 @@ export const getRevisedPendingPreviewFeedbacks = async (): Promise<
 export const getFeedbackDetailById = async (
   id: FeedbackPublicBase["id"]
 ): Promise<FeedbackPublicRow> => {
-  const supabaseServer = getRequiredSupabaseServer();
+  const supabaseServer = getSupabaseServer();
+  if (!supabaseServer) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
 
   const { data, error } = await supabaseServer
     .from("feedbacks")
@@ -107,7 +116,10 @@ export const getFeedbackDetailById = async (
 export const getFeedbackEmailById = async (
   id: FeedbackPublicBase["id"]
 ): Promise<string | null> => {
-  const supabaseServer = getRequiredSupabaseServer();
+  const supabaseServer = getSupabaseServer();
+  if (!supabaseServer) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
 
   const { data, error }: { data: { email: string } | null; error: SupabaseError } =
     await supabaseServer.from("feedbacks").select("email").eq("id", id).maybeSingle();

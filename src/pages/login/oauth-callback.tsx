@@ -4,6 +4,7 @@ import { useSession } from "@/components/session";
 import { markSignUpRoleSyncSkip } from "@/lib/auth/signup-flow";
 import { replaceSafely } from "@/lib/navigation/client";
 import { syncUserRole } from "@/lib/user-role/client";
+import { ApplyRoleUiStateParams } from "@/components/session/useSession";
 
 export default function OAuthCallbackPage() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function OAuthCallbackPage() {
         role: null,
         isLoading: true,
         isCacheWriteEnabled: false,
-      });
+      } satisfies ApplyRoleUiStateParams);
 
       let roleSyncResult: { role: "admin" | "reviewer"; isNewUser: boolean };
       try {
@@ -56,13 +57,17 @@ export default function OAuthCallbackPage() {
           role: null,
           isLoading: false,
           isCacheWriteEnabled: false,
-        });
+        } satisfies ApplyRoleUiStateParams);
         await replaceSafely(router, "/login");
         return;
       }
 
       const { role, isNewUser } = roleSyncResult;
-      applyRoleUiState({ userId: session.user.id, role, isLoading: false });
+      applyRoleUiState({
+        userId: session.user.id,
+        role,
+        isLoading: false,
+      } satisfies ApplyRoleUiStateParams);
       if (isNewUser) {
         markSignUpRoleSyncSkip();
       }

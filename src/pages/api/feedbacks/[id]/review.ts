@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
-import { getRequiredSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServer } from "@/lib/supabase/server";
 import { getUserName } from "@/lib/user/profile";
 import type { SupabaseError } from "@/types/common";
 import type { FeedbackPublicRow } from "@/types/feedback";
@@ -96,7 +96,10 @@ export default async function handler(
   if (auth.error || !auth.context) {
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }
-  const supabaseServer = getRequiredSupabaseServer();
+  const supabaseServer = getSupabaseServer();
+  if (!supabaseServer) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
 
   const { action }: { action?: ReviewFeedbackAction } = req.body ?? {};
   if (action !== "approve" && action !== "reject" && action !== "reopen") {

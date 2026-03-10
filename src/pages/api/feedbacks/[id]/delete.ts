@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
-import { getRequiredSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServer } from "@/lib/supabase/server";
 import {
   FEEDBACK_DELETE_FALLBACK_ERROR_MESSAGE,
   FEEDBACK_DELETE_FORBIDDEN_MESSAGE,
@@ -40,7 +40,10 @@ export default async function handler(
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }
 
-  const supabaseServer = getRequiredSupabaseServer();
+  const supabaseServer = getSupabaseServer();
+  if (!supabaseServer) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
 
   const {
     data: feedbackRow,

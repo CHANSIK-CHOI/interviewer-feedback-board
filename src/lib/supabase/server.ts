@@ -20,14 +20,6 @@ export function getSupabaseServer() {
   return supabaseServer;
 }
 
-export function getRequiredSupabaseServer() {
-  const client = getSupabaseServer();
-  if (!client) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
-  }
-  return client;
-}
-
 // user access token + anon key 조합으로 RLS를 강제하는 서버용 클라이언트 = 사용자 권한/RLS 강제용
 export function getSupabaseServerByAccessToken(accessToken: string) {
   const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
