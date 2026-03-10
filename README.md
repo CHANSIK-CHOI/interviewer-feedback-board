@@ -2,10 +2,18 @@
 
 > 권한 기반 승인 워크플로우(작성 → 검토 → 공개)를 구현한 포트폴리오 프로젝트
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3fcf8e?logo=supabase)](https://supabase.com/)
-[![Vercel](https://img.shields.io/badge/Vercel-black?logo=vercel)](https://vercel.com/)
+<a href="https://nextjs.org/" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs" alt="Next.js" />
+</a>
+<a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
+</a>
+<a href="https://supabase.com/" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3fcf8e?logo=supabase" alt="Supabase" />
+</a>
+<a href="https://vercel.com/" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/Vercel-black?logo=vercel" alt="Vercel" />
+</a>
 
 > 코드 구조, API 설계, UX 개선 포인트에 대한 피드백을 편하게 남겨주시면 감사하겠습니다.
 
@@ -24,7 +32,7 @@
 
 ## 2) 데모
 
-- Live: `https://next-js-page-router-fetch-api.vercel.app/`
+- Live: <a href="https://next-js-page-router-fetch-api.vercel.app/" target="_blank" rel="noopener noreferrer">https://next-js-page-router-fetch-api.vercel.app/</a>
 - Test Account:
   - Reviewer: `reviewer@gmail.com` / `Reviewer1!`
   - Admin: `admin@gmail.com` / `adminadmin1!`
@@ -187,14 +195,14 @@ src/
 
 ## 11) 기술 블로그
 
-1. [프로젝트 기획과 요구사항 정의](https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EA%B8%B0%ED%9A%8D%EA%B3%BC-%EC%9A%94%EA%B5%AC%EC%82%AC%ED%95%AD-%EC%A0%95%EC%9D%98)
-2. [아키텍처와 인증/인가 흐름](https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98%EC%99%80-%EC%9D%B8%EC%A6%9D%EC%9D%B8%EA%B0%80-%ED%9D%90%EB%A6%84)
-3. [피드백 상태 전이와 관리자 검토 워크플로우 구현](https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%94%BC%EB%93%9C%EB%B0%B1-%EC%83%81%ED%83%9C-%EC%A0%84%EC%9D%B4%EC%99%80-%EA%B4%80%EB%A6%AC%EC%9E%90-%EA%B2%80%ED%86%A0-%EC%9B%8C%ED%81%AC%ED%94%8C%EB%A1%9C%EC%9A%B0-%EA%B5%AC%ED%98%84)
-4. [회고: 이 프로젝트에서 배운 점과 다음 개선 로드맵](https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%9A%8C%EA%B3%A0-%EC%9D%B4-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%EC%97%90%EC%84%9C-%EB%B0%B0%EC%9A%B4-%EC%A0%90%EA%B3%BC-%EB%8B%A4%EC%9D%8C-%EA%B0%9C%EC%84%A0-%EB%A1%9C%EB%93%9C%EB%A7%B5)
+1. <a href="https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EA%B8%B0%ED%9A%8D%EA%B3%BC-%EC%9A%94%EA%B5%AC%EC%82%AC%ED%95%AD-%EC%A0%95%EC%9D%98" target="_blank" rel="noopener noreferrer">프로젝트 기획과 요구사항 정의</a>
+2. <a href="https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98%EC%99%80-%EC%9D%B8%EC%A6%9D%EC%9D%B8%EA%B0%80-%ED%9D%90%EB%A6%84" target="_blank" rel="noopener noreferrer">아키텍처와 인증/인가 흐름</a>
+3. <a href="https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%94%BC%EB%93%9C%EB%B0%B1-%EC%83%81%ED%83%9C-%EC%A0%84%EC%9D%B4%EC%99%80-%EA%B4%80%EB%A6%AC%EC%9E%90-%EA%B2%80%ED%86%A0-%EC%9B%8C%ED%81%AC%ED%94%8C%EB%A1%9C%EC%9A%B0-%EA%B5%AC%ED%98%84" target="_blank" rel="noopener noreferrer">피드백 상태 전이와 관리자 검토 워크플로우 구현</a>
+4. <a href="https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%9A%8C%EA%B3%A0-%EC%9D%B4-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%EC%97%90%EC%84%9C-%EB%B0%B0%EC%9A%B4-%EC%A0%90%EA%B3%BC-%EB%8B%A4%EC%9D%8C-%EA%B0%9C%EC%84%A0-%EB%A1%9C%EB%93%9C%EB%A7%B5" target="_blank" rel="noopener noreferrer">회고: 이 프로젝트에서 배운 점과 다음 개선 로드맵</a>
 
 ## 11) 작성자
 
 - 이름: 최찬식
-- GitHub: https://github.com/CHANSIK-CHOI
-- Velog: https://velog.io/@ckstlr0828/posts
-- Email: ccsik0828@gmail.com
+- GitHub: <a href="https://github.com/CHANSIK-CHOI" target="_blank" rel="noopener noreferrer">https://github.com/CHANSIK-CHOI</a>
+- Velog: <a href="https://velog.io/@ckstlr0828/posts" target="_blank" rel="noopener noreferrer">https://velog.io/@ckstlr0828/posts</a>
+- Email: <a href="mailto:ccsik0828@gmail.com">ccsik0828@gmail.com</a>
