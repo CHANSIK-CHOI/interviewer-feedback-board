@@ -11,7 +11,6 @@ export default function OAuthCallbackPage() {
   const router = useRouter();
   const { session, supabaseClient, applyRoleUiState } = useSession();
   const isHandledRef = useRef(false);
-  // isHandledRef : SessionProvider의 세션 변화와 fallback이 겹쳐도 실처리는 1번만 하게 막음.
 
   useEffect(() => {
     if (!router.isReady || !supabaseClient) return;
@@ -31,7 +30,6 @@ export default function OAuthCallbackPage() {
     if (!router.isReady || !session?.user || isHandledRef.current) return;
 
     let isUnmounted = false;
-    // isUnmounted : 컴포넌트 언마운트 후 비동기 완료 시점에 라우팅/상태 변경 같은 후속 작업을 중단해서 안전하게 종료.
 
     const handleSession = async () => {
       if (isUnmounted || isHandledRef.current) return;

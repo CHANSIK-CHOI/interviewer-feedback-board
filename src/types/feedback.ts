@@ -58,7 +58,6 @@ type AdminReviewBase = FeedbackPublicAndEmailRow & {
   isPreview: false;
 };
 
-// 기본 정책: 클라이언트 전달 시 이메일 제외
 export type AdminReviewFeedback = Omit<AdminReviewBase, "email">;
 
 export type FeedbackListItem =

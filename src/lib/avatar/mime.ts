@@ -11,7 +11,6 @@ export const getNormalizedAvatarMimeType = (mimeType: string): AvatarMimeType | 
   const normalized = mimeType.toLowerCase();
 
   if (normalized in MIME_TYPE_ALIASES) {
-    // 객체에 해당 key가 있는지 확인
     return MIME_TYPE_ALIASES[normalized];
   }
 

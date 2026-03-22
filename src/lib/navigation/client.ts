@@ -14,14 +14,6 @@ export const buildLoginHref = (next: string | string[] | undefined, fallbackPath
   return `/login?next=${encodeURIComponent(nextPath)}`;
 };
 
-/*
-  checkNavigationCancelledError
-  - 에러가 “실패”가 아니라 “라우팅 취소”인지 판별하는 필터
-    * true가 되는 조건
-    1. error.cancelled가 true
-    2. 문자열 에러에 취소 관련 문구 포함
-    3. 객체 에러의 message에 취소 관련 문구 포함
-*/
 const checkNavigationCancelledError = (error: unknown) => {
   if (!error) return false;
 

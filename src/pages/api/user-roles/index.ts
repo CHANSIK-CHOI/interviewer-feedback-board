@@ -5,7 +5,6 @@ import type { UserRole } from "@/types/user-role";
 import { getRequestAccessToken, RequestAccessTokenResult } from "@/lib/auth/request";
 import { UserRoleSyncResponse } from "@/types/response";
 
-// POST: role 없으면 reviewer로 생성(201), 있으면 기존 role 반환(200)
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<UserRoleSyncResponse>
@@ -40,7 +39,6 @@ export default async function handler(
       return res.status(401).json({ data: null, error: authError?.message ?? "Unauthorized" });
     }
 
-    // insert() 우선 시도: 성공 시 신규(201), unique 충돌 시 기존 사용자(200)로 처리
     const {
       data: insertedRows,
       error: insertError,
@@ -62,7 +60,6 @@ export default async function handler(
       });
     }
 
-    // 동시 요청 등으로 unique 충돌이 나면 기존 role 조회
     if (insertError?.code !== "23505") {
       return res.status(500).json({ data: null, error: insertError?.message ?? "Insert failed" });
     }
@@ -74,8 +71,8 @@ export default async function handler(
       .from("user_roles")
       .select("role")
       .eq("user_id", authData.user.id)
-      .limit(1) // 조회 결과 row 개수를 최대 1개로 제한
-      .maybeSingle(); // 0개면 null, 1개면 객체로 전달 받음
+      .limit(1)
+      .maybeSingle();
 
     if (existingError) {
       return res

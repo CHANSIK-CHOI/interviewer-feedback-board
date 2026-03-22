@@ -12,7 +12,7 @@ type SessionProviderProps = {
 };
 
 const CACHE_KEY = (id: string) => `role:${id}`;
-const CACHE_TTL = 5 * 60 * 1000; // 5분
+const CACHE_TTL = 5 * 60 * 1000;
 
 export default function SessionProvider({ children }: SessionProviderProps) {
   const supabaseClient: SupabaseClient | null = getSupabaseClient();
@@ -22,12 +22,6 @@ export default function SessionProvider({ children }: SessionProviderProps) {
   const [isRoleLoading, setIsRoleLoading] = useState(false);
   const syncedTokenRef = useRef<string | null>(null);
 
-  /*
-    applyRoleUiState
-    - userId & role
-    - isLoading : role 권한 부여 진행중
-    - isCacheWriteEnabled : sessionStorage에 user id & role 저장 여부
-  */
   const applyRoleUiState = useCallback(
     ({ userId, role, isLoading = false, isCacheWriteEnabled = true }: ApplyRoleUiStateParams) => {
       setIsAdminUi(role === "admin");
@@ -41,7 +35,6 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     []
   );
 
-  /* session 업데이트, session init 상태 업데이트 */
   useEffect(() => {
     if (!supabaseClient) {
       setIsInitSessionComplete(false);
@@ -66,9 +59,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     };
   }, [supabaseClient]);
 
-  /* 유저의 role 업데이트, role 부여 여부 업데이트 */
   useEffect(() => {
-    // OAuth 콜백과 이메일 인증 완료 페이지에서는 별도 흐름으로 처리한다.
     if (
       typeof window !== "undefined" &&
       (window.location.pathname === "/login/oauth-callback" ||
@@ -78,7 +69,6 @@ export default function SessionProvider({ children }: SessionProviderProps) {
       return;
     }
 
-    // 회원가입 후 첫 login은 skip -> 회원가입 후 자동 로그인 처리가 되기 떄문에 session이 감지가 됨 그 경우 스킵 처리 후 유저가 로그인을 직접 했을 때 아래 로직 수행
     const isSignUpComplete = consumeSignUpRoleSyncSkip();
     if (isSignUpComplete) {
       setIsAdminUi(false);
@@ -92,7 +82,6 @@ export default function SessionProvider({ children }: SessionProviderProps) {
       return;
     }
 
-    // 케시 처리로 api 호출 횟수를 줄임
     const cacheKey = CACHE_KEY(session.user.id);
     const cached = sessionStorage.getItem(cacheKey);
 
@@ -113,7 +102,6 @@ export default function SessionProvider({ children }: SessionProviderProps) {
       }
     }
 
-    // 세션 생성 시 user_roles를 동기화한다. (github 로그인시 oauth-callback 페이지에서 진행)
     const runRoleSync = async () => {
       setIsRoleLoading(true);
       const { role }: SyncUserRoleResult = await syncUserRole(session.access_token);
@@ -127,10 +115,8 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     });
   }, [session?.user?.id, session?.access_token, applyRoleUiState]);
 
-  /* 클라이언트 세션(access token)”을 “서버용 HttpOnly 쿠키”로 동기화 */
   useEffect(() => {
     const syncSessionCookie = async () => {
-      // 서버가 sb-access-token 쿠키를 만료(Max-Age=0)시켜 삭제
       if (!session?.access_token) {
         syncedTokenRef.current = null;
         await fetch("/api/auth/session", {
@@ -139,10 +125,8 @@ export default function SessionProvider({ children }: SessionProviderProps) {
         return;
       }
 
-      // 토큰이 있고, 이전에 동기화한 토큰과 같으면 요청 생략
       if (syncedTokenRef.current === session.access_token) return;
 
-      // 새 토큰이면 POST /api/auth/session 호출
       const response = await fetch("/api/auth/session", {
         method: "POST",
         headers: {

@@ -44,7 +44,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     return {
       redirect: {
         destination: buildLoginHref(`/feedback/edit/${feedbackId}`),
-        permanent: false, // 영구 이동 아님 이라고 알려서 캐시 고정하지 않게 함
+        permanent: false,
       },
     };
   }

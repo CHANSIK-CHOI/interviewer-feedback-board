@@ -28,14 +28,9 @@ export default async function handler(
       throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
     }
 
-    // status = 'pending' | 'revised_pending' 개수만 조회
     const { count, error: countError } = await supabaseServer
       .from("feedbacks")
       .select("id", { count: "exact", head: true })
-      // 데이터는 가져오지 않고 “개수만” 세기 위한 Supabase 쿼리 옵션
-      // select("id"): 카운트 기준 컬럼 지정 (여기선 id)
-      // count: "exact": 정확한 개수를 계산
-      // head: true: 실제 row 데이터는 내려받지 않음 (헤더만)
       .in("status", ["pending", "revised_pending"]);
 
     if (countError || count === null) {

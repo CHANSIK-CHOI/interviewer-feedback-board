@@ -22,8 +22,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   try {
     await res.revalidate("/feedback");
-    // Next.js의 revalidate 메서드로 /feedback 경로의 ISR 캐시를 무효화함
-    // 목록 페이지(/feedback)를 다음 요청 때 다시 생성하게 만드는 트리거
     return res.status(200).json({ data: { revalidated: true }, error: null });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

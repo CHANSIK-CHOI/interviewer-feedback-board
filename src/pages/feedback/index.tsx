@@ -95,7 +95,6 @@ export default function FeedbackBoardPage({
     }
   }, [alertMessage, openAlert]);
 
-  // admin 사용자 : 승인 대기 중 count 가져오기
   useEffect(() => {
     if (isRoleLoading || !isAdminUi || !session?.access_token) {
       setPendingCount(null);
@@ -143,7 +142,6 @@ export default function FeedbackBoardPage({
     return () => controller.abort();
   }, [isRoleLoading, isAdminUi, session?.access_token, supabaseClient]);
 
-  // 로그인 시 본인이 작성한 게시물 중 pending, revised_pending의 데이터를 가져와 list에 merge 하기
   useEffect(() => {
     if (!session?.access_token) {
       setOwnerPendingFeedbacks([]);
@@ -186,7 +184,6 @@ export default function FeedbackBoardPage({
     return () => controller.abort();
   }, [session?.access_token, supabaseClient]);
 
-  // 로그인 시 admin role 유저일 때 게시물 중 pending, revised_pending, rejected의 데이터를 가져와 list에 merge 하기
   useEffect(() => {
     if (isRoleLoading || !isAdminUi || !session?.access_token) {
       setAdminReviewFeedbacks([]);

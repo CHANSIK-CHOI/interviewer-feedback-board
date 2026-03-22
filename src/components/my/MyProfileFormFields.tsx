@@ -50,30 +50,6 @@ export default function MyProfileFormFields({
         <p className="text-xs text-muted-foreground">이메일은 관리자와 작성자에게만 표시됩니다.</p>
       </div>
 
-      {/* <div className="flex flex-col gap-2">
-        <label className="text-xs font-semibold text-muted-foreground" htmlFor="my_phone">
-          휴대폰 번호 (선택)
-        </label>
-        <input
-          id="my_phone"
-          type="tel"
-          className={inputBaseStyle}
-          placeholder="하이픈 없이 입력해도 됩니다."
-          {...register("phone", {
-            setValueAs: (value) =>
-              typeof value === "string" ? formatPhoneNumber(value.trim()) : value,
-            onChange: (event) => {
-              event.target.value = formatPhoneNumber(event.target.value);
-            },
-            validate: (value) => {
-              if (!value) return true;
-              return PHONE_PATTERN.test(value.trim()) || "휴대폰 번호 형식이 올바르지 않습니다.";
-            },
-          })}
-        />
-        {errors.phone && <span className="text-xs text-destructive">{errors.phone.message}</span>}
-      </div> */}
-
       <div className="flex flex-col gap-2">
         <label
           className="flex items-center gap-2 text-sm text-muted-foreground"

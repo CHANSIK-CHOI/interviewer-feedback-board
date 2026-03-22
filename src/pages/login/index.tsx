@@ -36,7 +36,7 @@ export default function LoginPage() {
   const { openAlert } = useAlert();
   const { supabaseClient } = useSession();
   const router = useRouter();
-  const nextPath = getSafeNextPath(router.query.next); // 예: /login?next=/feedback/new
+  const nextPath = getSafeNextPath(router.query.next);
   const {
     register,
     handleSubmit,

@@ -17,14 +17,10 @@ export default function AuthActions() {
     if (!supabaseClient) return;
     try {
       const { error } = await supabaseClient.auth.signOut({ scope: "global" });
-      // signOut({ scope: "global" }) : 서버 쪽(리프레시 토큰 포함)까지 로그아웃하려는 시도입니다.
       if (error?.name === "AuthSessionMissingError") {
-        // 현재 탭에 세션이 이미 없으면 AuthSessionMissingError가 날 수 있음 예: 다른 탭에서 이미 로그아웃, 토큰 만료, 로컬 세션 손실
-        // signOut({ scope: "local" })를 한 번 더 호출해서 클라이언트 로컬 auth 상태라도 확실히 정리
         await supabaseClient.auth.signOut({ scope: "local" });
       }
     } finally {
-      // 로그아웃 직후 서버 쿠키를 즉시 정리해서 SSR 권한 체크를 바로 반영한다.
       await fetch("/api/auth/session", { method: "DELETE" });
       await replaceSafely(router, "/");
     }

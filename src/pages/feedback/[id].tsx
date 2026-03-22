@@ -42,7 +42,6 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       isAdmin = authContext.isAdmin;
       isAuthor = authContext.userId === detailFeedback.author_id;
 
-      // approved가 아니면 작성자/관리자만 접근 허용
       if (detailFeedback.status !== "approved" && !isAuthor && !isAdmin) return { notFound: true };
 
       if (isAuthor || isAdmin) {
