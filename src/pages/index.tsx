@@ -16,6 +16,7 @@ const CORE_STACK_BADGES: StackBadge[] = [
   { label: "Next.js Page Router", iconSrc: "/icons/nextjs.svg", isInvertedInDarkMode: true },
   { label: "Supabase", iconSrc: "/icons/supabase.svg" },
   { label: "TypeScript" },
+  { label: "React Hook Form" },
   { label: "shadcn/ui" },
   { label: "Tailwind CSS" },
 ];
@@ -35,7 +36,7 @@ export default function MainPage() {
       <PageMeta
         title="홈"
         ogTitle="인터뷰어 피드백 보드 홈"
-        description="Next.js와 Supabase로 구현한 권한 기반 인터뷰어 피드백 보드 프로젝트를 소개합니다."
+        description="Next.js 14 Page Router와 Supabase로 구현한 권한 기반 인터뷰어 피드백 보드 포트폴리오입니다. 작성-검토-공개 워크플로우와 역할별 데이터 가시성 분리를 다룹니다."
       />
 
       <div className="grid gap-6">
@@ -49,12 +50,15 @@ export default function MainPage() {
               Project Specs
             </span>
             <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              Next.js + Supabase로 만든
+              Next.js 14 Page Router +
+              <br />
+              Supabase로 만든
               <br />
               권한 기반 피드백 보드
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Auth, RLS, CRUD, 승인 워크플로우를 중심으로 구성했습니다.
+              단순 CRUD보다 권한 모델, 상태 전이, 공개 데이터와 권한 데이터 분리 렌더링에 초점을
+              맞춘 포트폴리오 프로젝트입니다.
             </p>
           </div>
           <aside className="relative z-10 grid gap-3">
@@ -90,7 +94,7 @@ export default function MainPage() {
                 Vercel 배포 · GitHub 형상관리
               </strong>
               <span className="mt-1 block text-sm text-muted-foreground">
-                환경변수 기반 구성, API Route 기반 백엔드, 역할 분리 정책을 적용했습니다.
+                API Routes 기반 BFF, Supabase Auth/DB/Storage, 온디맨드 재검증 흐름을 적용했습니다.
               </span>
               <div className="mt-3 flex flex-wrap gap-2">
                 {DELIVERY_BADGES.map((item) => (
@@ -125,7 +129,8 @@ export default function MainPage() {
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             이 프로젝트의 메인 화면은{" "}
             <span className="font-semibold text-foreground">/feedback</span>
-            입니다. 작성, 검토, 공개까지 이어지는 권한 기반 피드백 흐름을 구현했습니다.
+            입니다. 공개 목록은 정적으로 제공하고, 로그인 이후에는 작성자/관리자 권한에 맞는
+            데이터를 API로 추가 조회해 하나의 보드로 병합합니다.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2">
@@ -165,7 +170,7 @@ export default function MainPage() {
             </p>
             <p className="mt-2 text-lg font-semibold text-foreground">{roleLabel}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              역할 기반으로 관리자 UI와 개인 데이터 노출이 분기됩니다.
+              reviewer는 본인 데이터 중심, admin은 검토 큐와 상태 변경 권한을 가집니다.
             </p>
           </article>
 
@@ -175,7 +180,8 @@ export default function MainPage() {
             </p>
             <p className="mt-2 text-lg font-semibold text-foreground">/feedback</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              공개 글 + 수정 대기 preview + 본인 full 데이터를 병합해서 표시합니다.
+              `approved` 공개 목록을 기본으로, `revised_pending` preview와 역할별 전용 데이터를
+              조건부 병합합니다.
             </p>
           </article>
         </section>
@@ -186,19 +192,19 @@ export default function MainPage() {
             <div className="rounded-xl border border-border/60 bg-background/70 p-4 dark:border-white/10 dark:bg-neutral-900/60">
               <p className="text-sm font-semibold text-foreground">1. 작성</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                인터뷰어가 피드백을 작성하고 제출합니다.
+                인터뷰어가 피드백을 작성하면 `pending` 상태로 저장됩니다.
               </p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/70 p-4 dark:border-white/10 dark:bg-neutral-900/60">
               <p className="text-sm font-semibold text-foreground">2. 검토</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                관리자가 승인/반려를 처리하고 공개 여부를 결정합니다.
+                관리자가 `approve`, `reject`, `reopen`으로 상태 전이를 처리합니다.
               </p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/70 p-4 dark:border-white/10 dark:bg-neutral-900/60">
               <p className="text-sm font-semibold text-foreground">3. 공개</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                승인된 글은 보드에 공개되고, 수정 대기는 preview로 보여집니다.
+                `approved`와 `is_public=true`인 글만 공개되고, 수정 대기는 preview로 유지됩니다.
               </p>
             </div>
           </div>

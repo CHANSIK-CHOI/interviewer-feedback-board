@@ -21,12 +21,14 @@
 
 ## 1) 프로젝트 소개
 
-이 프로젝트는 인터뷰어 피드백을 작성하고, 관리자가 검토 후 공개하는 **권한 기반 피드백 보드**입니다.
+이 프로젝트는 인터뷰어가 피드백을 작성하고, 관리자가 검토 후 공개하는 **권한 기반 피드백 보드**입니다.
+
+공개 목록과 사용자별 비공개 데이터를 분리하고, 작성 → 검토 → 공개로 이어지는 상태 전이를 API에서 강제하는 흐름을 구현했습니다.
 
 - **핵심 목표**
   - 단순 CRUD를 넘어서, 실제 서비스와 유사한 **승인 프로세스**를 구현
   - 사용자/관리자 역할에 따른 **데이터 가시성 분리**
-  - Next.js API Routes + Supabase를 활용한 **실무형 풀스택 구조** 구성
+  - `getStaticProps` + 온디맨드 재검증 + API Routes + Supabase를 조합한 **실무형 풀스택 구조** 구성
 
 ---
 
@@ -58,7 +60,7 @@
 
 - 피드백 작성
 - 본인 피드백 수정
-- 본인 글의 승인, 승인 대기중 상태 확인
+- 본인 글의 승인 여부 및 승인 대기 상태 확인
 
 ### Admin
 
@@ -87,7 +89,7 @@
 - 작성: `pending`
 - 관리자 승인: `pending | revised_pending → approved`
 - 관리자 반려: `pending | revised_pending → rejected`
-- 관리자 재검토: `approved | rejected → pending | revised_pending`
+- 관리자 재검토: `approved | rejected → 이전 검토 큐 상태(pending | revised_pending)로 복귀`
 
 ---
 
@@ -105,8 +107,9 @@
 
 ```text
 [Client (Next.js Pages)]
+    ├─ / (프로젝트 소개 및 주요 진입점)
     ├─ SessionProvider (세션/권한 동기화)
-    ├─ /feedback (공개 + 사용자/관리자 데이터 병합 렌더링)
+    ├─ /feedback (공개 데이터 ISR + 사용자/관리자 데이터 인증 후 병합 렌더링)
     └─ /admin/feedback (관리자 검토 UI)
 
 [API Routes]
@@ -169,19 +172,20 @@ src/
 
 | Method | Endpoint               | 설명                        | 권한               |
 | ------ | ---------------------- | --------------------------- | ------------------ |
-| POST   | `/api/revalidate-list` | `/feedback` ISR 캐시 무효화 | secret header 필요 |
+| POST   | `/api/revalidate-list` | `/feedback` ISR 캐시 무효화 | secret header 또는 query 필요 |
 
 - 보호 API는 `Authorization: Bearer <accessToken>` 기반으로 동작합니다.
 - `GET /api/feedbacks`의 기본 조회 상태는 `approved`입니다.
 - `GET /api/feedbacks/mine`의 기본 조회 상태는 `pending,revised_pending`입니다.
 - `admin`이 `GET /api/feedbacks/mine`을 호출하면 목록 대신 `data: null`을 반환합니다.
-- `POST /api/revalidate-list`는 `x-revalidate-secret` 헤더가 필요합니다.
+- `POST /api/revalidate-list`는 `x-revalidate-secret` 헤더 또는 `?secret=` 쿼리가 필요합니다.
 
 ---
 
 ## 9) 회고
 
 - 권한 모델과 상태 전이를 API 단에서 강제하며, UI는 해당 정책을 반영하는 구조로 설계했습니다.
+- `/feedback`는 공개 데이터와 권한 데이터를 분리 수집한 뒤 하나의 리스트로 병합해, 사용자 역할에 따라 다른 보드를 보여주도록 구성했습니다.
 - "보이는 기능"뿐 아니라 인증/인가, 데이터 가시성, 동시성 경합 등 실서비스 이슈를 다뤘습니다.
 
 ---
@@ -200,7 +204,7 @@ src/
 3. <a href="https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%94%BC%EB%93%9C%EB%B0%B1-%EC%83%81%ED%83%9C-%EC%A0%84%EC%9D%B4%EC%99%80-%EA%B4%80%EB%A6%AC%EC%9E%90-%EA%B2%80%ED%86%A0-%EC%9B%8C%ED%81%AC%ED%94%8C%EB%A1%9C%EC%9A%B0-%EA%B5%AC%ED%98%84" target="_blank" rel="noopener noreferrer">피드백 상태 전이와 관리자 검토 워크플로우 구현</a>
 4. <a href="https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%9A%8C%EA%B3%A0-%EC%9D%B4-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%EC%97%90%EC%84%9C-%EB%B0%B0%EC%9A%B4-%EC%A0%90%EA%B3%BC-%EB%8B%A4%EC%9D%8C-%EA%B0%9C%EC%84%A0-%EB%A1%9C%EB%93%9C%EB%A7%B5" target="_blank" rel="noopener noreferrer">회고: 이 프로젝트에서 배운 점과 다음 개선 로드맵</a>
 
-## 11) 작성자
+## 12) 작성자
 
 - 이름: 최찬식
 - GitHub: <a href="https://github.com/CHANSIK-CHOI" target="_blank" rel="noopener noreferrer">https://github.com/CHANSIK-CHOI</a>
