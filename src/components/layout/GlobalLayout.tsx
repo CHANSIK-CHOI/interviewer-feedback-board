@@ -2,8 +2,10 @@ import React, { ReactNode, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AuthActions } from "@/components/common";
-import { Switch } from "@/components/ui";
+import { Button, Switch } from "@/components/ui";
 import { useTheme } from "next-themes";
+
+const GITHUB_REPO_URL = "https://github.com/CHANSIK-CHOI/interviewer-feedback-board";
 
 export default function GlobalLayout({ children }: { children: ReactNode }) {
   const [isThemeMounted, setIsThemeMounted] = useState(false);
@@ -48,8 +50,32 @@ export default function GlobalLayout({ children }: { children: ReactNode }) {
                 홈으로 가기
               </span>
             </Link>
-            <div className="ml-auto min-w-0 max-w-full">
-              <AuthActions />
+            <div className="ml-auto flex min-w-0 max-w-full items-center gap-2">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="h-auto w-fit shrink-0 rounded-full border-transparent bg-transparent px-2 py-2 shadow-none hover:bg-muted/40 dark:border-transparent dark:bg-transparent sm:h-7 sm:border-input sm:bg-input/30 sm:px-2.5 sm:py-0 sm:shadow-none sm:hover:bg-input/50"
+              >
+                <a
+                  href={GITHUB_REPO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub 저장소 열기"
+                >
+                  <Image
+                    src="/icons/github.svg"
+                    alt="GitHub icon"
+                    width={16}
+                    height={16}
+                    className="shrink-0 dark:invert"
+                  />
+                  <span className="hidden sm:inline">GitHub</span>
+                </a>
+              </Button>
+              <div className="min-w-0 max-w-full">
+                <AuthActions />
+              </div>
             </div>
           </div>
           <div className="flex w-full justify-end">
@@ -77,7 +103,7 @@ export default function GlobalLayout({ children }: { children: ReactNode }) {
       <footer className="border-t border-border/60 bg-white/70 backdrop-blur-md dark:border-white/10 dark:bg-neutral-950/70">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-center gap-4 px-6 py-4 text-sm text-muted-foreground">
           <a
-            href="https://github.com/CHANSIK-CHOI/next-js-page-router-fetch-api"
+            href={GITHUB_REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 transition hover:text-foreground"
