@@ -13,6 +13,7 @@ import { getAuthUserNameById } from "@/lib/user/profile.server";
 import { FeedbackPublicAndEmailRow, FeedbackPublicRow } from "@/types/feedback";
 import { DeleteFeedbackButton, PageMeta, ReviewControls } from "@/components/common";
 import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
+import FeedbackCommentsSection from "@/components/feedback/detail/FeedbackCommentsSection";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
   const id = context.params?.id;
@@ -254,6 +255,13 @@ export default function FeedbackDetailPage({
             </p>
           </div>
         </section>
+
+        <FeedbackCommentsSection
+          feedback={currentDetailFeedback}
+          reviewerName={currentReviewerName}
+          isAuthor={isAuthor}
+          isAdmin={isAdmin}
+        />
       </div>
     </>
   );

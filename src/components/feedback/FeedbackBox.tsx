@@ -8,6 +8,8 @@ import { Button } from "@/components/ui";
 import Link from "next/link";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
+import { MessageCircle } from "lucide-react";
+import { getMockFeedbackCommentCount } from "@/lib/feedback/comment-ui";
 
 type FeedbackBoxProps = {
   data: FeedbackListItem;
@@ -17,6 +19,7 @@ export default function FeedbackBox({ data }: FeedbackBoxProps) {
   const isPreview = data.isPreview;
   const avatarSrc = data.avatar_url || AVATAR_PLACEHOLDER_SRC;
   const isUpdateData = checkUpdateData(data);
+  const commentCount = isPreview ? 0 : getMockFeedbackCommentCount(data.id);
 
   return (
     <article className="rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-neutral-900/70">
@@ -93,9 +96,15 @@ export default function FeedbackBox({ data }: FeedbackBoxProps) {
 
       <div className={cn("mt-4 flex flex-wrap items-center gap-3 justify-between")}>
         {!isPreview && (
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/feedback/${data.id}`}>상세 보기</Link>
-          </Button>
+          <>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-white/70 px-3 py-1 text-xs font-semibold text-muted-foreground dark:border-white/10 dark:bg-neutral-900/70">
+              <MessageCircle className="size-3.5" />
+              댓글 {commentCount}
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/feedback/${data.id}`}>상세 보기</Link>
+            </Button>
+          </>
         )}
       </div>
     </article>
