@@ -24,7 +24,6 @@ import {
   FeedbackEditHeaderSection,
 } from "@/components/feedback";
 import { PageMeta } from "@/components/common";
-import { FeedbackPublicRow } from "@/types/feedback";
 import { EditFeedbackResponse } from "@/types/response";
 
 const feedbackEditErrorMessages = new Set<string>([
@@ -62,7 +61,13 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       };
     }
 
-    const feedback: FeedbackPublicRow = await getFeedbackDetailById(feedbackId);
+    const feedback = await getFeedbackDetailById(feedbackId, {
+      supabaseClient: authContext.supabaseServer,
+    });
+
+    if (!feedback) {
+      return { notFound: true };
+    }
 
     if (feedback.author_id !== authContext.userId) {
       return { notFound: true };

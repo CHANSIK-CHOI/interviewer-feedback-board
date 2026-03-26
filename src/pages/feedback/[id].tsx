@@ -7,12 +7,13 @@ import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { getFeedbackComments } from "@/lib/feedback/comment";
 import { getFeedbackDetailById, getFeedbackEmailById } from "@/lib/feedback/server";
-import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
+import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 import { getAuthUserNameById } from "@/lib/user/profile.server";
 import { getSupabaseServerAnon } from "@/lib/supabase/server";
-import { FeedbackPublicAndEmailRow, FeedbackPublicRow } from "@/types/feedback";
+import type { AuthContext } from "@/lib/auth/server";
+import { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import { DeleteFeedbackButton, PageMeta, ReviewControls } from "@/components/common";
 import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
 import FeedbackCommentsSection from "@/components/feedback/detail/FeedbackCommentsSection";
@@ -25,40 +26,34 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   }
 
   try {
-    const detailFeedback: FeedbackPublicRow = await getFeedbackDetailById(id);
+    const accessToken = context.req.cookies["sb-access-token"];
+    const anonSupabase = getSupabaseServerAnon();
+    let authContext: AuthContext | null = null;
+
+    if (accessToken) {
+      const authResult = await getAuthContextByAccessToken(accessToken);
+      authContext = authResult.context;
+    }
+
+    const detailFeedback = await getFeedbackDetailById(id, {
+      supabaseClient: authContext?.supabaseServer ?? anonSupabase,
+    });
+    if (!detailFeedback) {
+      return { notFound: true };
+    }
+
     const reviewerName: string | null = detailFeedback.reviewed_by
       ? await getAuthUserNameById(detailFeedback.reviewed_by).catch(() => null)
       : null;
 
-    const accessToken = context.req.cookies["sb-access-token"];
     let isAuthor = false;
     let isAdmin = false;
     let mergedDetailFeedback: FeedbackPublicAndEmailRow = detailFeedback;
     let initialComments: FeedbackComment[] = [];
 
-    if (!accessToken) {
-      if (detailFeedback.status !== "approved") return { notFound: true };
-
-      if (detailFeedback.comments_unlocked_at) {
-        const anonSupabase = getSupabaseServerAnon();
-        if (anonSupabase) {
-          initialComments = await getFeedbackComments({
-            supabaseClient: anonSupabase,
-            feedbackId: id,
-            feedbackAuthorId: detailFeedback.author_id,
-          }).catch(() => []);
-        }
-      }
-    } else {
-      const authResult: AuthContextResult = await getAuthContextByAccessToken(accessToken);
-      const { context: authContext, error: authError } = authResult;
-
-      if (authError || !authContext) throw new Error("Auth Context Error");
-
+    if (authContext) {
       isAdmin = authContext.isAdmin;
       isAuthor = authContext.userId === detailFeedback.author_id;
-
-      if (detailFeedback.status !== "approved" && !isAuthor && !isAdmin) return { notFound: true };
 
       if (isAuthor || isAdmin) {
         const email: string | null = await getFeedbackEmailById(id).catch(() => null);
@@ -69,10 +64,13 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
           };
         }
       }
+    }
 
-      if (detailFeedback.comments_unlocked_at) {
+    if (detailFeedback.comments_unlocked_at) {
+      const commentReader = authContext?.supabaseServer ?? anonSupabase;
+      if (commentReader) {
         initialComments = await getFeedbackComments({
-          supabaseClient: authContext.supabaseServer,
+          supabaseClient: commentReader,
           feedbackId: id,
           feedbackAuthorId: detailFeedback.author_id,
         }).catch(() => []);
@@ -80,7 +78,13 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     }
 
     return {
-      props: { detailFeedback: mergedDetailFeedback, reviewerName, isAuthor, isAdmin, initialComments },
+      props: {
+        detailFeedback: mergedDetailFeedback,
+        reviewerName,
+        isAuthor,
+        isAdmin,
+        initialComments,
+      },
     };
   } catch (error) {
     console.error(error);

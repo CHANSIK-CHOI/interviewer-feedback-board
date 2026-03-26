@@ -6,19 +6,25 @@ import type {
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
 import type { SupabaseError } from "@/types/common";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServer, getSupabaseServerAnon } from "@/lib/supabase/server";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import { APPROVED_PUBLIC_COLUMNS, PREVIEWCOLUMN } from "@/constants";
-import { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getFeedbackCommentCounts } from "@/lib/feedback/comment";
 
-export const getApprovedFeedbacks = async (): Promise<ApprovedFeedback[]> => {
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+type FeedbackReadParams = {
+  supabaseClient?: SupabaseClient | null;
+};
+
+export const getApprovedFeedbacks = async ({
+  supabaseClient,
+}: FeedbackReadParams = {}): Promise<ApprovedFeedback[]> => {
+  const feedbackReader = supabaseClient ?? getSupabaseServerAnon();
+  if (!feedbackReader) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY");
   }
 
-  const { data, error } = await supabaseServer
+  const { data, error } = await feedbackReader
     .from("feedbacks")
     .select(APPROVED_PUBLIC_COLUMNS)
     .eq("status", "approved")
@@ -32,7 +38,7 @@ export const getApprovedFeedbacks = async (): Promise<ApprovedFeedback[]> => {
   }
 
   const commentCounts = await getFeedbackCommentCounts({
-    supabaseClient: supabaseServer,
+    supabaseClient: feedbackReader,
     feedbackIds: data.map((item) => item.id),
   }).catch(() => ({}));
 
@@ -99,24 +105,25 @@ export const getRevisedPendingPreviewFeedbacks = async (): Promise<
 };
 
 export const getFeedbackDetailById = async (
-  id: FeedbackPublicBase["id"]
-): Promise<FeedbackPublicRow> => {
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  id: FeedbackPublicBase["id"],
+  { supabaseClient }: FeedbackReadParams = {}
+): Promise<FeedbackPublicRow | null> => {
+  const feedbackReader = supabaseClient ?? getSupabaseServerAnon();
+  if (!feedbackReader) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY");
   }
 
-  const { data, error } = await supabaseServer
+  const { data, error } = await feedbackReader
     .from("feedbacks")
     .select(APPROVED_PUBLIC_COLUMNS)
     .eq("id", id)
     .maybeSingle();
 
-  if (error || !data) {
+  if (error) {
     throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getFeedbackDetailById"));
   }
 
-  return data;
+  return data ?? null;
 };
 
 export const getFeedbackEmailById = async (
