@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { PendingCountResponse } from "@/types/response";
 
 export default async function handler(
@@ -23,12 +23,12 @@ export default async function handler(
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
-    const supabaseServer = getSupabaseServer();
-    if (!supabaseServer) {
+    const supabaseServerAdminClient = getSupabaseServerAdminClient();
+    if (!supabaseServerAdminClient) {
       throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
     }
 
-    const { count, error: countError } = await supabaseServer
+    const { count, error: countError } = await supabaseServerAdminClient
       .from("feedbacks")
       .select("id", { count: "exact", head: true })
       .in("status", ["pending", "revised_pending"]);

@@ -24,7 +24,7 @@ export default function DeleteFeedbackButton({
   const router = useRouter();
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
-  const { session, supabaseClient } = useSession();
+  const { session, supabaseBrowserClient } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDelete = async () => {
@@ -43,7 +43,7 @@ export default function DeleteFeedbackButton({
 
     try {
       const accessToken = await getFreshAccessToken({
-        supabaseClient,
+        supabaseBrowserClient,
         fallbackAccessToken: session?.access_token ?? null,
       });
 

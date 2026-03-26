@@ -1,19 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type FreshAccessTokenParams = {
-  supabaseClient: SupabaseClient | null;
+  supabaseBrowserClient: SupabaseClient | null;
   fallbackAccessToken: string | null;
 };
 
 export async function getFreshAccessToken({
-  supabaseClient,
+  supabaseBrowserClient,
   fallbackAccessToken,
 }: FreshAccessTokenParams): Promise<string | null> {
-  if (!supabaseClient) {
+  if (!supabaseBrowserClient) {
     return fallbackAccessToken;
   }
 
-  const { data, error } = await supabaseClient.auth.getSession();
+  const { data, error } = await supabaseBrowserClient.auth.getSession();
   if (!data || !data.session || !data.session.access_token || error) {
     console.error(error);
     return fallbackAccessToken;

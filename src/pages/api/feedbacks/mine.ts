@@ -71,7 +71,7 @@ export default async function handler(
       return res.status(200).json({ data: null, error: null });
     }
 
-    const { data, error: dataError } = await auth.context.supabaseServer
+    const { data, error: dataError } = await auth.context.supabaseServerUserClient
       .from("feedbacks")
       .select()
       .eq("author_id", auth.context.userId)
@@ -87,7 +87,7 @@ export default async function handler(
     const commentCounts =
       feedbackIds.length === 0
         ? {}
-        : await auth.context.supabaseServer
+        : await auth.context.supabaseServerUserClient
             .from("feedback_comments")
             .select("feedback_id")
             .in("feedback_id", feedbackIds)

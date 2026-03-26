@@ -11,7 +11,7 @@ export type ApplyRoleUiStateParams = {
 
 type SessionContextValue = {
   session: Session | null;
-  supabaseClient: SupabaseClient | null;
+  supabaseBrowserClient: SupabaseClient | null;
   isInitSessionComplete: boolean;
   isAdminUi: boolean;
   isRoleLoading: boolean;

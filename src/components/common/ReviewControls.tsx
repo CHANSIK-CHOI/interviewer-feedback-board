@@ -30,7 +30,7 @@ export default function ReviewControls({
   onSuccess,
 }: ReviewControlsProps) {
   const { openAlert } = useAlert();
-  const { session, supabaseClient } = useSession();
+  const { session, supabaseBrowserClient } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleReview = async (action: ReviewFeedbackAction) => {
@@ -40,7 +40,7 @@ export default function ReviewControls({
 
     try {
       const accessToken = await getFreshAccessToken({
-        supabaseClient,
+        supabaseBrowserClient,
         fallbackAccessToken: session?.access_token ?? null,
       });
 

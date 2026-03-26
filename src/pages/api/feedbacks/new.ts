@@ -78,7 +78,7 @@ export default async function handler(
     }
 
     const { data, error }: { data: { id: FeedbackPublicBase["id"] } | null; error: SupabaseError } =
-      await auth.context.supabaseServer
+      await auth.context.supabaseServerUserClient
         .from("feedbacks")
         .insert({
           author_id: auth.context.userId,

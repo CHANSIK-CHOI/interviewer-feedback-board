@@ -1,10 +1,10 @@
-import { getSupabaseServerByAccessToken } from "@/lib/supabase/server";
+import { createSupabaseServerUserClient } from "@/lib/supabase/server";
 import type { SupabaseError } from "@/types/common";
 import type { UserRole } from "@/types/user-role";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 export type AuthContext = {
-  supabaseServer: SupabaseClient;
+  supabaseServerUserClient: SupabaseClient;
   userId: string;
   role: UserRole["role"] | null;
   isAdmin: boolean;
@@ -20,8 +20,8 @@ export type AuthContextResult = {
 export const getAuthContextByAccessToken = async (
   accessToken: string
 ): Promise<AuthContextResult> => {
-  const supabaseServer = getSupabaseServerByAccessToken(accessToken);
-  if (!supabaseServer) {
+  const supabaseServerUserClient = createSupabaseServerUserClient(accessToken);
+  if (!supabaseServerUserClient) {
     return {
       context: null,
       error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY",
@@ -29,7 +29,7 @@ export const getAuthContextByAccessToken = async (
     };
   }
 
-  const { data: authData, error: authError } = await supabaseServer.auth.getUser();
+  const { data: authData, error: authError } = await supabaseServerUserClient.auth.getUser();
   if (authError || !authData.user) {
     return {
       context: null,
@@ -41,7 +41,8 @@ export const getAuthContextByAccessToken = async (
   const {
     data: roleData,
     error: roleError,
-  }: { data: { role: UserRole["role"] } | null; error: SupabaseError } = await supabaseServer
+  }: { data: { role: UserRole["role"] } | null; error: SupabaseError } =
+    await supabaseServerUserClient
     .from("user_roles")
     .select("role")
     .eq("user_id", authData.user.id)
@@ -60,7 +61,7 @@ export const getAuthContextByAccessToken = async (
 
   return {
     context: {
-      supabaseServer,
+      supabaseServerUserClient,
       userId: authData.user.id,
       role,
       isAdmin: role === "admin",

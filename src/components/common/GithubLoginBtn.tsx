@@ -4,16 +4,16 @@ import { Button, useAlert } from "@/components/ui";
 import { useSession } from "@/components/session";
 
 export default function GithubLoginBtn() {
-  const { supabaseClient } = useSession();
+  const { supabaseBrowserClient } = useSession();
   const { openAlert } = useAlert();
 
   const handleLoginGithub = async () => {
-    if (!supabaseClient) {
+    if (!supabaseBrowserClient) {
       console.error("Supabase 클라이언트를 초기화하지 못했습니다.");
       return;
     }
 
-    const { error } = await supabaseClient.auth.signInWithOAuth({
+    const { error } = await supabaseBrowserClient.auth.signInWithOAuth({
       provider: "github",
       options: {
         redirectTo: `${window.location.origin}/login/oauth-callback`,

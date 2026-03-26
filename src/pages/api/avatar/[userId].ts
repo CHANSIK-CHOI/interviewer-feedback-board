@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { AVATAR_PLACEHOLDER_SRC, USER_ID_PATTERN } from "@/constants";
 import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
 import { buildAvatarPath } from "@/lib/avatar/path";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import type { ApiResponse } from "@/types/common";
 import { AvatarMimeType } from "@/types/avatar";
 
@@ -40,12 +40,12 @@ export default async function handler(
     return respondWithError(res, 500, "SUPABASE_AVATAR_BUCKET 환경변수가 필요합니다.");
   }
 
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
     return respondWithError(res, 500, "서버 Supabase 클라이언트를 초기화하지 못했습니다.");
   }
 
-  const { data, error } = await supabaseServer.storage
+  const { data, error } = await supabaseServerAdminClient.storage
     .from(AVATAR_BUCKET)
     .download(buildAvatarPath(userId));
   if (error || !data) {

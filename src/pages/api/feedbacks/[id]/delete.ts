@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import {
   FEEDBACK_DELETE_FALLBACK_ERROR_MESSAGE,
   FEEDBACK_DELETE_FORBIDDEN_MESSAGE,
@@ -40,15 +40,15 @@ export default async function handler(
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }
 
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   }
 
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackOwnerRow | null; error: SupabaseError } = await supabaseServer
+  }: { data: FeedbackOwnerRow | null; error: SupabaseError } = await supabaseServerAdminClient
     .from("feedbacks")
     .select("id, author_id")
     .eq("id", feedbackId)
@@ -70,7 +70,8 @@ export default async function handler(
   const {
     data: deletedFeedback,
     error: deleteError,
-  }: { data: { id: FeedbackPublicBase["id"] } | null; error: SupabaseError } = await supabaseServer
+  }: { data: { id: FeedbackPublicBase["id"] } | null; error: SupabaseError } =
+    await supabaseServerAdminClient
     .from("feedbacks")
     .delete()
     .eq("id", feedbackId)

@@ -9,16 +9,16 @@ import { checkAvatarApiSrcPrivate } from "@/lib/avatar/path";
 import { getUserName, getAvatarUrl } from "@/lib/user/profile";
 
 export default function AuthActions() {
-  const { session, supabaseClient } = useSession();
+  const { session, supabaseBrowserClient } = useSession();
   const router = useRouter();
   const [isLogging, setIsLogging] = useState(false);
 
   const handleLogout = async () => {
-    if (!supabaseClient) return;
+    if (!supabaseBrowserClient) return;
     try {
-      const { error } = await supabaseClient.auth.signOut({ scope: "global" });
+      const { error } = await supabaseBrowserClient.auth.signOut({ scope: "global" });
       if (error?.name === "AuthSessionMissingError") {
-        await supabaseClient.auth.signOut({ scope: "local" });
+        await supabaseBrowserClient.auth.signOut({ scope: "local" });
       }
     } finally {
       await fetch("/api/auth/session", { method: "DELETE" });

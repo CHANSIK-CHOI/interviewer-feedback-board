@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
 import { getApprovedFeedbacks, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import type {
   AdminReviewFeedback,
   ApprovedFeedback,
@@ -52,18 +52,18 @@ export default async function handler(
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
-    const supabaseServer = getSupabaseServer();
-    if (!supabaseServer) {
+    const supabaseServerAdminClient = getSupabaseServerAdminClient();
+    if (!supabaseServerAdminClient) {
       throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
     }
 
     const feedbackRows: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses({
-      supabaseClient: supabaseServer,
+      supabaseClient: supabaseServerAdminClient,
       statuses,
     });
 
     const commentCounts: Record<string, number> = await getFeedbackCommentCounts({
-      supabaseClient: auth.context.supabaseServer,
+      supabaseClient: auth.context.supabaseServerUserClient,
       feedbackIds: feedbackRows.map((item) => item.id),
     }).catch(() => ({}));
 

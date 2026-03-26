@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext } from "@/lib/auth/request";
 import { mapFeedbackComments } from "@/lib/feedback/comment";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { SupabaseError } from "@/types/common";
 import type { FeedbackPublicBase } from "@/types/feedback";
@@ -61,8 +61,8 @@ export default async function handler(
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }
 
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
     return res
       .status(500)
       .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
@@ -71,7 +71,7 @@ export default async function handler(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await supabaseServer
+  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await supabaseServerAdminClient
     .from("feedbacks")
     .select("id, author_id, status, is_public, comments_unlocked_at")
     .eq("id", feedbackId)
@@ -93,7 +93,7 @@ export default async function handler(
   const {
     data: commentRow,
     error: commentError,
-  }: { data: CommentOwnerRow | null; error: SupabaseError } = await supabaseServer
+  }: { data: CommentOwnerRow | null; error: SupabaseError } = await supabaseServerAdminClient
     .from("feedback_comments")
     .select(FEEDBACK_COMMENT_COLUMNS)
     .eq("id", commentId)
@@ -146,7 +146,8 @@ export default async function handler(
     const {
       data: updatedComment,
       error: updateError,
-    }: { data: FeedbackCommentRow | null; error: SupabaseError } = await auth.context.supabaseServer
+    }: { data: FeedbackCommentRow | null; error: SupabaseError } =
+      await auth.context.supabaseServerUserClient
       .from("feedback_comments")
       .update({ body })
       .eq("id", commentId)
@@ -191,7 +192,8 @@ export default async function handler(
   const {
     data: deletedComment,
     error: deleteError,
-  }: { data: Pick<FeedbackCommentRow, "id"> | null; error: SupabaseError } = await auth.context.supabaseServer
+  }: { data: Pick<FeedbackCommentRow, "id"> | null; error: SupabaseError } =
+    await auth.context.supabaseServerUserClient
     .from("feedback_comments")
     .delete()
     .eq("id", commentId)

@@ -95,7 +95,7 @@ export default async function handler(
     }: {
       data: UpdataCompleteReturnData | null;
       error: SupabaseError;
-    } = await auth.context.supabaseServer
+    } = await auth.context.supabaseServerUserClient
       .from("feedbacks")
       .select("id, author_id, status, revision_count")
       .eq("id", feedbackId)
@@ -118,7 +118,7 @@ export default async function handler(
     const nextRevisionCount: FeedbackPublicBase["revision_count"] = feedbackRow.revision_count + 1;
 
     const { data, error }: { data: { id: FeedbackPublicBase["id"] } | null; error: SupabaseError } =
-      await auth.context.supabaseServer
+      await auth.context.supabaseServerUserClient
         .from("feedbacks")
         .update({
           display_name,

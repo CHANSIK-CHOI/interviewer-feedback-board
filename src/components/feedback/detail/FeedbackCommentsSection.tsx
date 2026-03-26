@@ -50,7 +50,7 @@ export default function FeedbackCommentsSection({
   isAdmin,
   initialComments,
 }: FeedbackCommentsSectionProps) {
-  const { session, supabaseClient } = useSession();
+  const { session, supabaseBrowserClient } = useSession();
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
   const [comments, setComments] = useState<FeedbackComment[]>(initialComments);
@@ -98,7 +98,7 @@ export default function FeedbackCommentsSection({
 
   const resolveAccessToken = async () => {
     const accessToken = await getFreshAccessToken({
-      supabaseClient,
+      supabaseBrowserClient,
       fallbackAccessToken: session?.access_token ?? null,
     });
 

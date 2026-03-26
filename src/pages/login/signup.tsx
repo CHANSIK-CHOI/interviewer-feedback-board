@@ -43,7 +43,7 @@ const getSignupErrorMessage = (message?: string) => {
 
 export default function SignupPage() {
   const { openAlert } = useAlert();
-  const { supabaseClient } = useSession();
+  const { supabaseBrowserClient } = useSession();
   const router = useRouter();
 
   const {
@@ -57,7 +57,7 @@ export default function SignupPage() {
 
   const onSubmit = async (values: SignUpForm) => {
     if (isSubmitting) return;
-    if (!supabaseClient) return;
+    if (!supabaseBrowserClient) return;
 
     const trimmedName = values.signup_name?.trim();
     const userMetadata: Record<string, string> = {};
@@ -67,7 +67,7 @@ export default function SignupPage() {
     const emailConfirmRedirectUrl = new URL("/login/email-confirmed", window.location.origin);
     emailConfirmRedirectUrl.searchParams.set("next", "/my");
 
-    const { data, error } = await supabaseClient.auth.signUp({
+    const { data, error } = await supabaseBrowserClient.auth.signUp({
       email: values.signup_email,
       password: values.signup_password,
       options: {

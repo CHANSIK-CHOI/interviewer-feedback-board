@@ -6,7 +6,7 @@ import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
 import { getDetectedAvatarMimeTypeFromBuffer } from "@/lib/avatar/signature";
 import { replaceUserAvatar, ReplaceUserAvatarResult } from "@/lib/avatar/storage.server";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import type { ApiResponse } from "@/types/common";
 import { AvatarMimeType } from "@/types/avatar";
 
@@ -80,8 +80,8 @@ export default async function handler(
       .json({ data: null, error: "SUPABASE_AVATAR_BUCKET 환경변수가 필요합니다." });
   }
 
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
     return res
       .status(500)
       .json({ data: null, error: "서버 Supabase 클라이언트를 초기화하지 못했습니다." });
@@ -142,7 +142,7 @@ export default async function handler(
     }
 
     const replaceUserAvatarResult: ReplaceUserAvatarResult = await replaceUserAvatar({
-      supabaseServer,
+      supabaseServerAdminClient,
       bucket: AVATAR_BUCKET,
       userId: auth.context.userId,
       fileBuffer,

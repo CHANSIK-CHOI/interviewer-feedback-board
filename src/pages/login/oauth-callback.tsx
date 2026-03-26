@@ -9,11 +9,11 @@ import { ApplyRoleUiStateParams } from "@/components/session/useSession";
 
 export default function OAuthCallbackPage() {
   const router = useRouter();
-  const { session, supabaseClient, applyRoleUiState } = useSession();
+  const { session, supabaseBrowserClient, applyRoleUiState } = useSession();
   const isHandledRef = useRef(false);
 
   useEffect(() => {
-    if (!router.isReady || !supabaseClient) return;
+    if (!router.isReady || !supabaseBrowserClient) return;
 
     const fallbackTimer = window.setTimeout(() => {
       if (isHandledRef.current) return;
@@ -24,7 +24,7 @@ export default function OAuthCallbackPage() {
     return () => {
       window.clearTimeout(fallbackTimer);
     };
-  }, [router, router.isReady, supabaseClient]);
+  }, [router, router.isReady, supabaseBrowserClient]);
 
   useEffect(() => {
     if (!router.isReady || !session?.user || isHandledRef.current) return;

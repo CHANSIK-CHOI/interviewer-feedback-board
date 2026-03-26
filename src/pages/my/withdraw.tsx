@@ -28,7 +28,7 @@ const WITHDRAW_CONFIRM_TEXT = "회원탈퇴";
 export default function WithdrawPage() {
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
-  const { session, supabaseClient, isInitSessionComplete } = useSession();
+  const { session, supabaseBrowserClient, isInitSessionComplete } = useSession();
   const router = useRouter();
   const user = session?.user;
   const providers = getAuthProviders(user);
@@ -53,7 +53,7 @@ export default function WithdrawPage() {
 
   const onSubmit = async (values: WithdrawForm) => {
     if (isSubmitting) return;
-    if (!session?.access_token || !supabaseClient) {
+    if (!session?.access_token || !supabaseBrowserClient) {
       openAlert({
         description: "로그인 상태를 확인해주세요.",
       });
@@ -79,7 +79,7 @@ export default function WithdrawPage() {
       }
 
       const password = values.password.trim();
-      const { error: reauthError } = await supabaseClient.auth.signInWithPassword({
+      const { error: reauthError } = await supabaseBrowserClient.auth.signInWithPassword({
         email: user.email,
         password,
       });
@@ -93,7 +93,7 @@ export default function WithdrawPage() {
     }
 
     const accessToken = await getFreshAccessToken({
-      supabaseClient,
+      supabaseBrowserClient,
       fallbackAccessToken: session.access_token,
     });
 
@@ -116,7 +116,7 @@ export default function WithdrawPage() {
     }
 
     await fetch("/api/auth/session", { method: "DELETE" });
-    await supabaseClient.auth.signOut({ scope: "local" }).catch(() => undefined);
+    await supabaseBrowserClient.auth.signOut({ scope: "local" }).catch(() => undefined);
 
     openAlert({
       description: "회원 탈퇴가 완료되었습니다.",

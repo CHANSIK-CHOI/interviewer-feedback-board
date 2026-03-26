@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getSupabaseServerByAccessToken } from "@/lib/supabase/server";
+import { createSupabaseServerUserClient } from "@/lib/supabase/server";
 import { getRequestAccessToken, RequestAccessTokenResult } from "@/lib/auth/request";
 import { SessionCookieSyncResponse } from "@/types/response";
 
@@ -44,12 +44,12 @@ export default async function handler(
       .json({ data: null, error: tokenError ?? "Missing access token" });
   }
 
-  const supabaseServer = getSupabaseServerByAccessToken(accessToken);
-  if (!supabaseServer) {
+  const supabaseServerUserClient = createSupabaseServerUserClient(accessToken);
+  if (!supabaseServerUserClient) {
     return res.status(500).json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
   }
 
-  const { data, error } = await supabaseServer.auth.getUser();
+  const { data, error } = await supabaseServerUserClient.auth.getUser();
   if (error || !data.user) {
     return res.status(401).json({ data: null, error: error?.message ?? "Unauthorized" });
   }

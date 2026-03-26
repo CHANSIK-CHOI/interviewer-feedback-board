@@ -18,7 +18,7 @@ const RESET_PASSWORD_FORM: ResetPassword = {
 
 export default function PasswordResetPage() {
   const { openAlert } = useAlert();
-  const { session, supabaseClient } = useSession();
+  const { session, supabaseBrowserClient } = useSession();
   const router = useRouter();
   const [isRecovery, setIsRecovery] = useState(false);
   const email = session?.user?.email ?? "";
@@ -40,7 +40,7 @@ export default function PasswordResetPage() {
 
   const onSubmit = async (values: ResetPassword) => {
     if (isSubmitting) return;
-    if (!supabaseClient) return;
+    if (!supabaseBrowserClient) return;
     if (!isRecovery) {
       openAlert({
         description: "복구 링크로 다시 접속해주세요.",
@@ -48,7 +48,7 @@ export default function PasswordResetPage() {
       return;
     }
 
-    const { error } = await supabaseClient.auth.updateUser({
+    const { error } = await supabaseBrowserClient.auth.updateUser({
       password: values.reset_password,
     });
 
@@ -62,7 +62,7 @@ export default function PasswordResetPage() {
     openAlert({
       description: "비밀번호가 변경되었습니다.\n다시 로그인해주세요.",
       onOk: () => {
-        supabaseClient.auth.signOut();
+        supabaseBrowserClient.auth.signOut();
         void replaceSafely(router, "/login");
       },
     });

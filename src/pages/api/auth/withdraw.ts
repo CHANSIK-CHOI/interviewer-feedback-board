@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { buildAvatarPath } from "@/lib/avatar/path";
 import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { removeUserAvatar } from "@/lib/avatar/storage.server";
 import { WithdrawResponse } from "@/types/response";
 
@@ -23,8 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }
 
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
     return res
       .status(500)
       .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   try {
     await removeUserAvatar({
-      supabaseServer,
+      supabaseServerAdminClient,
       bucket: AVATAR_BUCKET,
       paths: [avatarPath],
     });
@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(500).json({ data: null, error: message });
   }
 
-  const { error: deleteUserError } = await supabaseServer.auth.admin.deleteUser(userId);
+  const { error: deleteUserError } = await supabaseServerAdminClient.auth.admin.deleteUser(userId);
   if (deleteUserError) {
     return res.status(500).json({ data: null, error: "회원 탈퇴 처리에 실패했습니다." });
   }

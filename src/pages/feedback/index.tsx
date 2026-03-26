@@ -63,7 +63,7 @@ export default function FeedbackBoardPage({
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const isAlertedRef = useRef(false);
   const { openAlert } = useAlert();
-  const { session, supabaseClient, isAdminUi, isRoleLoading } = useSession();
+  const { session, supabaseBrowserClient, isAdminUi, isRoleLoading } = useSession();
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
   const [ownerFeedbacks, setOwnerFeedbacks] = useState<OwnerFeedback[]>([]);
@@ -103,7 +103,7 @@ export default function FeedbackBoardPage({
     const loadPendingCount = async () => {
       try {
         const accessToken = await getFreshAccessToken({
-          supabaseClient,
+          supabaseBrowserClient,
           fallbackAccessToken: session.access_token,
         });
 
@@ -138,7 +138,7 @@ export default function FeedbackBoardPage({
     loadPendingCount();
 
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token, supabaseClient]);
+  }, [isRoleLoading, isAdminUi, session?.access_token, supabaseBrowserClient]);
 
   useEffect(() => {
     if (!session?.access_token) {
@@ -149,7 +149,7 @@ export default function FeedbackBoardPage({
     const getOwnerFeedbacks = async () => {
       try {
         const accessToken = await getFreshAccessToken({
-          supabaseClient,
+          supabaseBrowserClient,
           fallbackAccessToken: session.access_token,
         });
 
@@ -180,7 +180,7 @@ export default function FeedbackBoardPage({
     getOwnerFeedbacks();
 
     return () => controller.abort();
-  }, [session?.access_token, supabaseClient]);
+  }, [session?.access_token, supabaseBrowserClient]);
 
   useEffect(() => {
     if (isRoleLoading || !isAdminUi || !session?.access_token) {
@@ -192,7 +192,7 @@ export default function FeedbackBoardPage({
     const getAdminReviewFeedbacks = async () => {
       try {
         const accessToken = await getFreshAccessToken({
-          supabaseClient,
+          supabaseBrowserClient,
           fallbackAccessToken: session.access_token,
         });
 
@@ -222,7 +222,7 @@ export default function FeedbackBoardPage({
 
     getAdminReviewFeedbacks();
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token, supabaseClient]);
+  }, [isRoleLoading, isAdminUi, session?.access_token, supabaseBrowserClient]);
 
   return (
     <>

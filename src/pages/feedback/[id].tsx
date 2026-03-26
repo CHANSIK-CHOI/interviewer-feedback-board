@@ -11,7 +11,7 @@ import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 import { getAuthUserNameById } from "@/lib/user/profile.server";
-import { getSupabaseServerAnon } from "@/lib/supabase/server";
+import { getSupabaseServerAnonClient } from "@/lib/supabase/server";
 import type { AuthContext } from "@/lib/auth/server";
 import { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import { DeleteFeedbackButton, PageMeta, ReviewControls } from "@/components/common";
@@ -27,7 +27,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
   try {
     const accessToken = context.req.cookies["sb-access-token"];
-    const anonSupabase = getSupabaseServerAnon();
+    const supabaseServerAnonClient = getSupabaseServerAnonClient();
     let authContext: AuthContext | null = null;
 
     if (accessToken) {
@@ -36,7 +36,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     }
 
     const detailFeedback = await getFeedbackDetailById(id, {
-      supabaseClient: authContext?.supabaseServer ?? anonSupabase,
+      supabaseClient: authContext?.supabaseServerUserClient ?? supabaseServerAnonClient,
     });
     if (!detailFeedback) {
       return { notFound: true };
@@ -67,7 +67,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     }
 
     if (detailFeedback.comments_unlocked_at) {
-      const commentReader = authContext?.supabaseServer ?? anonSupabase;
+      const commentReader = authContext?.supabaseServerUserClient ?? supabaseServerAnonClient;
       if (commentReader) {
         initialComments = await getFeedbackComments({
           supabaseClient: commentReader,
@@ -112,7 +112,7 @@ export default function FeedbackDetailPage({
       reviewed_by: result.reviewed_by,
       comments_unlocked_at:
         result.status === "approved"
-          ? prev.comments_unlocked_at ?? result.reviewed_at ?? new Date().toISOString()
+          ? (prev.comments_unlocked_at ?? result.reviewed_at ?? new Date().toISOString())
           : prev.comments_unlocked_at,
     }));
     setCurrentReviewerName(result.reviewer_name);

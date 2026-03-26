@@ -34,7 +34,7 @@ const getLoginErrorMessage = (message?: string) => {
 
 export default function LoginPage() {
   const { openAlert } = useAlert();
-  const { supabaseClient } = useSession();
+  const { supabaseBrowserClient } = useSession();
   const router = useRouter();
   const nextPath = getSafeNextPath(router.query.next);
   const {
@@ -48,9 +48,9 @@ export default function LoginPage() {
 
   const onSubmit = async (values: LoginForm) => {
     if (isSubmitting) return;
-    if (!supabaseClient) return;
+    if (!supabaseBrowserClient) return;
 
-    const { error } = await supabaseClient.auth.signInWithPassword({
+    const { error } = await supabaseBrowserClient.auth.signInWithPassword({
       email: values.login_email.trim(),
       password: values.login_password.trim(),
     });

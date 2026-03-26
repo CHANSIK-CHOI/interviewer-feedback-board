@@ -8,11 +8,11 @@ const DEFAULT_NEXT_PATH = "/my";
 
 export default function EmailConfirmedPage() {
   const router = useRouter();
-  const { session, supabaseClient } = useSession();
+  const { session, supabaseBrowserClient } = useSession();
   const isHandledRef = useRef(false);
 
   useEffect(() => {
-    if (!router.isReady || !supabaseClient) return;
+    if (!router.isReady || !supabaseBrowserClient) return;
 
     const fallbackTimer = window.setTimeout(() => {
       if (isHandledRef.current) return;
@@ -25,10 +25,10 @@ export default function EmailConfirmedPage() {
     return () => {
       window.clearTimeout(fallbackTimer);
     };
-  }, [router, router.isReady, router.query.next, supabaseClient]);
+  }, [router, router.isReady, router.query.next, supabaseBrowserClient]);
 
   useEffect(() => {
-    if (!router.isReady || !supabaseClient || !session?.user || isHandledRef.current) return;
+    if (!router.isReady || !supabaseBrowserClient || !session?.user || isHandledRef.current) return;
 
     let isUnmounted = false;
     const loginHref = buildLoginHref(router.query.next, DEFAULT_NEXT_PATH);
@@ -37,7 +37,7 @@ export default function EmailConfirmedPage() {
       if (isUnmounted || isHandledRef.current) return;
       isHandledRef.current = true;
 
-      await supabaseClient.auth.signOut({ scope: "local" }).catch(() => undefined);
+      await supabaseBrowserClient.auth.signOut({ scope: "local" }).catch(() => undefined);
       await replaceSafely(router, loginHref);
     };
 
@@ -46,7 +46,7 @@ export default function EmailConfirmedPage() {
     return () => {
       isUnmounted = true;
     };
-  }, [router, router.isReady, router.query.next, session?.user, supabaseClient]);
+  }, [router, router.isReady, router.query.next, session?.user, supabaseBrowserClient]);
 
   return (
     <>

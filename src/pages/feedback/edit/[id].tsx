@@ -62,7 +62,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     }
 
     const feedback = await getFeedbackDetailById(feedbackId, {
-      supabaseClient: authContext.supabaseServer,
+      supabaseClient: authContext.supabaseServerUserClient,
     });
 
     if (!feedback) {
@@ -102,7 +102,7 @@ export default function FeedbackEditPage({
   feedbackId,
   defaultValues,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const { session, supabaseClient } = useSession();
+  const { session, supabaseBrowserClient } = useSession();
   const { openAlert } = useAlert();
   const router = useRouter();
 
@@ -128,7 +128,7 @@ export default function FeedbackEditPage({
 
     try {
       const accessToken = await getFreshAccessToken({
-        supabaseClient,
+        supabaseBrowserClient,
         fallbackAccessToken: session.access_token,
       });
 

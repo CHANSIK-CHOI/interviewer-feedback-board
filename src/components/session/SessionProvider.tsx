@@ -1,7 +1,7 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ApplyRoleUiStateParams, SessionContext } from "./useSession";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
-import { getSupabaseClient } from "@/lib/supabase/client";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { syncUserRole, SyncUserRoleResult } from "@/lib/user-role/client";
 import { consumeSignUpRoleSyncSkip } from "@/lib/auth/signup-flow";
 import type { UserRole } from "@/types/user-role";
@@ -15,7 +15,7 @@ const CACHE_KEY = (id: string) => `role:${id}`;
 const CACHE_TTL = 5 * 60 * 1000;
 
 export default function SessionProvider({ children }: SessionProviderProps) {
-  const supabaseClient: SupabaseClient | null = getSupabaseClient();
+  const supabaseBrowserClient: SupabaseClient | null = getSupabaseBrowserClient();
   const [session, setSession] = useState<Session | null>(null);
   const [isInitSessionComplete, setIsInitSessionComplete] = useState(false);
   const [isAdminUi, setIsAdminUi] = useState(false);
@@ -36,28 +36,30 @@ export default function SessionProvider({ children }: SessionProviderProps) {
   );
 
   useEffect(() => {
-    if (!supabaseClient) {
+    if (!supabaseBrowserClient) {
       setIsInitSessionComplete(false);
       return;
     }
     let isMounted = true;
 
-    supabaseClient.auth.getSession().then(({ data }) => {
+    supabaseBrowserClient.auth.getSession().then(({ data }) => {
       if (!isMounted) return;
       setSession(data.session ?? null);
       setIsInitSessionComplete(true);
     });
 
-    const { data: subscription } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setIsInitSessionComplete(true);
-    });
+    const { data: subscription } = supabaseBrowserClient.auth.onAuthStateChange(
+      (_event, nextSession) => {
+        setSession(nextSession);
+        setIsInitSessionComplete(true);
+      }
+    );
 
     return () => {
       isMounted = false;
       subscription.subscription.unsubscribe();
     };
-  }, [supabaseClient]);
+  }, [supabaseBrowserClient]);
 
   useEffect(() => {
     if (
@@ -153,7 +155,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     <SessionContext.Provider
       value={{
         session,
-        supabaseClient,
+        supabaseBrowserClient,
         isInitSessionComplete,
         isAdminUi,
         isRoleLoading,

@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAccessToken, getRequestAuthContext } from "@/lib/auth/request";
 import { getAuthContextByAccessToken } from "@/lib/auth/server";
-import { getSupabaseServer, getSupabaseServerAnon } from "@/lib/supabase/server";
+import { getSupabaseServerAdminClient, getSupabaseServerAnonClient } from "@/lib/supabase/server";
 import { getFeedbackComments, mapFeedbackComments } from "@/lib/feedback/comment";
 import { getAvatarUrl, getUserName } from "@/lib/user/profile";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
@@ -50,8 +50,8 @@ export default async function handler(
   }
 
   if (req.method === "GET") {
-    const supabaseServer = getSupabaseServer();
-    if (!supabaseServer) {
+    const supabaseServerAdminClient = getSupabaseServerAdminClient();
+    if (!supabaseServerAdminClient) {
       return res
         .status(500)
         .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
@@ -61,7 +61,11 @@ export default async function handler(
       data: feedbackRow,
       error: feedbackError,
     }: { data: Pick<FeedbackCommentTargetRow, "id" | "author_id"> | null; error: SupabaseError } =
-      await supabaseServer.from("feedbacks").select("id, author_id").eq("id", feedbackId).maybeSingle();
+      await supabaseServerAdminClient
+        .from("feedbacks")
+        .select("id, author_id")
+        .eq("id", feedbackId)
+        .maybeSingle();
 
     if (feedbackError) {
       return res
@@ -74,17 +78,19 @@ export default async function handler(
     }
 
     const accessToken = getRequestAccessToken(req).accessToken;
-    const commentReader =
-      accessToken ? (await getAuthContextByAccessToken(accessToken)).context?.supabaseServer : null;
-    const commentSupabase = commentReader ?? getSupabaseServerAnon();
+    const supabaseServerUserClient = accessToken
+      ? (await getAuthContextByAccessToken(accessToken)).context?.supabaseServerUserClient
+      : null;
+    const supabaseServerAnonClient = getSupabaseServerAnonClient();
+    const commentReader = supabaseServerUserClient ?? supabaseServerAnonClient;
 
-    if (!commentSupabase) {
+    if (!commentReader) {
       return res.status(500).json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
     }
 
     try {
       const comments = await getFeedbackComments({
-        supabaseClient: commentSupabase,
+        supabaseClient: commentReader,
         feedbackId,
         feedbackAuthorId: feedbackRow.author_id,
       });
@@ -110,8 +116,8 @@ export default async function handler(
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }
 
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
     return res
       .status(500)
       .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
@@ -120,7 +126,7 @@ export default async function handler(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await supabaseServer
+  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await supabaseServerAdminClient
     .from("feedbacks")
     .select("id, author_id, status, is_public, comments_unlocked_at")
     .eq("id", feedbackId)
@@ -167,7 +173,7 @@ export default async function handler(
     const {
       data: parentRow,
       error: parentError,
-    }: { data: FeedbackCommentParentRow | null; error: SupabaseError } = await supabaseServer
+    }: { data: FeedbackCommentParentRow | null; error: SupabaseError } = await supabaseServerAdminClient
       .from("feedback_comments")
       .select("id, feedback_id, parent_comment_id")
       .eq("id", parentCommentId)
@@ -198,7 +204,7 @@ export default async function handler(
   const {
     data: createdComment,
     error: createError,
-  }: { data: FeedbackCommentRow | null; error: SupabaseError } = await auth.context.supabaseServer
+  }: { data: FeedbackCommentRow | null; error: SupabaseError } = await auth.context.supabaseServerUserClient
     .from("feedback_comments")
     .insert({
       feedback_id: feedbackId,

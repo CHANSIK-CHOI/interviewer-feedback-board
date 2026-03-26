@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AvatarMimeType } from "@/types/avatar";
 
 type ReplaceUserAvatarParams = {
-  supabaseServer: SupabaseClient;
+  supabaseServerAdminClient: SupabaseClient;
   bucket: string;
   userId: string;
   fileBuffer: Buffer;
@@ -17,7 +17,7 @@ export type ReplaceUserAvatarResult = {
 };
 
 export async function replaceUserAvatar({
-  supabaseServer,
+  supabaseServerAdminClient,
   bucket,
   userId,
   fileBuffer,
@@ -25,7 +25,7 @@ export async function replaceUserAvatar({
 }: ReplaceUserAvatarParams): Promise<ReplaceUserAvatarResult> {
   const uploadPath = buildAvatarPath(userId);
 
-  const { error: uploadError } = await supabaseServer.storage
+  const { error: uploadError } = await supabaseServerAdminClient.storage
     .from(bucket)
     .upload(uploadPath, fileBuffer, {
       contentType,
@@ -45,17 +45,17 @@ export async function replaceUserAvatar({
 }
 
 type RemoveUserAvatarParams = {
-  supabaseServer: SupabaseClient;
+  supabaseServerAdminClient: SupabaseClient;
   bucket: string;
   paths: string[];
 };
 
 export async function removeUserAvatar({
-  supabaseServer,
+  supabaseServerAdminClient,
   bucket,
   paths = [],
 }: RemoveUserAvatarParams): Promise<void> {
-  const { error: removeAvatarError } = await supabaseServer.storage.from(bucket).remove(paths);
+  const { error: removeAvatarError } = await supabaseServerAdminClient.storage.from(bucket).remove(paths);
 
   if (removeAvatarError) {
     console.error(removeAvatarError);

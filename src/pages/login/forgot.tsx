@@ -24,7 +24,7 @@ const getResetPasswordErrorMessage = (message?: string) => {
 
 export default function Page() {
   const { openAlert } = useAlert();
-  const { supabaseClient } = useSession();
+  const { supabaseBrowserClient } = useSession();
   const {
     register,
     handleSubmit,
@@ -36,9 +36,9 @@ export default function Page() {
 
   const onSubmit = async (values: ForgotEmail) => {
     if (isSubmitting) return;
-    if (!supabaseClient) return;
+    if (!supabaseBrowserClient) return;
 
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(values.forgot_email.trim(), {
+    const { error } = await supabaseBrowserClient.auth.resetPasswordForEmail(values.forgot_email.trim(), {
       redirectTo: `${window.location.origin}/login/reset`,
     });
 

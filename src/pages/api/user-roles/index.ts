@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import type { SupabaseError } from "@/types/common";
 import type { UserRole } from "@/types/user-role";
 import { getRequestAccessToken, RequestAccessTokenResult } from "@/lib/auth/request";
@@ -16,8 +16,8 @@ export default async function handler(
     return res.status(405).json({ data: null, error: "Method Not Allowed" });
   }
 
-  const supabaseServer = getSupabaseServer();
-  if (!supabaseServer) {
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
     return res
       .status(500)
       .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
@@ -34,7 +34,9 @@ export default async function handler(
   }
 
   try {
-    const { data: authData, error: authError } = await supabaseServer.auth.getUser(accessToken);
+    const { data: authData, error: authError } = await supabaseServerAdminClient.auth.getUser(
+      accessToken
+    );
     if (authError || !authData.user) {
       return res.status(401).json({ data: null, error: authError?.message ?? "Unauthorized" });
     }
@@ -42,7 +44,7 @@ export default async function handler(
     const {
       data: insertedRows,
       error: insertError,
-    }: { data: UserRole[] | null; error: SupabaseError } = await supabaseServer
+    }: { data: UserRole[] | null; error: SupabaseError } = await supabaseServerAdminClient
       .from("user_roles")
       .insert({
         user_id: authData.user.id,
@@ -67,7 +69,8 @@ export default async function handler(
     const {
       data: existingRole,
       error: existingError,
-    }: { data: { role: UserRole["role"] } | null; error: SupabaseError } = await supabaseServer
+    }: { data: { role: UserRole["role"] } | null; error: SupabaseError } =
+      await supabaseServerAdminClient
       .from("user_roles")
       .select("role")
       .eq("user_id", authData.user.id)
