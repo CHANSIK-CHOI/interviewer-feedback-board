@@ -43,8 +43,8 @@ export type RevisedPendingPreviewFeedback = FeedbackPublicBase & {
   isPreview: true;
 };
 
-export type RevisedPendingOwnerFeedback = FeedbackPublicBase & {
-  status: "revised_pending" | "pending";
+export type OwnerFeedback = FeedbackPublicBase & {
+  status: "pending" | "revised_pending" | "rejected";
   isPreview: false;
   summary: string;
   strengths: string | null;
@@ -63,5 +63,5 @@ export type AdminReviewFeedback = Omit<AdminReviewBase, "email">;
 export type FeedbackListItem =
   | ApprovedFeedback
   | RevisedPendingPreviewFeedback
-  | RevisedPendingOwnerFeedback
+  | OwnerFeedback
   | AdminReviewFeedback;

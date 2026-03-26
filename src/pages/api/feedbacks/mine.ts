@@ -1,10 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext, RequestAuthResult } from "@/lib/auth/request";
 import { parseStatusQuery, ParseStatusQueryResult } from "@/lib/status/query";
-import type { RevisedPendingOwnerFeedback } from "@/types/feedback";
+import type { OwnerFeedback } from "@/types/feedback";
 import { FeedbackMineResponse } from "@/types/response";
 
-const ALLOWED_STATUSES = ["pending", "revised_pending"] as const;
+const ALLOWED_STATUSES = ["pending", "revised_pending", "rejected"] as const;
 type MineStatus = (typeof ALLOWED_STATUSES)[number];
 
 export default async function handler(
@@ -23,7 +23,7 @@ export default async function handler(
       rawStatus: req.query.status,
       allowedStatuses: ALLOWED_STATUSES,
       defaultStatuses: ALLOWED_STATUSES,
-      usageMessage: "Use ?status=pending,revised_pending",
+      usageMessage: "Use ?status=pending,revised_pending,rejected",
     });
   if (statusError || !statuses) {
     return res.status(400).json({ data: null, error: statusError ?? "Invalid status query" });
@@ -51,7 +51,7 @@ export default async function handler(
         .json({ data: null, error: dataError?.message ?? "Select failed Owner Pending Data" });
     }
 
-    const ownerFeedbacks: RevisedPendingOwnerFeedback[] = data.map((item) => ({
+    const ownerFeedbacks: OwnerFeedback[] = data.map((item) => ({
       ...item,
       isPreview: false,
     }));

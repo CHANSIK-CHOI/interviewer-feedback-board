@@ -17,13 +17,13 @@ import {
   AdminReviewFeedback,
   ApprovedFeedback,
   FeedbackListItem,
-  RevisedPendingOwnerFeedback,
+  OwnerFeedback,
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
 import { FeedbackMineResponse, FeedbackResponse, PendingCountResponse } from "@/types/response";
 
 const MINE_STATUS_QUERY = new URLSearchParams({
-  status: "pending,revised_pending",
+  status: "pending,revised_pending,rejected",
 }).toString();
 
 const ADMIN_REVIEW_STATUS_QUERY = new URLSearchParams({
@@ -66,19 +66,17 @@ export default function FeedbackBoardPage({
   const { session, supabaseClient, isAdminUi, isRoleLoading } = useSession();
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
-  const [ownerPendingFeedbacks, setOwnerPendingFeedbacks] = useState<RevisedPendingOwnerFeedback[]>(
-    []
-  );
+  const [ownerFeedbacks, setOwnerFeedbacks] = useState<OwnerFeedback[]>([]);
   const [adminReviewFeedbacks, setAdminReviewFeedbacks] = useState<AdminReviewFeedback[]>([]);
   const feedbackData = useMemo<FeedbackListItem[]>(
     () =>
       mergeFeedbackList({
         approved: approvedFeedbacks,
         revisedPreview: revisedPendingPreviews,
-        revisedMine: ownerPendingFeedbacks,
+        mine: ownerFeedbacks,
         adminReview: adminReviewFeedbacks,
       } satisfies MergeFeedbackListParams),
-    [approvedFeedbacks, revisedPendingPreviews, ownerPendingFeedbacks, adminReviewFeedbacks]
+    [approvedFeedbacks, revisedPendingPreviews, ownerFeedbacks, adminReviewFeedbacks]
   );
   const sortedFeedbackData = useMemo(() => {
     return [...feedbackData].sort((a, b) =>
@@ -144,11 +142,11 @@ export default function FeedbackBoardPage({
 
   useEffect(() => {
     if (!session?.access_token) {
-      setOwnerPendingFeedbacks([]);
+      setOwnerFeedbacks([]);
       return;
     }
     const controller = new AbortController();
-    const getPendingOwnerFeedback = async () => {
+    const getOwnerFeedbacks = async () => {
       try {
         const accessToken = await getFreshAccessToken({
           supabaseClient,
@@ -172,14 +170,14 @@ export default function FeedbackBoardPage({
         }
 
         if (controller.signal.aborted) return;
-        setOwnerPendingFeedbacks(result.data ?? []);
+        setOwnerFeedbacks(result.data ?? []);
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error(error);
-        setOwnerPendingFeedbacks([]);
+        setOwnerFeedbacks([]);
       }
     };
-    getPendingOwnerFeedback();
+    getOwnerFeedbacks();
 
     return () => controller.abort();
   }, [session?.access_token, supabaseClient]);

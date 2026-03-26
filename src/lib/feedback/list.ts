@@ -3,7 +3,7 @@ import type {
   ApprovedFeedback,
   FeedbackListItem,
   FeedbackPublicBase,
-  RevisedPendingOwnerFeedback,
+  OwnerFeedback,
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
 
@@ -29,14 +29,14 @@ export const compareUpdatedAtDesc = (a: WithUpdatedAt, b: WithUpdatedAt) => {
 export type MergeFeedbackListParams = {
   approved: ApprovedFeedback[];
   revisedPreview: RevisedPendingPreviewFeedback[];
-  revisedMine: RevisedPendingOwnerFeedback[];
+  mine: OwnerFeedback[];
   adminReview: AdminReviewFeedback[];
 };
 
 export const mergeFeedbackList = ({
   approved,
   revisedPreview,
-  revisedMine,
+  mine,
   adminReview,
 }: MergeFeedbackListParams): FeedbackListItem[] => {
   const mergedById = new Map<string, FeedbackListItem>();
@@ -46,7 +46,7 @@ export const mergeFeedbackList = ({
   });
 
   if (adminReview.length === 0) {
-    revisedMine.forEach((ownerItem) => {
+    mine.forEach((ownerItem) => {
       mergedById.set(ownerItem.id, ownerItem);
     });
   } else {

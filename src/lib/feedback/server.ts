@@ -73,7 +73,6 @@ export const getRevisedPendingPreviewFeedbacks = async (): Promise<
     .from("feedbacks")
     .select(PREVIEWCOLUMN)
     .eq("status", "revised_pending")
-    .eq("is_public", true)
     .order("created_at", {
       ascending: false,
     });
