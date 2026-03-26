@@ -5,15 +5,18 @@ import { Button } from "@/components/ui";
 import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
 import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
+import { getFeedbackComments } from "@/lib/feedback/comment";
 import { getFeedbackDetailById, getFeedbackEmailById } from "@/lib/feedback/server";
 import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 import { getAuthUserNameById } from "@/lib/user/profile.server";
+import { getSupabaseServerAnon } from "@/lib/supabase/server";
 import { FeedbackPublicAndEmailRow, FeedbackPublicRow } from "@/types/feedback";
 import { DeleteFeedbackButton, PageMeta, ReviewControls } from "@/components/common";
 import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
 import FeedbackCommentsSection from "@/components/feedback/detail/FeedbackCommentsSection";
+import type { FeedbackComment } from "@/types/feedback-comment";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
   const id = context.params?.id;
@@ -31,9 +34,21 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     let isAuthor = false;
     let isAdmin = false;
     let mergedDetailFeedback: FeedbackPublicAndEmailRow = detailFeedback;
+    let initialComments: FeedbackComment[] = [];
 
     if (!accessToken) {
       if (detailFeedback.status !== "approved") return { notFound: true };
+
+      if (detailFeedback.comments_unlocked_at) {
+        const anonSupabase = getSupabaseServerAnon();
+        if (anonSupabase) {
+          initialComments = await getFeedbackComments({
+            supabaseClient: anonSupabase,
+            feedbackId: id,
+            feedbackAuthorId: detailFeedback.author_id,
+          }).catch(() => []);
+        }
+      }
     } else {
       const authResult: AuthContextResult = await getAuthContextByAccessToken(accessToken);
       const { context: authContext, error: authError } = authResult;
@@ -54,10 +69,18 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
           };
         }
       }
+
+      if (detailFeedback.comments_unlocked_at) {
+        initialComments = await getFeedbackComments({
+          supabaseClient: authContext.supabaseServer,
+          feedbackId: id,
+          feedbackAuthorId: detailFeedback.author_id,
+        }).catch(() => []);
+      }
     }
 
     return {
-      props: { detailFeedback: mergedDetailFeedback, reviewerName, isAuthor, isAdmin },
+      props: { detailFeedback: mergedDetailFeedback, reviewerName, isAuthor, isAdmin, initialComments },
     };
   } catch (error) {
     console.error(error);
@@ -70,6 +93,7 @@ export default function FeedbackDetailPage({
   reviewerName,
   isAuthor,
   isAdmin,
+  initialComments,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [currentDetailFeedback, setCurrentDetailFeedback] =
     useState<FeedbackPublicAndEmailRow>(detailFeedback);
@@ -82,6 +106,10 @@ export default function FeedbackDetailPage({
       is_public: result.is_public,
       reviewed_at: result.reviewed_at,
       reviewed_by: result.reviewed_by,
+      comments_unlocked_at:
+        result.status === "approved"
+          ? prev.comments_unlocked_at ?? result.reviewed_at ?? new Date().toISOString()
+          : prev.comments_unlocked_at,
     }));
     setCurrentReviewerName(result.reviewer_name);
   };
@@ -258,9 +286,9 @@ export default function FeedbackDetailPage({
 
         <FeedbackCommentsSection
           feedback={currentDetailFeedback}
-          reviewerName={currentReviewerName}
           isAuthor={isAuthor}
           isAdmin={isAdmin}
+          initialComments={initialComments}
         />
       </div>
     </>

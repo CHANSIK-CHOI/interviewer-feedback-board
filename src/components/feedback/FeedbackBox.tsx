@@ -9,7 +9,6 @@ import Link from "next/link";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 import { MessageCircle } from "lucide-react";
-import { getMockFeedbackCommentCount } from "@/lib/feedback/comment-ui";
 
 type FeedbackBoxProps = {
   data: FeedbackListItem;
@@ -19,7 +18,7 @@ export default function FeedbackBox({ data }: FeedbackBoxProps) {
   const isPreview = data.isPreview;
   const avatarSrc = data.avatar_url || AVATAR_PLACEHOLDER_SRC;
   const isUpdateData = checkUpdateData(data);
-  const commentCount = isPreview ? 0 : getMockFeedbackCommentCount(data.id);
+  const commentCount = isPreview ? 0 : (data.comment_count ?? 0);
 
   return (
     <article className="rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-neutral-900/70">

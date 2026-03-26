@@ -1,5 +1,6 @@
 import type { NextApiRequest } from "next";
-import { AuthContext, AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
+import type { AuthContext, AuthContextResult } from "@/lib/auth/server";
+import { getAuthContextByAccessToken } from "@/lib/auth/server";
 
 type RequestAccessTokenOptions = {
   missingAccessTokenError?: string;

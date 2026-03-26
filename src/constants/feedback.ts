@@ -2,10 +2,10 @@ import { AVATAR_PLACEHOLDER_SRC } from "./avatar";
 import type { FeedbackFormValues } from "@/types/forms";
 
 export const APPROVED_PUBLIC_COLUMNS =
-  "id, author_id, display_name, company_name, is_company_public, avatar_url, summary, strengths, questions, suggestions, rating, tags, status, is_public, revision_count, created_at, updated_at, reviewed_at, reviewed_by";
+  "id, author_id, display_name, company_name, is_company_public, avatar_url, summary, strengths, questions, suggestions, rating, tags, status, is_public, revision_count, created_at, updated_at, reviewed_at, reviewed_by, comments_unlocked_at";
 
 export const PREVIEWCOLUMN =
-  "id, author_id, display_name, company_name, is_company_public, avatar_url, status, is_public, revision_count, created_at, updated_at, reviewed_at, reviewed_by";
+  "id, author_id, display_name, company_name, is_company_public, avatar_url, status, is_public, revision_count, created_at, updated_at, reviewed_at, reviewed_by, comments_unlocked_at";
 
 export const NEW_FEEDBACK_DEFAULT_VALUES: FeedbackFormValues = {
   display_name: "",

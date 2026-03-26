@@ -1,7 +1,8 @@
-import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
+import type { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
 import type { ApiResponse } from "./common";
 import type { FeedbackPublicBase, OwnerFeedback } from "./feedback";
-import { UserRole } from "./user-role";
+import type { FeedbackComment } from "./feedback-comment";
+import type { UserRole } from "./user-role";
 
 export type SessionCookieSyncResponse = ApiResponse<{
   success: true;
@@ -23,6 +24,14 @@ export type FeedbackMineResponse = ApiResponse<OwnerFeedback[]>;
 
 export type PendingCountResponse = ApiResponse<{
   count: number;
+}>;
+
+export type FeedbackCommentListResponse = ApiResponse<FeedbackComment[]>;
+
+export type FeedbackCommentResponse = ApiResponse<FeedbackComment>;
+
+export type DeleteFeedbackCommentResponse = ApiResponse<{
+  id: FeedbackComment["id"];
 }>;
 
 type UserRoleSyncData = {

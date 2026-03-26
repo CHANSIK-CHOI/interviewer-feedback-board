@@ -11,6 +11,8 @@ export type FeedbackPublicBase = {
   updated_at: string;
   reviewed_at: string | null;
   reviewed_by: string | null;
+  comments_unlocked_at: string | null;
+  comment_count?: number;
 };
 
 export type FeedbackPublicRow = FeedbackPublicBase & {

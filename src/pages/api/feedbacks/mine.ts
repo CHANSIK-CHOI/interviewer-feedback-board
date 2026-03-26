@@ -1,11 +1,49 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext, RequestAuthResult } from "@/lib/auth/request";
-import { parseStatusQuery, ParseStatusQueryResult } from "@/lib/status/query";
+import { getRequestAuthContext } from "@/lib/auth/request";
+import type { RequestAuthResult } from "@/lib/auth/request";
 import type { OwnerFeedback } from "@/types/feedback";
-import { FeedbackMineResponse } from "@/types/response";
+import type { FeedbackMineResponse } from "@/types/response";
 
 const ALLOWED_STATUSES = ["pending", "revised_pending", "rejected"] as const;
 type MineStatus = (typeof ALLOWED_STATUSES)[number];
+
+const parseMineStatuses = (
+  rawStatus: string | string[] | undefined
+): { statuses: MineStatus[] | null; error: string | null } => {
+  if (typeof rawStatus === "undefined") {
+    return {
+      statuses: [...ALLOWED_STATUSES],
+      error: null,
+    };
+  }
+
+  const parsed = (Array.isArray(rawStatus) ? rawStatus : [rawStatus])
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (parsed.length === 0) {
+    return {
+      statuses: null,
+      error: "Invalid status query. Use ?status=pending,revised_pending,rejected",
+    };
+  }
+
+  const allowedStatusSet = new Set<MineStatus>(ALLOWED_STATUSES);
+  const invalidStatuses = parsed.filter((status) => !allowedStatusSet.has(status as MineStatus));
+
+  if (invalidStatuses.length > 0) {
+    return {
+      statuses: null,
+      error: `Unsupported status: ${invalidStatuses.join(", ")}`,
+    };
+  }
+
+  return {
+    statuses: Array.from(new Set(parsed)) as MineStatus[],
+    error: null,
+  };
+};
 
 export default async function handler(
   req: NextApiRequest,
@@ -18,13 +56,7 @@ export default async function handler(
     return res.status(405).json({ data: null, error: "Method Not Allowed" });
   }
 
-  const { statuses, error: statusError }: ParseStatusQueryResult<MineStatus> =
-    parseStatusQuery<MineStatus>({
-      rawStatus: req.query.status,
-      allowedStatuses: ALLOWED_STATUSES,
-      defaultStatuses: ALLOWED_STATUSES,
-      usageMessage: "Use ?status=pending,revised_pending,rejected",
-    });
+  const { statuses, error: statusError } = parseMineStatuses(req.query.status);
   if (statusError || !statuses) {
     return res.status(400).json({ data: null, error: statusError ?? "Invalid status query" });
   }
@@ -51,8 +83,30 @@ export default async function handler(
         .json({ data: null, error: dataError?.message ?? "Select failed Owner Pending Data" });
     }
 
+    const feedbackIds = data.map((item) => item.id);
+    const commentCounts =
+      feedbackIds.length === 0
+        ? {}
+        : await auth.context.supabaseServer
+            .from("feedback_comments")
+            .select("feedback_id")
+            .in("feedback_id", feedbackIds)
+            .then(({ data: commentRows, error: commentError }) => {
+              if (commentError || !commentRows) {
+                return {};
+              }
+
+              return commentRows.reduce<Record<string, number>>((acc, row) => {
+                const feedbackId = typeof row.feedback_id === "string" ? row.feedback_id : null;
+                if (!feedbackId) return acc;
+                acc[feedbackId] = (acc[feedbackId] ?? 0) + 1;
+                return acc;
+              }, {});
+            });
+
     const ownerFeedbacks: OwnerFeedback[] = data.map((item) => ({
       ...item,
+      comment_count: commentCounts[item.id] ?? 0,
       isPreview: false,
     }));
 

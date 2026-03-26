@@ -9,6 +9,7 @@ import type {
 } from "@/types/feedback";
 import { parseStatusQuery, ParseStatusQueryResult } from "@/lib/status/query";
 import { FeedbackResponse } from "@/types/response";
+import { getFeedbackCommentCounts } from "@/lib/feedback/comment";
 
 const ALLOWED_STATUSES = ["pending", "approved", "rejected", "revised_pending"] as const;
 type FeedbackStatus = (typeof ALLOWED_STATUSES)[number];
@@ -61,11 +62,17 @@ export default async function handler(
       statuses,
     });
 
+    const commentCounts = await getFeedbackCommentCounts({
+      supabaseClient: auth.context.supabaseServer,
+      feedbackIds: feedbackRows.map((item) => item.id),
+    }).catch(() => ({}));
+
     const adminReviewFeedbacks: AdminReviewFeedback[] = feedbackRows.map((item) => {
       const { email, ...rest } = item;
       void email;
       return {
         ...rest,
+        comment_count: commentCounts[item.id] ?? 0,
         isPreview: false,
       };
     });

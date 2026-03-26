@@ -1,5 +1,15 @@
 import type { FeedbackPublicBase, FeedbackPublicRow } from "@/types/feedback";
-import type { DeleteFeedbackResponse, ReviewFeedbackResponse } from "@/types/response";
+import type {
+  DeleteFeedbackCommentResponse,
+  DeleteFeedbackResponse,
+  FeedbackCommentResponse,
+  ReviewFeedbackResponse,
+} from "@/types/response";
+import type {
+  FeedbackComment,
+  FeedbackCommentCreatePayload,
+  FeedbackCommentUpdatePayload,
+} from "@/types/feedback-comment";
 
 export type ReviewFeedbackAction = "approve" | "reject" | "reopen";
 
@@ -80,6 +90,121 @@ export async function deleteFeedback({
 
   if (!response.ok || result.error || !result.data) {
     throw new Error(result.error ?? "피드백 삭제에 실패했습니다.");
+  }
+
+  return result.data;
+}
+
+export type CreateFeedbackCommentParams = {
+  feedbackId: FeedbackPublicBase["id"];
+  accessToken: string;
+  payload: FeedbackCommentCreatePayload;
+};
+
+export async function createFeedbackComment({
+  feedbackId,
+  accessToken,
+  payload,
+}: CreateFeedbackCommentParams): Promise<FeedbackComment> {
+  if (!accessToken) {
+    throw new Error("Missing access token");
+  }
+
+  const response = await fetch(`/api/feedbacks/${encodeURIComponent(feedbackId)}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const result: FeedbackCommentResponse = await response
+    .json()
+    .catch(() => ({ data: null, error: "Invalid response" }));
+
+  if (!response.ok || result.error || !result.data) {
+    throw new Error(result.error ?? "코멘트 등록에 실패했습니다.");
+  }
+
+  return result.data;
+}
+
+export type UpdateFeedbackCommentParams = {
+  feedbackId: FeedbackPublicBase["id"];
+  commentId: FeedbackComment["id"];
+  accessToken: string;
+  payload: FeedbackCommentUpdatePayload;
+};
+
+export async function updateFeedbackComment({
+  feedbackId,
+  commentId,
+  accessToken,
+  payload,
+}: UpdateFeedbackCommentParams): Promise<FeedbackComment> {
+  if (!accessToken) {
+    throw new Error("Missing access token");
+  }
+
+  const response = await fetch(
+    `/api/feedbacks/${encodeURIComponent(feedbackId)}/comments/${encodeURIComponent(commentId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const result: FeedbackCommentResponse = await response
+    .json()
+    .catch(() => ({ data: null, error: "Invalid response" }));
+
+  if (!response.ok || result.error || !result.data) {
+    throw new Error(result.error ?? "코멘트 수정에 실패했습니다.");
+  }
+
+  return result.data;
+}
+
+export type DeleteFeedbackCommentResult = {
+  id: FeedbackComment["id"];
+};
+
+export type DeleteFeedbackCommentParams = {
+  feedbackId: FeedbackPublicBase["id"];
+  commentId: FeedbackComment["id"];
+  accessToken: string;
+};
+
+export async function deleteFeedbackComment({
+  feedbackId,
+  commentId,
+  accessToken,
+}: DeleteFeedbackCommentParams): Promise<DeleteFeedbackCommentResult> {
+  if (!accessToken) {
+    throw new Error("Missing access token");
+  }
+
+  const response = await fetch(
+    `/api/feedbacks/${encodeURIComponent(feedbackId)}/comments/${encodeURIComponent(commentId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  const result: DeleteFeedbackCommentResponse = await response
+    .json()
+    .catch(() => ({ data: null, error: "Invalid response" }));
+
+  if (!response.ok || result.error || !result.data) {
+    throw new Error(result.error ?? "코멘트 삭제에 실패했습니다.");
   }
 
   return result.data;
