@@ -37,7 +37,7 @@ export const getApprovedFeedbacks = async ({
     throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getApprovedFeedbacks"));
   }
 
-  const commentCounts = await getFeedbackCommentCounts({
+  const commentCounts: Record<string, number> = await getFeedbackCommentCounts({
     supabaseClient: feedbackReader,
     feedbackIds: data.map((item) => item.id),
   }).catch(() => ({}));

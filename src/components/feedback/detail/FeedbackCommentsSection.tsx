@@ -368,6 +368,7 @@ export default function FeedbackCommentsSection({
           {isCommentsUnlocked &&
             topLevelComments.map((comment) => {
               const replies = comments.filter((item) => item.parentCommentId === comment.id);
+              const commentAvatarSrc = comment.authorAvatarUrl ?? AVATAR_PLACEHOLDER_SRC;
 
               return (
                 <article
@@ -377,13 +378,13 @@ export default function FeedbackCommentsSection({
                   <div className="flex items-start gap-3">
                     <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted">
                       <Image
-                        src={comment.authorAvatarUrl || AVATAR_PLACEHOLDER_SRC}
+                        src={commentAvatarSrc}
                         alt={`${comment.authorName} avatar`}
                         width={44}
                         height={44}
                         unoptimized={
-                          checkSvgImageSrc(comment.authorAvatarUrl) ||
-                          checkAvatarApiSrcPrivate(comment.authorAvatarUrl)
+                          checkSvgImageSrc(commentAvatarSrc) ||
+                          checkAvatarApiSrcPrivate(commentAvatarSrc)
                         }
                         className="h-full w-full object-cover"
                       />

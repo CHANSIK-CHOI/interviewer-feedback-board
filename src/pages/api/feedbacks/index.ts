@@ -62,7 +62,7 @@ export default async function handler(
       statuses,
     });
 
-    const commentCounts = await getFeedbackCommentCounts({
+    const commentCounts: Record<string, number> = await getFeedbackCommentCounts({
       supabaseClient: auth.context.supabaseServer,
       feedbackIds: feedbackRows.map((item) => item.id),
     }).catch(() => ({}));
