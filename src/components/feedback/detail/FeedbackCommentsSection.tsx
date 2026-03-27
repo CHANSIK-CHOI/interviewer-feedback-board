@@ -301,8 +301,7 @@ export default function FeedbackCommentsSection({
           <h3 className="mt-2 text-2xl font-semibold text-foreground">코멘트</h3>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             승인된 공개 피드백에서는 모두가 코멘트를 읽을 수 있고, 작성은 게시물 작성자와
-            관리자만 가능합니다. 비공개 상태로 돌아가면 기존 코멘트는 작성자와 관리자에게만
-            계속 보입니다.
+            관리자만 가능합니다.
           </p>
         </div>
 
@@ -346,9 +345,6 @@ export default function FeedbackCommentsSection({
           {isPubliclyVisible ? <MessageCircle className="size-3.5" /> : <Lock className="size-3.5" />}
           {isPubliclyVisible ? "전체 공개 코멘트" : "작성자 · 관리자 전용 열람"}
         </span>
-        <span className="text-xs text-muted-foreground">
-          답글은 1단계까지만 허용하는 구조로 퍼블리싱했습니다.
-        </span>
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -375,8 +371,8 @@ export default function FeedbackCommentsSection({
                   key={comment.id}
                   className="rounded-2xl border border-border/60 bg-white/70 p-5 shadow-sm dark:border-white/10 dark:bg-neutral-900/70"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted">
                       <Image
                         src={commentAvatarSrc}
                         alt={`${comment.authorName} avatar`}
@@ -516,7 +512,7 @@ export default function FeedbackCommentsSection({
                       )}
 
                       {replies.length > 0 && (
-                        <div className="mt-4 space-y-3 border-l border-border/60 pl-4 dark:border-white/10">
+                        <div className="mt-4 space-y-3 sm:border-l sm:border-border/60 sm:pl-4 dark:sm:border-white/10">
                           {replies.map((reply) => (
                             <div
                               key={reply.id}
@@ -716,15 +712,7 @@ export default function FeedbackCommentsSection({
                 코멘트 등록
               </Button>
             </div>
-          </form>
-
-          <div className="mt-5 rounded-2xl border border-dashed border-border/60 bg-background/80 p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-neutral-950/40">
-            <p className="font-semibold text-foreground">UI 메모</p>
-            <p className="mt-2 leading-6">
-              코멘트 등록, 1단계 답글, 본인 코멘트 수정, 본인 또는 관리자 삭제까지 실제 API에
-              연결되어 있습니다.
-            </p>
-          </div>
+          </form>          
         </aside>
       </div>
     </section>
