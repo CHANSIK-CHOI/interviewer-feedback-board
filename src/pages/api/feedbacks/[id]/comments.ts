@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAccessToken, getRequestAuthContext } from "@/lib/auth/request";
 import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { getSupabaseServerAdminClient, getSupabaseServerAnonClient } from "@/lib/supabase/server";
-import { getFeedbackComments, mapFeedbackComments } from "@/lib/feedback/comment";
+import { getFeedbackComments } from "@/lib/feedback/comment";
 import { getAvatarUrl, getUserName } from "@/lib/user/profile";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { FeedbackPublicBase } from "@/types/feedback";
@@ -77,10 +77,9 @@ export default async function handler(
       return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
     }
 
-    const accessToken = getRequestAccessToken(req).accessToken;
-    const supabaseServerUserClient = accessToken
-      ? (await getAuthContextByAccessToken(accessToken)).context?.supabaseServerUserClient
-      : null;
+    const { accessToken } = getRequestAccessToken(req);
+    const authContext = accessToken ? (await getAuthContextByAccessToken(accessToken)).context : null;
+    const supabaseServerUserClient = authContext?.supabaseServerUserClient ?? null;
     const supabaseServerAnonClient = getSupabaseServerAnonClient();
     const commentReader = supabaseServerUserClient ?? supabaseServerAnonClient;
 
@@ -92,7 +91,6 @@ export default async function handler(
       const comments = await getFeedbackComments({
         supabaseClient: commentReader,
         feedbackId,
-        feedbackAuthorId: feedbackRow.author_id,
       });
 
       return res.status(200).json({ data: comments, error: null });
@@ -115,6 +113,7 @@ export default async function handler(
   if (auth.error || !auth.context) {
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }
+  const { authData, isAdmin, supabaseServerUserClient, userId } = auth.context;
 
   const supabaseServerAdminClient = getSupabaseServerAdminClient();
   if (!supabaseServerAdminClient) {
@@ -154,7 +153,7 @@ export default async function handler(
       .json({ data: null, error: "현재는 승인된 공개 글에서만 코멘트를 작성할 수 있습니다." });
   }
 
-  if (!auth.context.isAdmin && feedbackRow.author_id !== auth.context.userId) {
+  if (!isAdmin && feedbackRow.author_id !== userId) {
     return res
       .status(403)
       .json({ data: null, error: "코멘트 작성 권한이 없습니다." });
@@ -198,18 +197,18 @@ export default async function handler(
     }
   }
 
-  const authorName = getUserName(auth.context.authData.user ?? undefined);
-  const authorAvatarUrl = getAvatarUrl(auth.context.authData.user ?? undefined);
+  const authorName = getUserName(authData.user ?? undefined);
+  const authorAvatarUrl = getAvatarUrl(authData.user ?? undefined);
 
   const {
     data: createdComment,
     error: createError,
-  }: { data: FeedbackCommentRow | null; error: SupabaseError } = await auth.context.supabaseServerUserClient
+  }: { data: FeedbackCommentRow | null; error: SupabaseError } = await supabaseServerUserClient
     .from("feedback_comments")
     .insert({
       feedback_id: feedbackId,
       parent_comment_id: parentCommentId,
-      author_id: auth.context.userId,
+      author_id: userId,
       author_name: authorName,
       author_avatar_url: authorAvatarUrl,
       body,
@@ -231,10 +230,7 @@ export default async function handler(
   }
 
   return res.status(201).json({
-    data: mapFeedbackComments({
-      rows: [createdComment],
-      feedbackAuthorId: feedbackRow.author_id,
-    })[0],
+    data: createdComment,
     error: null,
   });
 }

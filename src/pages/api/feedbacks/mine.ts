@@ -70,11 +70,12 @@ export default async function handler(
     if (auth.context.isAdmin) {
       return res.status(200).json({ data: null, error: null });
     }
+    const { supabaseServerUserClient, userId } = auth.context;
 
-    const { data, error: dataError } = await auth.context.supabaseServerUserClient
+    const { data, error: dataError } = await supabaseServerUserClient
       .from("feedbacks")
       .select()
-      .eq("author_id", auth.context.userId)
+      .eq("author_id", userId)
       .in("status", statuses);
 
     if (dataError || !data) {
@@ -87,7 +88,7 @@ export default async function handler(
     const commentCounts =
       feedbackIds.length === 0
         ? {}
-        : await auth.context.supabaseServerUserClient
+        : await supabaseServerUserClient
             .from("feedback_comments")
             .select("feedback_id")
             .in("feedback_id", feedbackIds)

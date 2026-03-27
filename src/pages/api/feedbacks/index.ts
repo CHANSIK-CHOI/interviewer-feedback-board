@@ -52,6 +52,7 @@ export default async function handler(
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
+    const { supabaseServerUserClient } = auth.context;
     const supabaseServerAdminClient = getSupabaseServerAdminClient();
     if (!supabaseServerAdminClient) {
       throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
@@ -63,7 +64,7 @@ export default async function handler(
     });
 
     const commentCounts: Record<string, number> = await getFeedbackCommentCounts({
-      supabaseClient: auth.context.supabaseServerUserClient,
+      supabaseClient: supabaseServerUserClient,
       feedbackIds: feedbackRows.map((item) => item.id),
     }).catch(() => ({}));
 

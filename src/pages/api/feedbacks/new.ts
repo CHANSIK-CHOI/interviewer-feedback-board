@@ -27,6 +27,7 @@ export default async function handler(
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
+    const { authData, supabaseServerUserClient, userId } = auth.context;
 
     const body: Partial<FeedbackFormValues> = req.body ?? {};
     const rating = Number(body.rating);
@@ -72,16 +73,16 @@ export default async function handler(
       return res.status(400).json({ data: null, error: FEEDBACK_FORM_ERROR_MESSAGES.company });
     }
 
-    const email = auth.context.authData.user?.email;
+    const email = authData.user?.email;
     if (!email) {
       return res.status(400).json({ data: null, error: FEEDBACK_FORM_ERROR_MESSAGES.email });
     }
 
     const { data, error }: { data: { id: FeedbackPublicBase["id"] } | null; error: SupabaseError } =
-      await auth.context.supabaseServerUserClient
+      await supabaseServerUserClient
         .from("feedbacks")
         .insert({
-          author_id: auth.context.userId,
+          author_id: userId,
           display_name,
           company_name,
           is_company_public,

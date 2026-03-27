@@ -1,52 +1,15 @@
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { FeedbackPublicBase } from "@/types/feedback";
-import type { FeedbackComment, FeedbackCommentRole, FeedbackCommentRow } from "@/types/feedback-comment";
+import type { FeedbackComment, FeedbackCommentRow } from "@/types/feedback-comment";
 import type { SupabaseError } from "@/types/common";
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-export const mapFeedbackCommentRole = ({
-  feedbackAuthorId,
-  commentAuthorId,
-}: {
-  feedbackAuthorId: FeedbackPublicBase["author_id"];
-  commentAuthorId: FeedbackCommentRow["author_id"];
-}): FeedbackCommentRole => {
-  return feedbackAuthorId === commentAuthorId ? "author" : "admin";
-};
-
-export const mapFeedbackComments = ({
-  rows,
-  feedbackAuthorId,
-}: {
-  rows: FeedbackCommentRow[];
-  feedbackAuthorId: FeedbackPublicBase["author_id"];
-}): FeedbackComment[] => {
-  return rows.map((row) => ({
-    id: row.id,
-    feedbackId: row.feedback_id,
-    parentCommentId: row.parent_comment_id,
-    authorId: row.author_id,
-    authorName: row.author_name,
-    authorAvatarUrl: row.author_avatar_url,
-    body: row.body,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    editedAt: row.edited_at,
-    role: mapFeedbackCommentRole({
-      feedbackAuthorId,
-      commentAuthorId: row.author_id,
-    }),
-  }));
-};
 
 export const getFeedbackComments = async ({
   supabaseClient,
   feedbackId,
-  feedbackAuthorId,
 }: {
   supabaseClient: SupabaseClient;
   feedbackId: FeedbackPublicBase["id"];
-  feedbackAuthorId: FeedbackPublicBase["author_id"];
 }): Promise<FeedbackComment[]> => {
   const { data, error }: { data: FeedbackCommentRow[] | null; error: SupabaseError } =
     await supabaseClient
@@ -61,10 +24,7 @@ export const getFeedbackComments = async ({
     throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getFeedbackComments"));
   }
 
-  return mapFeedbackComments({
-    rows: data ?? [],
-    feedbackAuthorId,
-  });
+  return data ?? [];
 };
 
 export const getFeedbackCommentCounts = async ({

@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAuthContext } from "@/lib/auth/request";
-import { mapFeedbackComments } from "@/lib/feedback/comment";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { SupabaseError } from "@/types/common";
@@ -60,6 +59,7 @@ export default async function handler(
   if (auth.error || !auth.context) {
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }
+  const { isAdmin, supabaseServerUserClient, userId } = auth.context;
 
   const supabaseServerAdminClient = getSupabaseServerAdminClient();
   if (!supabaseServerAdminClient) {
@@ -130,7 +130,7 @@ export default async function handler(
       });
     }
 
-    if (commentRow.author_id !== auth.context.userId) {
+    if (commentRow.author_id !== userId) {
       return res.status(403).json({ data: null, error: "본인 코멘트만 수정할 수 있습니다." });
     }
 
@@ -147,7 +147,7 @@ export default async function handler(
       data: updatedComment,
       error: updateError,
     }: { data: FeedbackCommentRow | null; error: SupabaseError } =
-      await auth.context.supabaseServerUserClient
+      await supabaseServerUserClient
       .from("feedback_comments")
       .update({ body })
       .eq("id", commentId)
@@ -168,16 +168,13 @@ export default async function handler(
     }
 
     return res.status(200).json({
-      data: mapFeedbackComments({
-        rows: [updatedComment],
-        feedbackAuthorId: feedbackRow.author_id,
-      })[0],
+      data: updatedComment,
       error: null,
     });
   }
 
-  if (!auth.context.isAdmin) {
-    if (commentRow.author_id !== auth.context.userId) {
+  if (!isAdmin) {
+    if (commentRow.author_id !== userId) {
       return res.status(403).json({ data: null, error: "본인 코멘트만 삭제할 수 있습니다." });
     }
 
@@ -193,7 +190,7 @@ export default async function handler(
     data: deletedComment,
     error: deleteError,
   }: { data: Pick<FeedbackCommentRow, "id"> | null; error: SupabaseError } =
-    await auth.context.supabaseServerUserClient
+    await supabaseServerUserClient
     .from("feedback_comments")
     .delete()
     .eq("id", commentId)

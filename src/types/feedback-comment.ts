@@ -13,19 +13,7 @@ export type FeedbackCommentRow = {
   edited_at: string | null;
 };
 
-export type FeedbackComment = {
-  id: string;
-  feedbackId: string;
-  parentCommentId: string | null;
-  authorId: string;
-  authorName: string;
-  authorAvatarUrl: string | null;
-  body: string;
-  createdAt: string;
-  updatedAt: string;
-  editedAt: string | null;
-  role: FeedbackCommentRole;
-};
+export type FeedbackComment = FeedbackCommentRow;
 
 export type FeedbackCommentCreatePayload = {
   body: string;

@@ -44,6 +44,7 @@ export default async function handler(
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
+    const { supabaseServerUserClient, userId } = auth.context;
 
     const body: Partial<FeedbackFormValues> = req.body ?? {};
     const rating = Number(body.rating);
@@ -95,7 +96,7 @@ export default async function handler(
     }: {
       data: UpdataCompleteReturnData | null;
       error: SupabaseError;
-    } = await auth.context.supabaseServerUserClient
+    } = await supabaseServerUserClient
       .from("feedbacks")
       .select("id, author_id, status, revision_count")
       .eq("id", feedbackId)
@@ -110,7 +111,7 @@ export default async function handler(
       return res.status(404).json({ data: null, error: FEEDBACK_NOT_FOUND_MESSAGE });
     }
 
-    if (feedbackRow.author_id !== auth.context.userId) {
+    if (feedbackRow.author_id !== userId) {
       return res.status(403).json({ data: null, error: FEEDBACK_FORBIDDEN_MESSAGE });
     }
 
@@ -118,7 +119,7 @@ export default async function handler(
     const nextRevisionCount: FeedbackPublicBase["revision_count"] = feedbackRow.revision_count + 1;
 
     const { data, error }: { data: { id: FeedbackPublicBase["id"] } | null; error: SupabaseError } =
-      await auth.context.supabaseServerUserClient
+      await supabaseServerUserClient
         .from("feedbacks")
         .update({
           display_name,
@@ -139,7 +140,7 @@ export default async function handler(
           review_queue_status: null,
         })
         .eq("id", feedbackId)
-        .eq("author_id", auth.context.userId)
+        .eq("author_id", userId)
         .select("id")
         .single();
 

@@ -34,9 +34,11 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       const authResult = await getAuthContextByAccessToken(accessToken);
       authContext = authResult.context;
     }
+    const supabaseServerUserClient = authContext?.supabaseServerUserClient ?? null;
+    const feedbackReader = supabaseServerUserClient ?? supabaseServerAnonClient;
 
     const detailFeedback = await getFeedbackDetailById(id, {
-      supabaseClient: authContext?.supabaseServerUserClient ?? supabaseServerAnonClient,
+      supabaseClient: feedbackReader,
     });
     if (!detailFeedback) {
       return { notFound: true };
@@ -49,7 +51,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     let isAuthor = false;
     let isAdmin = false;
     let mergedDetailFeedback: FeedbackPublicAndEmailRow = detailFeedback;
-    let initialComments: FeedbackComment[] = [];
+    let serverComments: FeedbackComment[] = [];
 
     if (authContext) {
       isAdmin = authContext.isAdmin;
@@ -66,15 +68,11 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       }
     }
 
-    if (detailFeedback.comments_unlocked_at) {
-      const commentReader = authContext?.supabaseServerUserClient ?? supabaseServerAnonClient;
-      if (commentReader) {
-        initialComments = await getFeedbackComments({
-          supabaseClient: commentReader,
-          feedbackId: id,
-          feedbackAuthorId: detailFeedback.author_id,
-        }).catch(() => []);
-      }
+    if (detailFeedback.comments_unlocked_at && feedbackReader) {
+      serverComments = await getFeedbackComments({
+        supabaseClient: feedbackReader,
+        feedbackId: id,
+      }).catch(() => []);
     }
 
     return {
@@ -83,7 +81,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
         reviewerName,
         isAuthor,
         isAdmin,
-        initialComments,
+        serverComments,
       },
     };
   } catch (error) {
@@ -97,7 +95,7 @@ export default function FeedbackDetailPage({
   reviewerName,
   isAuthor,
   isAdmin,
-  initialComments,
+  serverComments,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [currentDetailFeedback, setCurrentDetailFeedback] =
     useState<FeedbackPublicAndEmailRow>(detailFeedback);
@@ -292,7 +290,7 @@ export default function FeedbackDetailPage({
           feedback={currentDetailFeedback}
           isAuthor={isAuthor}
           isAdmin={isAdmin}
-          initialComments={initialComments}
+          serverComments={serverComments}
         />
       </div>
     </>
