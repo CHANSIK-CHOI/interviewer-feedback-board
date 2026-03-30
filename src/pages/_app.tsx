@@ -29,11 +29,14 @@ export default function App({ Component, pageProps }: AppProps) {
 
     // Next.js pages router는 새로고침 없이 이동하므로 page_view를 직접 보냅니다.
     const trackPageView = (url: string) => {
+      const gtag = window.gtag;
+      if (!gtag) return;
+
       const pageLocation = new URL(url, window.location.origin).toString();
       if (lastTrackedLocationRef.current === pageLocation) return;
 
       lastTrackedLocationRef.current = pageLocation;
-      window.gtag("event", "page_view", {
+      gtag("event", "page_view", {
         page_title: document.title,
         page_location: pageLocation,
         page_path: url,
