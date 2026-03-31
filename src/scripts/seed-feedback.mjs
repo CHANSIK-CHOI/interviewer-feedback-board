@@ -81,8 +81,7 @@ function buildRows({ items, authorId, reviewerId }) {
     const createdAt =
       item.created_at ?? new Date(baseTime - (items.length - index) * 1000).toISOString();
     const updatedAt = item.updated_at ?? createdAt;
-    const isPublic =
-      typeof item.is_public === "boolean" ? item.is_public : status === "approved";
+    const isPublic = typeof item.is_public === "boolean" ? item.is_public : status === "approved";
     const revisionCount =
       typeof item.revision_count === "number"
         ? item.revision_count
@@ -94,7 +93,7 @@ function buildRows({ items, authorId, reviewerId }) {
     const reviewedAt =
       item.reviewed_at ??
       (isReviewRequired ? new Date(baseTime - index * 500).toISOString() : null);
-    const reviewedBy = item.reviewed_by ?? (isReviewRequired ? reviewerId ?? null : null);
+    const reviewedBy = item.reviewed_by ?? (isReviewRequired ? (reviewerId ?? null) : null);
     const reviewQueueStatus =
       item.review_queue_status ??
       (status === "approved" || status === "rejected"
@@ -158,10 +157,7 @@ async function main() {
   const items = readFeedbacksFromFile(dataPath);
   const rows = buildRows({ items, authorId, reviewerId });
 
-  const { error: deleteError } = await supabase
-    .from("feedbacks")
-    .delete()
-    .not("id", "is", null);
+  const { error: deleteError } = await supabase.from("feedbacks").delete().not("id", "is", null);
   if (deleteError) throw deleteError;
 
   const { error } = await supabase.from("feedbacks").insert(rows);

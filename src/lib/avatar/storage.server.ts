@@ -55,7 +55,9 @@ export async function removeUserAvatar({
   bucket,
   paths = [],
 }: RemoveUserAvatarParams): Promise<void> {
-  const { error: removeAvatarError } = await supabaseServerAdminClient.storage.from(bucket).remove(paths);
+  const { error: removeAvatarError } = await supabaseServerAdminClient.storage
+    .from(bucket)
+    .remove(paths);
 
   if (removeAvatarError) {
     console.error(removeAvatarError);

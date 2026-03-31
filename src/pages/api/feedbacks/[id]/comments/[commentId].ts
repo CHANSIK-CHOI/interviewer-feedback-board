@@ -4,14 +4,8 @@ import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { SupabaseError } from "@/types/common";
 import type { FeedbackPublicBase } from "@/types/feedback";
-import type {
-  FeedbackCommentRow,
-  FeedbackCommentUpdatePayload,
-} from "@/types/feedback-comment";
-import type {
-  DeleteFeedbackCommentResponse,
-  FeedbackCommentResponse,
-} from "@/types/response";
+import type { FeedbackCommentRow, FeedbackCommentUpdatePayload } from "@/types/feedback-comment";
+import type { DeleteFeedbackCommentResponse, FeedbackCommentResponse } from "@/types/response";
 
 type FeedbackCommentTargetRow = {
   id: FeedbackPublicBase["id"];
@@ -71,11 +65,12 @@ export default async function handler(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await supabaseServerAdminClient
-    .from("feedbacks")
-    .select("id, author_id, status, is_public, comments_unlocked_at")
-    .eq("id", feedbackId)
-    .maybeSingle();
+  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } =
+    await supabaseServerAdminClient
+      .from("feedbacks")
+      .select("id, author_id, status, is_public, comments_unlocked_at")
+      .eq("id", feedbackId)
+      .maybeSingle();
 
   if (feedbackError) {
     const fallbackMessage =
@@ -146,8 +141,7 @@ export default async function handler(
     const {
       data: updatedComment,
       error: updateError,
-    }: { data: FeedbackCommentRow | null; error: SupabaseError } =
-      await supabaseServerUserClient
+    }: { data: FeedbackCommentRow | null; error: SupabaseError } = await supabaseServerUserClient
       .from("feedback_comments")
       .update({ body })
       .eq("id", commentId)
@@ -178,7 +172,11 @@ export default async function handler(
       return res.status(403).json({ data: null, error: "본인 코멘트만 삭제할 수 있습니다." });
     }
 
-    if (!feedbackRow.comments_unlocked_at || feedbackRow.status !== "approved" || !feedbackRow.is_public) {
+    if (
+      !feedbackRow.comments_unlocked_at ||
+      feedbackRow.status !== "approved" ||
+      !feedbackRow.is_public
+    ) {
       return res.status(403).json({
         data: null,
         error: "현재는 승인된 공개 글에서만 본인 코멘트를 삭제할 수 있습니다.",
@@ -191,11 +189,11 @@ export default async function handler(
     error: deleteError,
   }: { data: Pick<FeedbackCommentRow, "id"> | null; error: SupabaseError } =
     await supabaseServerUserClient
-    .from("feedback_comments")
-    .delete()
-    .eq("id", commentId)
-    .select("id")
-    .maybeSingle();
+      .from("feedback_comments")
+      .delete()
+      .eq("id", commentId)
+      .select("id")
+      .maybeSingle();
 
   if (deleteError || !deletedComment) {
     return res.status(500).json({

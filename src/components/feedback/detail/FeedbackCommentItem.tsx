@@ -133,7 +133,9 @@ export default function FeedbackCommentItem({
             alt={`${comment.author_name} avatar`}
             width={44}
             height={44}
-            unoptimized={checkSvgImageSrc(commentAvatarSrc) || checkAvatarApiSrcPrivate(commentAvatarSrc)}
+            unoptimized={
+              checkSvgImageSrc(commentAvatarSrc) || checkAvatarApiSrcPrivate(commentAvatarSrc)
+            }
             className="h-full w-full object-cover"
           />
         </div>
@@ -159,7 +161,9 @@ export default function FeedbackCommentItem({
                 </span>
               )}
             </span>
-            <span className="text-xs text-muted-foreground">{formatDateTime(comment.created_at)}</span>
+            <span className="text-xs text-muted-foreground">
+              {formatDateTime(comment.created_at)}
+            </span>
             {comment.edited_at && <span className="text-xs text-muted-foreground">수정됨</span>}
           </div>
 
@@ -172,7 +176,13 @@ export default function FeedbackCommentItem({
               <MessageCircle className="size-3.5" />
               답글 {replies.length}개
             </span>
-            <Button type="button" variant="ghost" size="sm" disabled={!canWrite} onClick={handleToggleReply}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={!canWrite}
+              onClick={handleToggleReply}
+            >
               <Reply className="size-3.5" />
               답글 달기
             </Button>
@@ -231,7 +241,9 @@ export default function FeedbackCommentItem({
                         <CornerDownRight className="size-3.5" />
                         답글
                       </span>
-                      <strong className="text-sm font-semibold text-foreground">{reply.author_name}</strong>
+                      <strong className="text-sm font-semibold text-foreground">
+                        {reply.author_name}
+                      </strong>
                       <span
                         className={cn(
                           "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",

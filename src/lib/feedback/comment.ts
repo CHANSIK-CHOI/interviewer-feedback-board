@@ -38,7 +38,10 @@ export const getFeedbackCommentCounts = async ({
     return {};
   }
 
-  const { data, error }: { data: Pick<FeedbackCommentRow, "feedback_id">[] | null; error: SupabaseError } =
+  const {
+    data,
+    error,
+  }: { data: Pick<FeedbackCommentRow, "feedback_id">[] | null; error: SupabaseError } =
     await supabaseClient
       .from("feedback_comments")
       .select("feedback_id")

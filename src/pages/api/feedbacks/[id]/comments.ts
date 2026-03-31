@@ -18,7 +18,10 @@ type FeedbackCommentTargetRow = {
   comments_unlocked_at: string | null;
 };
 
-type FeedbackCommentParentRow = Pick<FeedbackCommentRow, "id" | "feedback_id" | "parent_comment_id">;
+type FeedbackCommentParentRow = Pick<
+  FeedbackCommentRow,
+  "id" | "feedback_id" | "parent_comment_id"
+>;
 
 const FEEDBACK_COMMENT_COLUMNS =
   "id, feedback_id, parent_comment_id, author_id, author_name, author_avatar_url, body, created_at, updated_at, edited_at";
@@ -68,9 +71,10 @@ export default async function handler(
         .maybeSingle();
 
     if (feedbackError) {
-      return res
-        .status(500)
-        .json({ data: null, error: resolveSupabaseErrorMessage(feedbackError, "댓글 조회에 실패했습니다.") });
+      return res.status(500).json({
+        data: null,
+        error: resolveSupabaseErrorMessage(feedbackError, "댓글 조회에 실패했습니다."),
+      });
     }
 
     if (!feedbackRow) {
@@ -78,13 +82,17 @@ export default async function handler(
     }
 
     const { accessToken } = getRequestAccessToken(req);
-    const authContext = accessToken ? (await getAuthContextByAccessToken(accessToken)).context : null;
+    const authContext = accessToken
+      ? (await getAuthContextByAccessToken(accessToken)).context
+      : null;
     const supabaseServerUserClient = authContext?.supabaseServerUserClient ?? null;
     const supabaseServerAnonClient = getSupabaseServerAnonClient();
     const commentReader = supabaseServerUserClient ?? supabaseServerAnonClient;
 
     if (!commentReader) {
-      return res.status(500).json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
+      return res
+        .status(500)
+        .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
     }
 
     try {
@@ -125,16 +133,18 @@ export default async function handler(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await supabaseServerAdminClient
-    .from("feedbacks")
-    .select("id, author_id, status, is_public, comments_unlocked_at")
-    .eq("id", feedbackId)
-    .maybeSingle();
+  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } =
+    await supabaseServerAdminClient
+      .from("feedbacks")
+      .select("id, author_id, status, is_public, comments_unlocked_at")
+      .eq("id", feedbackId)
+      .maybeSingle();
 
   if (feedbackError) {
-    return res
-      .status(500)
-      .json({ data: null, error: resolveSupabaseErrorMessage(feedbackError, COMMENT_CREATE_ERROR_MESSAGE) });
+    return res.status(500).json({
+      data: null,
+      error: resolveSupabaseErrorMessage(feedbackError, COMMENT_CREATE_ERROR_MESSAGE),
+    });
   }
 
   if (!feedbackRow) {
@@ -154,9 +164,7 @@ export default async function handler(
   }
 
   if (!isAdmin && feedbackRow.author_id !== userId) {
-    return res
-      .status(403)
-      .json({ data: null, error: "코멘트 작성 권한이 없습니다." });
+    return res.status(403).json({ data: null, error: "코멘트 작성 권한이 없습니다." });
   }
 
   const { body, parentCommentId } = normalizeCommentPayload(req.body ?? {});
@@ -172,16 +180,18 @@ export default async function handler(
     const {
       data: parentRow,
       error: parentError,
-    }: { data: FeedbackCommentParentRow | null; error: SupabaseError } = await supabaseServerAdminClient
-      .from("feedback_comments")
-      .select("id, feedback_id, parent_comment_id")
-      .eq("id", parentCommentId)
-      .maybeSingle();
+    }: { data: FeedbackCommentParentRow | null; error: SupabaseError } =
+      await supabaseServerAdminClient
+        .from("feedback_comments")
+        .select("id, feedback_id, parent_comment_id")
+        .eq("id", parentCommentId)
+        .maybeSingle();
 
     if (parentError) {
-      return res
-        .status(500)
-        .json({ data: null, error: resolveSupabaseErrorMessage(parentError, COMMENT_CREATE_ERROR_MESSAGE) });
+      return res.status(500).json({
+        data: null,
+        error: resolveSupabaseErrorMessage(parentError, COMMENT_CREATE_ERROR_MESSAGE),
+      });
     }
 
     if (!parentRow) {
@@ -189,7 +199,9 @@ export default async function handler(
     }
 
     if (parentRow.feedback_id !== feedbackId) {
-      return res.status(400).json({ data: null, error: "같은 피드백의 코멘트에만 답글을 달 수 있습니다." });
+      return res
+        .status(400)
+        .json({ data: null, error: "같은 피드백의 코멘트에만 답글을 달 수 있습니다." });
     }
 
     if (parentRow.parent_comment_id) {

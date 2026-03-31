@@ -43,11 +43,11 @@ export const getAuthContextByAccessToken = async (
     error: roleError,
   }: { data: { role: UserRole["role"] } | null; error: SupabaseError } =
     await supabaseServerUserClient
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", authData.user.id)
-    .limit(1)
-    .maybeSingle();
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", authData.user.id)
+      .limit(1)
+      .maybeSingle();
 
   if (roleError) {
     return {
