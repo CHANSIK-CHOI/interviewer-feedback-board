@@ -27,7 +27,6 @@ export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
     if (!isAnalyticsReady) return;
 
-    
     const trackPageView = (url: string) => {
       const gtag = window.gtag;
       if (!gtag) return;

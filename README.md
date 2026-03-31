@@ -205,12 +205,12 @@ src/
 
 ### Comments
 
-| Method | Endpoint                                      | 설명                                      | 권한                    |
-| ------ | --------------------------------------------- | ----------------------------------------- | ----------------------- |
-| GET    | `/api/feedbacks/:id/comments`                 | 코멘트 / 답글 목록 조회                   | 공개 또는 작성자 / admin |
-| POST   | `/api/feedbacks/:id/comments`                 | 코멘트 또는 1단계 답글 작성               | 작성자 또는 admin       |
-| PATCH  | `/api/feedbacks/:id/comments/:commentId`      | 본인 코멘트 수정                          | 본인 작성자             |
-| DELETE | `/api/feedbacks/:id/comments/:commentId`      | 본인 코멘트 삭제 또는 관리자 삭제         | 본인 작성자 또는 admin  |
+| Method | Endpoint                                 | 설명                              | 권한                     |
+| ------ | ---------------------------------------- | --------------------------------- | ------------------------ |
+| GET    | `/api/feedbacks/:id/comments`            | 코멘트 / 답글 목록 조회           | 공개 또는 작성자 / admin |
+| POST   | `/api/feedbacks/:id/comments`            | 코멘트 또는 1단계 답글 작성       | 작성자 또는 admin        |
+| PATCH  | `/api/feedbacks/:id/comments/:commentId` | 본인 코멘트 수정                  | 본인 작성자              |
+| DELETE | `/api/feedbacks/:id/comments/:commentId` | 본인 코멘트 삭제 또는 관리자 삭제 | 본인 작성자 또는 admin   |
 
 ### Auth / User / Avatar
 
@@ -225,8 +225,8 @@ src/
 
 ### Infra
 
-| Method | Endpoint               | 설명                        | 권한                        |
-| ------ | ---------------------- | --------------------------- | --------------------------- |
+| Method | Endpoint               | 설명                        | 권한                          |
+| ------ | ---------------------- | --------------------------- | ----------------------------- |
 | POST   | `/api/revalidate-list` | `/feedback` ISR 캐시 무효화 | secret header 또는 query 필요 |
 
 - 보호 API는 `Authorization: Bearer <accessToken>` 기반으로 동작합니다.

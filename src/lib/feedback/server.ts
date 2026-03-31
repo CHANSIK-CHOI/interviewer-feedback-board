@@ -16,9 +16,9 @@ type FeedbackReadParams = {
   supabaseClient?: SupabaseClient | null;
 };
 
-export const getApprovedFeedbacks = async ({
-  supabaseClient,
-}: FeedbackReadParams = {}): Promise<ApprovedFeedback[]> => {
+export const getApprovedFeedbacks = async ({ supabaseClient }: FeedbackReadParams = {}): Promise<
+  ApprovedFeedback[]
+> => {
   const supabaseServerAnonClient = getSupabaseServerAnonClient();
   const feedbackReader = supabaseClient ?? supabaseServerAnonClient;
   if (!feedbackReader) {

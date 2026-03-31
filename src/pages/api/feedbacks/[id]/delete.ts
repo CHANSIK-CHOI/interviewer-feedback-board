@@ -72,11 +72,11 @@ export default async function handler(
     error: deleteError,
   }: { data: { id: FeedbackPublicBase["id"] } | null; error: SupabaseError } =
     await supabaseServerAdminClient
-    .from("feedbacks")
-    .delete()
-    .eq("id", feedbackId)
-    .select("id")
-    .maybeSingle();
+      .from("feedbacks")
+      .delete()
+      .eq("id", feedbackId)
+      .select("id")
+      .maybeSingle();
 
   if (deleteError) {
     console.error("Delete feedback failed", deleteError);

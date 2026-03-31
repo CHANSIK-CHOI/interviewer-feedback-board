@@ -108,9 +108,7 @@ export default function FeedbackCommentForm({
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
           <p className="text-xs text-muted-foreground">{bodyValue.trim().length}/1000자</p>
-          {errors.body && (
-            <p className="text-xs text-destructive">{errors.body.message}</p>
-          )}
+          {errors.body && <p className="text-xs text-destructive">{errors.body.message}</p>}
         </div>
         <div className="flex gap-2">
           {onCancel && (

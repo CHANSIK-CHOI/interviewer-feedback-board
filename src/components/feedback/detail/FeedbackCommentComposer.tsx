@@ -20,7 +20,9 @@ export default function FeedbackCommentComposer({
 }: FeedbackCommentComposerProps) {
   return (
     <aside className="rounded-2xl border border-border/60 bg-white/70 p-5 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Composer</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Composer
+      </p>
       <h4 className="mt-2 text-lg font-semibold text-foreground">{title}</h4>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
 

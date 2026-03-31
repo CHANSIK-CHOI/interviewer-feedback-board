@@ -38,9 +38,12 @@ export default function Page() {
     if (isSubmitting) return;
     if (!supabaseBrowserClient) return;
 
-    const { error } = await supabaseBrowserClient.auth.resetPasswordForEmail(values.forgot_email.trim(), {
-      redirectTo: `${window.location.origin}/login/reset`,
-    });
+    const { error } = await supabaseBrowserClient.auth.resetPasswordForEmail(
+      values.forgot_email.trim(),
+      {
+        redirectTo: `${window.location.origin}/login/reset`,
+      }
+    );
 
     if (error) {
       openAlert({

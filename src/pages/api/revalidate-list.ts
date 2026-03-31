@@ -3,7 +3,10 @@ import type { ApiResponse } from "@/types/common";
 
 type RevalidateResponse = ApiResponse<{ revalidated: true }>;
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<RevalidateResponse>) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<RevalidateResponse>
+) {
   const headerSecret = req.headers["x-revalidate-secret"];
   const querySecret = req.query.secret;
   const secretFromHeader = Array.isArray(headerSecret) ? headerSecret[0] : headerSecret;

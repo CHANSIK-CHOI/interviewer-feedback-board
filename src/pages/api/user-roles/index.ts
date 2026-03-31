@@ -34,9 +34,8 @@ export default async function handler(
   }
 
   try {
-    const { data: authData, error: authError } = await supabaseServerAdminClient.auth.getUser(
-      accessToken
-    );
+    const { data: authData, error: authError } =
+      await supabaseServerAdminClient.auth.getUser(accessToken);
     if (authError || !authData.user) {
       return res.status(401).json({ data: null, error: authError?.message ?? "Unauthorized" });
     }
@@ -71,11 +70,11 @@ export default async function handler(
       error: existingError,
     }: { data: { role: UserRole["role"] } | null; error: SupabaseError } =
       await supabaseServerAdminClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", authData.user.id)
-      .limit(1)
-      .maybeSingle();
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", authData.user.id)
+        .limit(1)
+        .maybeSingle();
 
     if (existingError) {
       return res

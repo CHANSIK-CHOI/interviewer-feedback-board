@@ -7,7 +7,9 @@ export default function MyPageHeaderSection() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold text-foreground">마이페이지</h2>
-          <p className="mt-1 text-sm text-muted-foreground">회원 정보를 확인하고 수정할 수 있습니다.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            회원 정보를 확인하고 수정할 수 있습니다.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">

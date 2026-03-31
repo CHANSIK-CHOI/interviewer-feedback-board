@@ -57,13 +57,7 @@ export const useMyProfileController = () => {
       company_name: sessionCompanyName,
       is_company_public: sessionIsCompanyPublic,
     });
-  }, [
-    reset,
-    sessionAvatar,
-    sessionUserName,
-    sessionCompanyName,
-    sessionIsCompanyPublic,
-  ]);
+  }, [reset, sessionAvatar, sessionUserName, sessionCompanyName, sessionIsCompanyPublic]);
 
   useEffect(() => {
     return () => {

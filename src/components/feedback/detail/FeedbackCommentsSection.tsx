@@ -36,8 +36,12 @@ export default function FeedbackCommentsSection({
 
   const isCommentsUnlocked = Boolean(feedback.comments_unlocked_at);
   const canWrite =
-    isCommentsUnlocked && feedback.status === "approved" && feedback.is_public && (isAuthor || isAdmin);
-  const isPubliclyVisible = isCommentsUnlocked && feedback.status === "approved" && feedback.is_public;
+    isCommentsUnlocked &&
+    feedback.status === "approved" &&
+    feedback.is_public &&
+    (isAuthor || isAdmin);
+  const isPubliclyVisible =
+    isCommentsUnlocked && feedback.status === "approved" && feedback.is_public;
   const topLevelComments = commentItems.filter((comment) => comment.parent_comment_id === null);
   const replyCount = commentItems.length - topLevelComments.length;
   const topLevelCount = topLevelComments.length;
@@ -150,8 +154,8 @@ export default function FeedbackCommentsSection({
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-foreground">코멘트</h3>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            승인된 공개 피드백에서는 모두가 코멘트를 읽을 수 있고, 작성은 게시물 작성자와
-            관리자만 가능합니다.
+            승인된 공개 피드백에서는 모두가 코멘트를 읽을 수 있고, 작성은 게시물 작성자와 관리자만
+            가능합니다.
           </p>
         </div>
 
@@ -192,7 +196,11 @@ export default function FeedbackCommentsSection({
               : "bg-slate-500/12 text-slate-700 dark:text-slate-300"
           )}
         >
-          {isPubliclyVisible ? <MessageCircle className="size-3.5" /> : <Lock className="size-3.5" />}
+          {isPubliclyVisible ? (
+            <MessageCircle className="size-3.5" />
+          ) : (
+            <Lock className="size-3.5" />
+          )}
           {isPubliclyVisible ? "전체 공개 코멘트" : "작성자 · 관리자 전용 열람"}
         </span>
       </div>
@@ -207,7 +215,8 @@ export default function FeedbackCommentsSection({
 
           {isCommentsUnlocked && topLevelComments.length === 0 && (
             <div className="rounded-2xl border border-dashed border-border/60 bg-white/70 p-6 text-sm text-muted-foreground shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
-              아직 등록된 코멘트가 없습니다. 승인 상태일 때 작성자나 관리자가 첫 코멘트를 남길 수 있습니다.
+              아직 등록된 코멘트가 없습니다. 승인 상태일 때 작성자나 관리자가 첫 코멘트를 남길 수
+              있습니다.
             </div>
           )}
 
