@@ -27,7 +27,6 @@ export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
     if (!isAnalyticsReady) return;
 
-    // Next.js pages router는 새로고침 없이 이동하므로 page_view를 직접 보냅니다.
     const trackPageView = (url: string) => {
       const gtag = window.gtag;
       if (!gtag) return;
