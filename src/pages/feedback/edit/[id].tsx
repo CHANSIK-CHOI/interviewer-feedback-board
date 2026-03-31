@@ -7,7 +7,7 @@ import { useAlert } from "@/components/ui";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { getFeedbackDetailById } from "@/lib/feedback/server";
 import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
-import { getFreshAccessToken } from "@/lib/auth/client";
+import { resolveAccessToken } from "@/lib/auth/client";
 import {
   AVATAR_PLACEHOLDER_SRC,
   FEEDBACK_FORM_ERROR_MESSAGES,
@@ -127,14 +127,10 @@ export default function FeedbackEditPage({
     }
 
     try {
-      const accessToken = await getFreshAccessToken({
+      const accessToken = await resolveAccessToken({
         supabaseBrowserClient,
         fallbackAccessToken: session.access_token,
       });
-
-      if (!accessToken) {
-        throw new Error("로그인 상태를 확인해주세요.");
-      }
 
       const response = await fetch(`/api/feedbacks/${feedbackId}`, {
         method: "PATCH",

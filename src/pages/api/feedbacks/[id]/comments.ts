@@ -2,31 +2,23 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getRequestAccessToken, getRequestAuthContext } from "@/lib/auth/request";
 import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { getSupabaseServerAdminClient, getSupabaseServerAnonClient } from "@/lib/supabase/server";
-import { getFeedbackComments } from "@/lib/feedback/comment";
+import {
+  FEEDBACK_COMMENT_COLUMNS,
+  getFeedbackComments,
+  getFeedbackCommentParent,
+  getFeedbackCommentTarget,
+  type FeedbackCommentParentRow,
+  type FeedbackCommentTargetRow,
+  validateCommentBody,
+} from "@/lib/feedback/comment";
 import { getAvatarUrl, getUserName } from "@/lib/user/profile";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
-import type { FeedbackPublicBase } from "@/types/feedback";
 import type { FeedbackCommentCreatePayload, FeedbackCommentRow } from "@/types/feedback-comment";
 import type { FeedbackCommentListResponse, FeedbackCommentResponse } from "@/types/response";
 import type { SupabaseError } from "@/types/common";
 
-type FeedbackCommentTargetRow = {
-  id: FeedbackPublicBase["id"];
-  author_id: FeedbackPublicBase["author_id"];
-  status: "pending" | "approved" | "rejected" | "revised_pending";
-  is_public: boolean;
-  comments_unlocked_at: string | null;
-};
-
-type FeedbackCommentParentRow = Pick<
-  FeedbackCommentRow,
-  "id" | "feedback_id" | "parent_comment_id"
->;
-
-const FEEDBACK_COMMENT_COLUMNS =
-  "id, feedback_id, parent_comment_id, author_id, author_name, author_avatar_url, body, created_at, updated_at, edited_at";
-
 const COMMENT_CREATE_ERROR_MESSAGE = "코멘트 등록에 실패했습니다.";
+const COMMENT_READ_ERROR_MESSAGE = "댓글 조회에 실패했습니다.";
 
 const normalizeCommentPayload = (body: Partial<FeedbackCommentCreatePayload>) => {
   const nextBody = typeof body.body === "string" ? body.body.trim() : "";
@@ -41,78 +33,128 @@ const normalizeCommentPayload = (body: Partial<FeedbackCommentCreatePayload>) =>
   };
 };
 
-export default async function handler(
+const getCommentReaderFromRequest = async (req: NextApiRequest) => {
+  const { accessToken } = getRequestAccessToken(req);
+  const authContext = accessToken ? (await getAuthContextByAccessToken(accessToken)).context : null;
+  const supabaseServerUserClient = authContext?.supabaseServerUserClient ?? null;
+  const supabaseServerAnonClient = getSupabaseServerAnonClient();
+
+  return supabaseServerUserClient ?? supabaseServerAnonClient;
+};
+
+const validateReplyTarget = async ({
+  supabaseServerAdminClient,
+  feedbackId,
+  parentCommentId,
+}: {
+  supabaseServerAdminClient: NonNullable<ReturnType<typeof getSupabaseServerAdminClient>>;
+  feedbackId: string;
+  parentCommentId: string;
+}) => {
+  const {
+    data: parentRow,
+    error: parentError,
+  }: { data: FeedbackCommentParentRow | null; error: SupabaseError } = await getFeedbackCommentParent(
+    {
+      supabaseClient: supabaseServerAdminClient,
+      parentCommentId,
+    }
+  );
+
+  if (parentError) {
+    return {
+      status: 500,
+      error: resolveSupabaseErrorMessage(parentError, COMMENT_CREATE_ERROR_MESSAGE),
+    };
+  }
+
+  if (!parentRow) {
+    return { status: 404, error: "답글 대상 코멘트를 찾을 수 없습니다." };
+  }
+
+  if (parentRow.feedback_id !== feedbackId) {
+    return {
+      status: 400,
+      error: "같은 피드백의 코멘트에만 답글을 달 수 있습니다.",
+    };
+  }
+
+  if (parentRow.parent_comment_id) {
+    return { status: 400, error: "답글에는 다시 답글을 달 수 없습니다." };
+  }
+
+  return null;
+};
+
+const revalidateFeedbackList = async (
+  res: NextApiResponse<FeedbackCommentListResponse | FeedbackCommentResponse>,
+  action: "create" | "update" | "delete"
+) => {
+  try {
+    await res.revalidate("/feedback");
+  } catch (error) {
+    console.warn(`Failed to revalidate /feedback after comment ${action}`, error);
+  }
+};
+
+async function handleGetComments(
   req: NextApiRequest,
-  res: NextApiResponse<FeedbackCommentListResponse | FeedbackCommentResponse>
+  res: NextApiResponse<FeedbackCommentListResponse | FeedbackCommentResponse>,
+  feedbackId: string
 ) {
-  res.setHeader("Cache-Control", "no-store");
-
-  const feedbackId = req.query.id;
-  if (typeof feedbackId !== "string") {
-    return res.status(400).json({ data: null, error: "Invalid feedback id" });
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
+    return res
+      .status(500)
+      .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
   }
 
-  if (req.method === "GET") {
-    const supabaseServerAdminClient = getSupabaseServerAdminClient();
-    if (!supabaseServerAdminClient) {
-      return res
-        .status(500)
-        .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
+  const {
+    data: feedbackRow,
+    error: feedbackError,
+  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await getFeedbackCommentTarget(
+    {
+      supabaseClient: supabaseServerAdminClient,
+      feedbackId,
     }
+  );
 
-    const {
-      data: feedbackRow,
-      error: feedbackError,
-    }: { data: Pick<FeedbackCommentTargetRow, "id" | "author_id"> | null; error: SupabaseError } =
-      await supabaseServerAdminClient
-        .from("feedbacks")
-        .select("id, author_id")
-        .eq("id", feedbackId)
-        .maybeSingle();
-
-    if (feedbackError) {
-      return res.status(500).json({
-        data: null,
-        error: resolveSupabaseErrorMessage(feedbackError, "댓글 조회에 실패했습니다."),
-      });
-    }
-
-    if (!feedbackRow) {
-      return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
-    }
-
-    const { accessToken } = getRequestAccessToken(req);
-    const authContext = accessToken
-      ? (await getAuthContextByAccessToken(accessToken)).context
-      : null;
-    const supabaseServerUserClient = authContext?.supabaseServerUserClient ?? null;
-    const supabaseServerAnonClient = getSupabaseServerAnonClient();
-    const commentReader = supabaseServerUserClient ?? supabaseServerAnonClient;
-
-    if (!commentReader) {
-      return res
-        .status(500)
-        .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
-    }
-
-    try {
-      const comments = await getFeedbackComments({
-        supabaseClient: commentReader,
-        feedbackId,
-      });
-
-      return res.status(200).json({ data: comments, error: null });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "댓글 조회에 실패했습니다.";
-      return res.status(500).json({ data: null, error: message });
-    }
+  if (feedbackError) {
+    return res.status(500).json({
+      data: null,
+      error: resolveSupabaseErrorMessage(feedbackError, COMMENT_READ_ERROR_MESSAGE),
+    });
   }
 
-  if (req.method !== "POST") {
-    res.setHeader("Allow", ["GET", "POST"]);
-    return res.status(405).json({ data: null, error: "Method Not Allowed" });
+  if (!feedbackRow) {
+    return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
   }
 
+  const commentReader = await getCommentReaderFromRequest(req);
+  if (!commentReader) {
+    return res
+      .status(500)
+      .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
+  }
+
+  try {
+    const comments = await getFeedbackComments({
+      supabaseClient: commentReader,
+      feedbackId,
+    });
+
+    return res.status(200).json({ data: comments, error: null });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : COMMENT_READ_ERROR_MESSAGE;
+    return res.status(500).json({ data: null, error: message });
+  }
+}
+
+async function handleCreateComment(
+  req: NextApiRequest,
+  res: NextApiResponse<FeedbackCommentListResponse | FeedbackCommentResponse>,
+  feedbackId: string
+) {
   const auth = await getRequestAuthContext(req, {
     missingAccessTokenError: "로그인이 필요합니다.",
     unauthorizedError: "로그인 상태를 확인해주세요.",
@@ -133,12 +175,12 @@ export default async function handler(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } =
-    await supabaseServerAdminClient
-      .from("feedbacks")
-      .select("id, author_id, status, is_public, comments_unlocked_at")
-      .eq("id", feedbackId)
-      .maybeSingle();
+  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await getFeedbackCommentTarget(
+    {
+      supabaseClient: supabaseServerAdminClient,
+      feedbackId,
+    }
+  );
 
   if (feedbackError) {
     return res.status(500).json({
@@ -168,44 +210,22 @@ export default async function handler(
   }
 
   const { body, parentCommentId } = normalizeCommentPayload(req.body ?? {});
-  if (!body) {
-    return res.status(400).json({ data: null, error: "코멘트 내용을 입력해주세요." });
-  }
-
-  if (body.length > 1000) {
-    return res.status(400).json({ data: null, error: "코멘트는 1000자 이하로 작성해주세요." });
+  const bodyValidationError = validateCommentBody(body);
+  if (bodyValidationError) {
+    return res.status(400).json({ data: null, error: bodyValidationError });
   }
 
   if (parentCommentId) {
-    const {
-      data: parentRow,
-      error: parentError,
-    }: { data: FeedbackCommentParentRow | null; error: SupabaseError } =
-      await supabaseServerAdminClient
-        .from("feedback_comments")
-        .select("id, feedback_id, parent_comment_id")
-        .eq("id", parentCommentId)
-        .maybeSingle();
+    const replyTargetValidationError = await validateReplyTarget({
+      supabaseServerAdminClient,
+      feedbackId,
+      parentCommentId,
+    });
 
-    if (parentError) {
-      return res.status(500).json({
-        data: null,
-        error: resolveSupabaseErrorMessage(parentError, COMMENT_CREATE_ERROR_MESSAGE),
-      });
-    }
-
-    if (!parentRow) {
-      return res.status(404).json({ data: null, error: "답글 대상 코멘트를 찾을 수 없습니다." });
-    }
-
-    if (parentRow.feedback_id !== feedbackId) {
+    if (replyTargetValidationError) {
       return res
-        .status(400)
-        .json({ data: null, error: "같은 피드백의 코멘트에만 답글을 달 수 있습니다." });
-    }
-
-    if (parentRow.parent_comment_id) {
-      return res.status(400).json({ data: null, error: "답글에는 다시 답글을 달 수 없습니다." });
+        .status(replyTargetValidationError.status)
+        .json({ data: null, error: replyTargetValidationError.error });
     }
   }
 
@@ -235,14 +255,33 @@ export default async function handler(
     });
   }
 
-  try {
-    await res.revalidate("/feedback");
-  } catch (error) {
-    console.warn("Failed to revalidate /feedback after comment create", error);
-  }
+  await revalidateFeedbackList(res, "create");
 
   return res.status(201).json({
     data: createdComment,
     error: null,
   });
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<FeedbackCommentListResponse | FeedbackCommentResponse>
+) {
+  res.setHeader("Cache-Control", "no-store");
+
+  const feedbackId = req.query.id;
+  if (typeof feedbackId !== "string") {
+    return res.status(400).json({ data: null, error: "Invalid feedback id" });
+  }
+
+  if (req.method === "GET") {
+    return handleGetComments(req, res, feedbackId);
+  }
+
+  if (req.method === "POST") {
+    return handleCreateComment(req, res, feedbackId);
+  }
+
+  res.setHeader("Allow", ["GET", "POST"]);
+  return res.status(405).json({ data: null, error: "Method Not Allowed" });
 }

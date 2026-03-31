@@ -16,7 +16,7 @@ import type { AuthContext } from "@/lib/auth/server";
 import { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import { DeleteFeedbackButton, PageMeta, ReviewControls } from "@/components/common";
 import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
-import FeedbackCommentsSection from "@/components/feedback/detail/FeedbackCommentsSection";
+import FeedbackComments from "@/components/feedback/detail/FeedbackComments";
 import type { FeedbackComment } from "@/types/feedback-comment";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
@@ -286,7 +286,7 @@ export default function FeedbackDetailPage({
           </div>
         </section>
 
-        <FeedbackCommentsSection
+        <FeedbackComments
           feedback={currentDetailFeedback}
           isAuthor={isAuthor}
           isAdmin={isAdmin}

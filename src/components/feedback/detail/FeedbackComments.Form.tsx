@@ -5,17 +5,17 @@ import { inputBaseStyle } from "@/constants";
 import { cn } from "@/lib/shared/cn";
 import { SendHorizontal, X } from "lucide-react";
 
-type FeedbackCommentFormValues = {
-  body: string;
+type FeedbackCommentsFormValues = {
+  commentText: string;
 };
 
-type FeedbackCommentFormProps = {
+type FeedbackCommentsFormProps = {
   formId: string;
   label: string;
   placeholder: string;
   submitLabel: string;
   defaultValue?: string;
-  onSubmit: (body: string) => Promise<void>;
+  onSubmitText: (commentText: string) => Promise<void>;
   onSuccess?: () => void;
   onCancel?: () => void;
   cancelLabel?: string;
@@ -24,20 +24,20 @@ type FeedbackCommentFormProps = {
   minHeightClassName?: string;
 };
 
-export default function FeedbackCommentForm({
+export default function FeedbackCommentsForm({
   formId,
   label,
   placeholder,
   submitLabel,
   defaultValue = "",
-  onSubmit,
+  onSubmitText,
   onSuccess,
   onCancel,
   cancelLabel = "취소",
   disabled = false,
   className,
   minHeightClassName = "min-h-[120px]",
-}: FeedbackCommentFormProps) {
+}: FeedbackCommentsFormProps) {
   const { openAlert } = useAlert();
   const {
     register,
@@ -45,30 +45,30 @@ export default function FeedbackCommentForm({
     reset,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<FeedbackCommentFormValues>({
+  } = useForm<FeedbackCommentsFormValues>({
     mode: "onSubmit",
     shouldUnregister: true,
     defaultValues: {
-      body: defaultValue,
+      commentText: defaultValue,
     },
   });
 
-  const bodyValue = watch("body") ?? "";
+  const commentTextValue = watch("commentText") ?? "";
 
   useEffect(() => {
-    reset({ body: defaultValue });
+    reset({ commentText: defaultValue });
   }, [defaultValue, reset]);
 
   useEffect(() => {
     if (disabled) {
-      reset({ body: defaultValue });
+      reset({ commentText: defaultValue });
     }
   }, [defaultValue, disabled, reset]);
 
-  const handleValidSubmit = async ({ body }: FeedbackCommentFormValues) => {
+  const handleValidSubmit = async ({ commentText }: FeedbackCommentsFormValues) => {
     try {
-      await onSubmit(body.trim());
-      reset({ body: defaultValue });
+      await onSubmitText(commentText.trim());
+      reset({ commentText: defaultValue });
       onSuccess?.();
     } catch (error) {
       openAlert({
@@ -79,7 +79,7 @@ export default function FeedbackCommentForm({
 
   const handleCancel = () => {
     if (isSubmitting) return;
-    reset({ body: defaultValue });
+    reset({ commentText: defaultValue });
     onCancel?.();
   };
 
@@ -97,7 +97,7 @@ export default function FeedbackCommentForm({
         disabled={disabled || isSubmitting}
         className={cn(inputBaseStyle, "mt-3 resize-none", minHeightClassName)}
         maxLength={1000}
-        {...register("body", {
+        {...register("commentText", {
           validate: {
             required: (value) => !!value.trim() || "코멘트 내용을 입력해주세요.",
             maxLength: (value) =>
@@ -107,8 +107,10 @@ export default function FeedbackCommentForm({
       />
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">{bodyValue.trim().length}/1000자</p>
-          {errors.body && <p className="text-xs text-destructive">{errors.body.message}</p>}
+          <p className="text-xs text-muted-foreground">{commentTextValue.trim().length}/1000자</p>
+          {errors.commentText && (
+            <p className="text-xs text-destructive">{errors.commentText.message}</p>
+          )}
         </div>
         <div className="flex gap-2">
           {onCancel && (

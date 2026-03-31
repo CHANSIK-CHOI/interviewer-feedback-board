@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useSession } from "@/components/session";
-import { getFreshAccessToken } from "@/lib/auth/client";
+import { resolveAccessToken } from "@/lib/auth/client";
 import {
   ReviewFeedbackAction,
   ReviewFeedbackParams,
@@ -39,17 +39,10 @@ export default function ReviewControls({
     setIsSubmitting(true);
 
     try {
-      const accessToken = await getFreshAccessToken({
+      const accessToken = await resolveAccessToken({
         supabaseBrowserClient,
         fallbackAccessToken: session?.access_token ?? null,
       });
-
-      if (!accessToken) {
-        openAlert({
-          description: "로그인 상태를 확인해주세요.",
-        });
-        return;
-      }
 
       const result: ReviewFeedbackResultWithReviewerName = await reviewFeedback({
         feedbackId: id,

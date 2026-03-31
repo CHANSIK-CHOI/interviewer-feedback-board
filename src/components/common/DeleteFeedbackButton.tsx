@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "@/components/session";
-import { getFreshAccessToken } from "@/lib/auth/client";
+import { resolveAccessToken } from "@/lib/auth/client";
 import { replaceSafely } from "@/lib/navigation/client";
 import { DeleteFeedbackResult, deleteFeedback } from "@/lib/feedback/client";
 import { Button, useAlert, useConfirm } from "../ui";
@@ -42,17 +42,10 @@ export default function DeleteFeedbackButton({
     setIsSubmitting(true);
 
     try {
-      const accessToken = await getFreshAccessToken({
+      const accessToken = await resolveAccessToken({
         supabaseBrowserClient,
         fallbackAccessToken: session?.access_token ?? null,
       });
-
-      if (!accessToken) {
-        openAlert({
-          description: "로그인 상태를 확인해주세요.",
-        });
-        return;
-      }
 
       const result: DeleteFeedbackResult = await deleteFeedback({
         feedbackId: id,

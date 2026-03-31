@@ -9,25 +9,23 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
+import {
+  useFeedbackCommentsActions,
+  useFeedbackCommentsMeta,
+  useFeedbackCommentsState,
+} from "@/components/feedback/detail/FeedbackComments.Provider";
+import FeedbackCommentsForm from "@/components/feedback/detail/FeedbackComments.Form";
 import { Button, useAlert, useConfirm } from "@/components/ui";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
 import { formatDateTime } from "@/lib/feedback/presentation";
 import { cn } from "@/lib/shared/cn";
-import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import type { FeedbackComment, FeedbackCommentRole } from "@/types/feedback-comment";
-import FeedbackCommentForm from "@/components/feedback/detail/FeedbackCommentForm";
 
-type FeedbackCommentItemProps = {
-  comment: FeedbackComment;
-  replies: FeedbackComment[];
-  feedbackAuthorId: FeedbackPublicAndEmailRow["author_id"];
-  canWrite: boolean;
-  isAdmin: boolean;
-  currentUserId: string | null;
-  onReplySubmit: (parentCommentId: string, body: string) => Promise<void>;
-  onEditSubmit: (comment: FeedbackComment, body: string) => Promise<void>;
-  onDelete: (comment: FeedbackComment) => Promise<void>;
+type FeedbackCommentIdentity = Pick<FeedbackComment, "id" | "author_id">;
+
+type FeedbackCommentsItemProps = {
+  commentId: FeedbackComment["id"];
 };
 
 const getRoleLabel = (role: FeedbackCommentRole) => {
@@ -40,22 +38,22 @@ const getRoleBadgeTone = (role: FeedbackCommentRole) => {
     : "bg-blue-500/12 text-blue-700 dark:text-blue-300";
 };
 
-export default function FeedbackCommentItem({
-  comment,
-  replies,
-  feedbackAuthorId,
-  canWrite,
-  isAdmin,
-  currentUserId,
-  onReplySubmit,
-  onEditSubmit,
-  onDelete,
-}: FeedbackCommentItemProps) {
+export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItemProps) {
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
+  const { commentById, replyIdsByParentId } = useFeedbackCommentsState();
+  const { feedbackAuthorId, canWrite, currentUserId, isAdmin } = useFeedbackCommentsMeta();
+  const { createReply, updateComment, deleteComment } = useFeedbackCommentsActions();
   const [isReplyOpen, setIsReplyOpen] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
+  const comment = commentById.get(commentId);
+  const replies =
+    replyIdsByParentId
+      .get(commentId)
+      ?.map((replyId) => commentById.get(replyId))
+      .filter((reply): reply is FeedbackComment => Boolean(reply)) ?? [];
 
   useEffect(() => {
     if (!canWrite) {
@@ -64,34 +62,41 @@ export default function FeedbackCommentItem({
     }
   }, [canWrite]);
 
-  const getCommentRole = (commentItem: FeedbackComment): FeedbackCommentRole => {
-    return commentItem.author_id === feedbackAuthorId ? "author" : "admin";
+  if (!comment) {
+    return null;
+  }
+
+  const getCommentRole = (authorId: FeedbackComment["author_id"]): FeedbackCommentRole => {
+    return authorId === feedbackAuthorId ? "author" : "admin";
   };
 
-  const canEditComment = (commentItem: FeedbackComment) => {
-    return canWrite && currentUserId === commentItem.author_id;
+  const canEditComment = (authorId: FeedbackComment["author_id"]) => {
+    return canWrite && currentUserId === authorId;
   };
 
-  const canDeleteComment = (commentItem: FeedbackComment) => {
-    return isAdmin || (canWrite && currentUserId === commentItem.author_id);
+  const canDeleteComment = (authorId: FeedbackComment["author_id"]) => {
+    return isAdmin || (canWrite && currentUserId === authorId);
   };
 
   const commentAvatarSrc = comment.author_avatar_url ?? AVATAR_PLACEHOLDER_SRC;
-  const commentRole = getCommentRole(comment);
+  const commentRole = getCommentRole(comment.author_id);
 
   const handleToggleReply = () => {
     setEditingCommentId(null);
     setIsReplyOpen((prev) => !prev);
   };
 
-  const handleStartEdit = (commentItem: FeedbackComment) => {
-    if (!canEditComment(commentItem)) return;
+  const handleStartEdit = ({ author_id, id }: FeedbackCommentIdentity) => {
+    if (!canEditComment(author_id)) return;
     setIsReplyOpen(false);
-    setEditingCommentId(commentItem.id);
+    setEditingCommentId(id);
   };
 
-  const handleDelete = async (commentItem: FeedbackComment, replyLength: number) => {
-    if (!canDeleteComment(commentItem) || deletingCommentId) return;
+  const handleDelete = async (
+    { author_id, id }: FeedbackCommentIdentity,
+    replyLength: number
+  ) => {
+    if (!canDeleteComment(author_id) || deletingCommentId) return;
 
     const isConfirmed = await openConfirm({
       title: "코멘트 삭제 확인",
@@ -105,14 +110,14 @@ export default function FeedbackCommentItem({
 
     if (!isConfirmed) return;
 
-    setDeletingCommentId(commentItem.id);
+    setDeletingCommentId(id);
 
     try {
-      await onDelete(commentItem);
-      if (editingCommentId === commentItem.id) {
+      await deleteComment(id);
+      if (editingCommentId === id) {
         setEditingCommentId(null);
       }
-      if (commentItem.id === comment.id) {
+      if (id === comment.id) {
         setIsReplyOpen(false);
       }
     } catch (error) {
@@ -186,7 +191,7 @@ export default function FeedbackCommentItem({
               <Reply className="size-3.5" />
               답글 달기
             </Button>
-            {canEditComment(comment) && (
+            {canEditComment(comment.author_id) && (
               <Button
                 type="button"
                 variant="ghost"
@@ -198,7 +203,7 @@ export default function FeedbackCommentItem({
                 수정
               </Button>
             )}
-            {canDeleteComment(comment) && (
+            {canDeleteComment(comment.author_id) && (
               <Button
                 type="button"
                 variant="ghost"
@@ -213,13 +218,13 @@ export default function FeedbackCommentItem({
           </div>
 
           {editingCommentId === comment.id && (
-            <FeedbackCommentForm
+            <FeedbackCommentsForm
               formId={`edit-${comment.id}`}
               label="코멘트 수정"
               placeholder="코멘트를 수정해보세요."
               submitLabel="수정 저장"
               defaultValue={comment.body}
-              onSubmit={(body) => onEditSubmit(comment, body)}
+              onSubmitText={(updatedCommentText) => updateComment(comment.id, updatedCommentText)}
               onSuccess={() => setEditingCommentId(null)}
               onCancel={() => setEditingCommentId(null)}
               className="mt-4 border border-dashed border-border/60 bg-background/80 dark:border-white/10 dark:bg-neutral-950/40"
@@ -229,7 +234,7 @@ export default function FeedbackCommentItem({
           {replies.length > 0 && (
             <div className="mt-4 space-y-3 sm:border-l sm:border-border/60 sm:pl-4 dark:sm:border-white/10">
               {replies.map((reply) => {
-                const replyRole = getCommentRole(reply);
+                const replyRole = getCommentRole(reply.author_id);
 
                 return (
                   <div
@@ -263,7 +268,7 @@ export default function FeedbackCommentItem({
                       {reply.body}
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {canEditComment(reply) && (
+                      {canEditComment(reply.author_id) && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -275,7 +280,7 @@ export default function FeedbackCommentItem({
                           수정
                         </Button>
                       )}
-                      {canDeleteComment(reply) && (
+                      {canDeleteComment(reply.author_id) && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -290,13 +295,15 @@ export default function FeedbackCommentItem({
                     </div>
 
                     {editingCommentId === reply.id && (
-                      <FeedbackCommentForm
+                      <FeedbackCommentsForm
                         formId={`edit-${reply.id}`}
                         label="답글 수정"
                         placeholder="답글을 수정해보세요."
                         submitLabel="수정 저장"
                         defaultValue={reply.body}
-                        onSubmit={(body) => onEditSubmit(reply, body)}
+                        onSubmitText={(updatedCommentText) =>
+                          updateComment(reply.id, updatedCommentText)
+                        }
                         onSuccess={() => setEditingCommentId(null)}
                         onCancel={() => setEditingCommentId(null)}
                         className="mt-3 border border-dashed border-border/60 bg-white/70 dark:border-white/10 dark:bg-neutral-900/60"
@@ -310,12 +317,12 @@ export default function FeedbackCommentItem({
           )}
 
           {isReplyOpen && (
-            <FeedbackCommentForm
+            <FeedbackCommentsForm
               formId={`reply-${comment.id}`}
               label="답글 작성"
               placeholder="답글은 한 단계까지만 허용됩니다."
               submitLabel="답글 등록"
-              onSubmit={(body) => onReplySubmit(comment.id, body)}
+              onSubmitText={(replyText) => createReply(comment.id, replyText)}
               onSuccess={() => setIsReplyOpen(false)}
               onCancel={() => setIsReplyOpen(false)}
               cancelLabel="닫기"

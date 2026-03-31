@@ -8,7 +8,7 @@ import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { useRouter } from "next/router";
 import { inputBaseStyle } from "@/constants";
 import { getAuthProviderLabel, getAuthProviders } from "@/lib/auth/provider";
-import { getFreshAccessToken } from "@/lib/auth/client";
+import { resolveAccessToken } from "@/lib/auth/client";
 import { WithdrawResponse } from "@/types/response";
 
 type WithdrawForm = {
@@ -92,38 +92,46 @@ export default function WithdrawPage() {
       }
     }
 
-    const accessToken = await getFreshAccessToken({
-      supabaseBrowserClient,
-      fallbackAccessToken: session.access_token,
-    });
-
-    const response = await fetch("/api/auth/withdraw", {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    const result: WithdrawResponse = await response.json().catch(() => ({
-      data: null,
-      error: "Invalid response",
-    }));
-    if (!response.ok || result.error) {
-      openAlert({
-        description: result.error ?? "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
+    try {
+      const accessToken = await resolveAccessToken({
+        supabaseBrowserClient,
+        fallbackAccessToken: session.access_token,
       });
-      return;
+
+      const response = await fetch("/api/auth/withdraw", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const result: WithdrawResponse = await response.json().catch(() => ({
+        data: null,
+        error: "Invalid response",
+      }));
+      if (!response.ok || result.error) {
+        openAlert({
+          description: result.error ?? "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        });
+        return;
+      }
+
+      await fetch("/api/auth/session", { method: "DELETE" });
+      await supabaseBrowserClient.auth.signOut({ scope: "local" }).catch(() => undefined);
+
+      openAlert({
+        description: "회원 탈퇴가 완료되었습니다.",
+        onOk: () => {
+          void replaceSafely(router, "/");
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      openAlert({
+        description:
+          error instanceof Error ? error.message : "로그인 상태를 확인해주세요.",
+      });
     }
-
-    await fetch("/api/auth/session", { method: "DELETE" });
-    await supabaseBrowserClient.auth.signOut({ scope: "local" }).catch(() => undefined);
-
-    openAlert({
-      description: "회원 탈퇴가 완료되었습니다.",
-      onOk: () => {
-        void replaceSafely(router, "/");
-      },
-    });
   };
 
   if (!isInitSessionComplete || !user) {

@@ -5,7 +5,11 @@ type FreshAccessTokenParams = {
   fallbackAccessToken: string | null;
 };
 
-export async function getFreshAccessToken({
+type ResolveAccessTokenParams = FreshAccessTokenParams & {
+  errorMessage?: string;
+};
+
+async function getFreshAccessToken({
   supabaseBrowserClient,
   fallbackAccessToken,
 }: FreshAccessTokenParams): Promise<string | null> {
@@ -20,4 +24,21 @@ export async function getFreshAccessToken({
   }
 
   return data.session.access_token;
+}
+
+export async function resolveAccessToken({
+  supabaseBrowserClient,
+  fallbackAccessToken,
+  errorMessage = "로그인 상태를 확인해주세요.",
+}: ResolveAccessTokenParams): Promise<string> {
+  const accessToken = await getFreshAccessToken({
+    supabaseBrowserClient,
+    fallbackAccessToken,
+  });
+
+  if (!accessToken) {
+    throw new Error(errorMessage);
+  }
+
+  return accessToken;
 }

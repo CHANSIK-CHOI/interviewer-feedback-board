@@ -12,7 +12,7 @@ import {
   MergeFeedbackListParams,
 } from "@/lib/feedback/list";
 import { FeedbackBox, NewFeedbackLinkBtn } from "@/components/feedback";
-import { getFreshAccessToken } from "@/lib/auth/client";
+import { resolveAccessToken } from "@/lib/auth/client";
 import {
   AdminReviewFeedback,
   ApprovedFeedback,
@@ -102,7 +102,7 @@ export default function FeedbackBoardPage({
     const controller = new AbortController();
     const loadPendingCount = async () => {
       try {
-        const accessToken = await getFreshAccessToken({
+        const accessToken = await resolveAccessToken({
           supabaseBrowserClient,
           fallbackAccessToken: session.access_token,
         });
@@ -148,7 +148,7 @@ export default function FeedbackBoardPage({
     const controller = new AbortController();
     const getOwnerFeedbacks = async () => {
       try {
-        const accessToken = await getFreshAccessToken({
+        const accessToken = await resolveAccessToken({
           supabaseBrowserClient,
           fallbackAccessToken: session.access_token,
         });
@@ -191,7 +191,7 @@ export default function FeedbackBoardPage({
     const controller = new AbortController();
     const getAdminReviewFeedbacks = async () => {
       try {
-        const accessToken = await getFreshAccessToken({
+        const accessToken = await resolveAccessToken({
           supabaseBrowserClient,
           fallbackAccessToken: session.access_token,
         });
