@@ -4,11 +4,11 @@ import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { getSupabaseServerAdminClient, getSupabaseServerAnonClient } from "@/lib/supabase/server";
 import {
   FEEDBACK_COMMENT_COLUMNS,
-  findFeedbackCommentTarget,
+  findFeedbackCommentsFeedbackTarget,
   listFeedbackComments,
   normalizeCreateFeedbackCommentPayload,
   type FeedbackCommentReplyTargetValidationError,
-  type FeedbackCommentTargetRow,
+  type FeedbackCommentsFeedbackTargetRow,
   validateCommentBody,
   validateFeedbackCommentReplyTarget,
 } from "@/lib/feedback/comment";
@@ -63,7 +63,7 @@ async function handleGetComments(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await findFeedbackCommentTarget(
+  }: { data: FeedbackCommentsFeedbackTargetRow | null; error: SupabaseError } = await findFeedbackCommentsFeedbackTarget(
     {
       supabaseClient: supabaseServerAdminClient,
       feedbackId,
@@ -126,7 +126,7 @@ async function handleCreateComment(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await findFeedbackCommentTarget(
+  }: { data: FeedbackCommentsFeedbackTargetRow | null; error: SupabaseError } = await findFeedbackCommentsFeedbackTarget(
     {
       supabaseClient: supabaseServerAdminClient,
       feedbackId,

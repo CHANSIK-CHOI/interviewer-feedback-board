@@ -8,7 +8,7 @@ import type {
 import type { SupabaseError } from "@/types/common";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type FeedbackCommentTargetRow = {
+export type FeedbackCommentsFeedbackTargetRow = {
   id: FeedbackPublicBase["id"];
   author_id: FeedbackPublicBase["author_id"];
   status: "pending" | "approved" | "rejected" | "revised_pending";
@@ -27,7 +27,7 @@ export type FeedbackCommentReplyTargetValidationError =
   | "NESTED_REPLY_NOT_ALLOWED";
 
 export type FeedbackCommentMutationTarget = {
-  feedback: FeedbackCommentTargetRow | null;
+  feedback: FeedbackCommentsFeedbackTargetRow | null;
   feedbackError: SupabaseError;
   comment: FeedbackCommentRow | null;
   commentError: SupabaseError;
@@ -67,13 +67,13 @@ export const normalizeCreateFeedbackCommentPayload = (
   };
 };
 
-export const findFeedbackCommentTarget = async ({
+export const findFeedbackCommentsFeedbackTarget = async ({
   supabaseClient,
   feedbackId,
 }: {
   supabaseClient: SupabaseClient;
   feedbackId: FeedbackPublicBase["id"];
-}): Promise<{ data: FeedbackCommentTargetRow | null; error: SupabaseError }> => {
+}): Promise<{ data: FeedbackCommentsFeedbackTargetRow | null; error: SupabaseError }> => {
   return await supabaseClient
     .from("feedbacks")
     .select("id, author_id, status, is_public, comments_unlocked_at")
@@ -172,8 +172,8 @@ export const findFeedbackCommentMutationTarget = async ({
   const {
     data: feedback,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } =
-    await findFeedbackCommentTarget(
+  }: { data: FeedbackCommentsFeedbackTargetRow | null; error: SupabaseError } =
+    await findFeedbackCommentsFeedbackTarget(
     {
       supabaseClient,
       feedbackId,

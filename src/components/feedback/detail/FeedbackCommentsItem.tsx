@@ -1,41 +1,31 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import {
-  CornerDownRight,
-  MessageCircle,
-  PencilLine,
-  Reply,
-  Shield,
-  Trash2,
-  UserRound,
-} from "lucide-react";
+import { MessageCircle, PencilLine, Reply, Shield, Trash2, UserRound } from "lucide-react";
 import {
   useFeedbackCommentsActions,
   useFeedbackCommentsMeta,
   useFeedbackCommentsState,
 } from "@/components/feedback/detail/FeedbackCommentsProvider";
 import FeedbackCommentsForm from "@/components/feedback/detail/FeedbackCommentsForm";
+import FeedbackCommentsReplyItem from "@/components/feedback/detail/FeedbackCommentsReplyItem";
+import {
+  canDeleteFeedbackComment,
+  canEditFeedbackComment,
+  getFeedbackCommentRoleBadgeTone,
+  getFeedbackCommentRoleLabel,
+  resolveFeedbackCommentRole,
+} from "@/components/feedback/detail/FeedbackCommentsUtils";
 import { Button, useAlert, useConfirm } from "@/components/ui";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
 import { formatDateTime } from "@/lib/feedback/presentation";
 import { cn } from "@/lib/shared/cn";
-import type { FeedbackComment, FeedbackCommentRole } from "@/types/feedback-comment";
+import type { FeedbackComment } from "@/types/feedback-comment";
 
 type FeedbackCommentIdentity = Pick<FeedbackComment, "id" | "author_id">;
 
 type FeedbackCommentsItemProps = {
   commentId: FeedbackComment["id"];
-};
-
-const getRoleLabel = (role: FeedbackCommentRole) => {
-  return role === "admin" ? "관리자" : "작성자";
-};
-
-const getRoleBadgeTone = (role: FeedbackCommentRole) => {
-  return role === "admin"
-    ? "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
-    : "bg-blue-500/12 text-blue-700 dark:text-blue-300";
 };
 
 export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItemProps) {
@@ -69,20 +59,22 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
     return null;
   }
 
-  const getCommentRole = (authorId: FeedbackComment["author_id"]): FeedbackCommentRole => {
-    return authorId === feedbackAuthorId ? "author" : "admin";
-  };
-
-  const canEditComment = (authorId: FeedbackComment["author_id"]) => {
-    return canWrite && currentUserId === authorId;
-  };
-
-  const canDeleteComment = (authorId: FeedbackComment["author_id"]) => {
-    return isAdmin || (canWrite && currentUserId === authorId);
-  };
-
   const commentAvatarSrc = comment.author_avatar_url ?? AVATAR_PLACEHOLDER_SRC;
-  const commentRole = getCommentRole(comment.author_id);
+  const commentRole = resolveFeedbackCommentRole({
+    authorId: comment.author_id,
+    feedbackAuthorId,
+  });
+  const canEditCurrentComment = canEditFeedbackComment({
+    canWrite,
+    currentUserId,
+    authorId: comment.author_id,
+  });
+  const canDeleteCurrentComment = canDeleteFeedbackComment({
+    canWrite,
+    currentUserId,
+    isAdmin,
+    authorId: comment.author_id,
+  });
 
   const handleToggleReply = () => {
     setEditingCommentId(null);
@@ -90,7 +82,15 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
   };
 
   const handleStartEdit = ({ author_id, id }: FeedbackCommentIdentity) => {
-    if (!canEditComment(author_id)) return;
+    if (!canEditFeedbackComment({ canWrite, currentUserId, authorId: author_id })) {
+      return;
+    }
+
+    if (editingCommentId === id) {
+      setEditingCommentId(null);
+      return;
+    }
+
     setIsReplyOpen(false);
     setEditingCommentId(id);
   };
@@ -99,7 +99,17 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
     { author_id, id }: FeedbackCommentIdentity,
     replyLength: number
   ) => {
-    if (!canDeleteComment(author_id) || deletingCommentId) return;
+    if (
+      !canDeleteFeedbackComment({
+        canWrite,
+        currentUserId,
+        isAdmin,
+        authorId: author_id,
+      }) ||
+      deletingCommentId
+    ) {
+      return;
+    }
 
     const isConfirmed = await openConfirm({
       title: "코멘트 삭제 확인",
@@ -154,18 +164,18 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
             <span
               className={cn(
                 "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                getRoleBadgeTone(commentRole)
+                getFeedbackCommentRoleBadgeTone(commentRole)
               )}
             >
               {commentRole === "admin" ? (
                 <span className="inline-flex items-center gap-1">
                   <Shield className="size-3" />
-                  {getRoleLabel(commentRole)}
+                  {getFeedbackCommentRoleLabel(commentRole)}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1">
                   <UserRound className="size-3" />
-                  {getRoleLabel(commentRole)}
+                  {getFeedbackCommentRoleLabel(commentRole)}
                 </span>
               )}
             </span>
@@ -194,7 +204,7 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
               <Reply className="size-3.5" />
               답글 달기
             </Button>
-            {canEditComment(comment.author_id) && (
+            {canEditCurrentComment && (
               <Button
                 type="button"
                 variant="ghost"
@@ -206,7 +216,7 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
                 수정
               </Button>
             )}
-            {canDeleteComment(comment.author_id) && (
+            {canDeleteCurrentComment && (
               <Button
                 type="button"
                 variant="ghost"
@@ -237,83 +247,16 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
           {replies.length > 0 && (
             <div className="mt-4 space-y-3 sm:border-l sm:border-border/60 sm:pl-4 dark:sm:border-white/10">
               {replies.map((reply) => {
-                const replyRole = getCommentRole(reply.author_id);
-
                 return (
-                  <div
+                  <FeedbackCommentsReplyItem
                     key={reply.id}
-                    className="rounded-2xl border border-border/60 bg-background/80 p-4 dark:border-white/10 dark:bg-neutral-950/40"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-                        <CornerDownRight className="size-3.5" />
-                        답글
-                      </span>
-                      <strong className="text-sm font-semibold text-foreground">
-                        {reply.author_name}
-                      </strong>
-                      <span
-                        className={cn(
-                          "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                          getRoleBadgeTone(replyRole)
-                        )}
-                      >
-                        {getRoleLabel(replyRole)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDateTime(reply.created_at)}
-                      </span>
-                      {reply.edited_at && (
-                        <span className="text-xs text-muted-foreground">수정됨</span>
-                      )}
-                    </div>
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                      {reply.body}
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {canEditComment(reply.author_id) && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={Boolean(deletingCommentId)}
-                          onClick={() => handleStartEdit(reply)}
-                        >
-                          <PencilLine className="size-3.5" />
-                          수정
-                        </Button>
-                      )}
-                      {canDeleteComment(reply.author_id) && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={Boolean(deletingCommentId)}
-                          onClick={() => void handleDelete(reply, 0)}
-                        >
-                          <Trash2 className="size-3.5" />
-                          삭제
-                        </Button>
-                      )}
-                    </div>
-
-                    {editingCommentId === reply.id && (
-                      <FeedbackCommentsForm
-                        formId={`edit-${reply.id}`}
-                        label="답글 수정"
-                        placeholder="답글을 수정해보세요."
-                        submitLabel="수정 저장"
-                        defaultValue={reply.body}
-                        onSubmitText={(updatedCommentText) =>
-                          updateComment(reply.id, updatedCommentText)
-                        }
-                        onSuccess={() => setEditingCommentId(null)}
-                        onCancel={() => setEditingCommentId(null)}
-                        className="mt-3 border border-dashed border-border/60 bg-white/70 dark:border-white/10 dark:bg-neutral-900/60"
-                        minHeightClassName="min-h-[110px]"
-                      />
-                    )}
-                  </div>
+                    replyId={reply.id}
+                    editingCommentId={editingCommentId}
+                    deletingCommentId={deletingCommentId}
+                    onStartEdit={handleStartEdit}
+                    onCloseEdit={() => setEditingCommentId(null)}
+                    onDelete={handleDelete}
+                  />
                 );
               })}
             </div>

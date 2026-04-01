@@ -29,7 +29,10 @@ type FeedbackCommentsProviderProps = {
 type FeedbackCommentsStateContextValue = {
   comments: FeedbackCommentRow[];
   commentById: Map<FeedbackComment["id"], FeedbackCommentRow>;
-  replyIdsByParentId: Map<FeedbackComment["id"], FeedbackComment["id"][]>;
+  replyIdsByParentId: Map<
+    NonNullable<FeedbackComment["parent_comment_id"]>,
+    FeedbackComment["id"][]
+  >;
   firstDepthCommentIds: FeedbackComment["id"][];
   firstDepthCount: number;
   replyCount: number;

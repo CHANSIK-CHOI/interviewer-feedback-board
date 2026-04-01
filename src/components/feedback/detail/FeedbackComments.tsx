@@ -5,6 +5,7 @@ import FeedbackCommentsProvider, {
   useFeedbackCommentsMeta,
   useFeedbackCommentsState,
 } from "@/components/feedback/detail/FeedbackCommentsProvider";
+import FeedbackCommentsReplyItem from "@/components/feedback/detail/FeedbackCommentsReplyItem";
 import { cn } from "@/lib/shared/cn";
 import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import type { FeedbackComment } from "@/types/feedback-comment";
@@ -21,6 +22,7 @@ type FeedbackCommentsComponent = ((props: FeedbackCommentsProps) => JSX.Element)
   Provider: typeof FeedbackCommentsProvider;
   Composer: typeof FeedbackCommentsComposer;
   Item: typeof FeedbackCommentsItem;
+  ReplyItem: typeof FeedbackCommentsReplyItem;
   Form: typeof FeedbackCommentsForm;
 };
 
@@ -45,6 +47,7 @@ const FeedbackComments: FeedbackCommentsComponent = function FeedbackComments({
 FeedbackComments.Provider = FeedbackCommentsProvider;
 FeedbackComments.Composer = FeedbackCommentsComposer;
 FeedbackComments.Item = FeedbackCommentsItem;
+FeedbackComments.ReplyItem = FeedbackCommentsReplyItem;
 FeedbackComments.Form = FeedbackCommentsForm;
 
 export default FeedbackComments;
