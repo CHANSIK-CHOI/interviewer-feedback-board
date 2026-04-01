@@ -1,10 +1,10 @@
-import FeedbackCommentsComposer from "@/components/feedback/detail/FeedbackComments.Composer";
-import FeedbackCommentsForm from "@/components/feedback/detail/FeedbackComments.Form";
-import FeedbackCommentsItem from "@/components/feedback/detail/FeedbackComments.Item";
+import FeedbackCommentsComposer from "@/components/feedback/detail/FeedbackCommentsComposer";
+import FeedbackCommentsForm from "@/components/feedback/detail/FeedbackCommentsForm";
+import FeedbackCommentsItem from "@/components/feedback/detail/FeedbackCommentsItem";
 import FeedbackCommentsProvider, {
   useFeedbackCommentsMeta,
   useFeedbackCommentsState,
-} from "@/components/feedback/detail/FeedbackComments.Provider";
+} from "@/components/feedback/detail/FeedbackCommentsProvider";
 import { cn } from "@/lib/shared/cn";
 import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import type { FeedbackComment } from "@/types/feedback-comment";
@@ -14,7 +14,7 @@ type FeedbackCommentsProps = {
   feedback: FeedbackPublicAndEmailRow;
   isAuthor: boolean;
   isAdmin: boolean;
-  serverComments: FeedbackComment[];
+  initialComments: FeedbackComment[];
 };
 
 type FeedbackCommentsComponent = ((props: FeedbackCommentsProps) => JSX.Element) & {
@@ -24,38 +24,36 @@ type FeedbackCommentsComponent = ((props: FeedbackCommentsProps) => JSX.Element)
   Form: typeof FeedbackCommentsForm;
 };
 
-const FeedbackComments = Object.assign(
-  function FeedbackComments({
-    feedback,
-    isAuthor,
-    isAdmin,
-    serverComments,
-  }: FeedbackCommentsProps) {
-    return (
-      <FeedbackCommentsProvider
-        feedback={feedback}
-        isAuthor={isAuthor}
-        isAdmin={isAdmin}
-        serverComments={serverComments}
-      >
-        <FeedbackCommentsContent />
-      </FeedbackCommentsProvider>
-    );
-  },
-  {
-    Provider: FeedbackCommentsProvider,
-    Composer: FeedbackCommentsComposer,
-    Item: FeedbackCommentsItem,
-    Form: FeedbackCommentsForm,
-  }
-) as FeedbackCommentsComponent;
+const FeedbackComments: FeedbackCommentsComponent = function FeedbackComments({
+  feedback,
+  isAuthor,
+  isAdmin,
+  initialComments,
+}: FeedbackCommentsProps) {
+  return (
+    <FeedbackCommentsProvider
+      feedback={feedback}
+      isAuthor={isAuthor}
+      isAdmin={isAdmin}
+      initialComments={initialComments}
+    >
+      <FeedbackCommentsContent />
+    </FeedbackCommentsProvider>
+  );
+};
+
+FeedbackComments.Provider = FeedbackCommentsProvider;
+FeedbackComments.Composer = FeedbackCommentsComposer;
+FeedbackComments.Item = FeedbackCommentsItem;
+FeedbackComments.Form = FeedbackCommentsForm;
 
 export default FeedbackComments;
 
 function FeedbackCommentsContent() {
-  const { commentItems, firstDepthCommentIds, firstDepthCount, replyCount } =
-    useFeedbackCommentsState();
-  const { hasCommentsBeenUnlocked, canEveryoneReadComments } = useFeedbackCommentsMeta();
+  const stateValue = useFeedbackCommentsState();
+  const metaValue = useFeedbackCommentsMeta();
+  const { comments, firstDepthCommentIds, firstDepthCount, replyCount } = stateValue;
+  const { hasCommentsBeenUnlocked, canEveryoneReadComments } = metaValue;
 
   return (
     <section className="rounded-2xl border border-border/60 bg-background/80 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
@@ -77,7 +75,7 @@ function FeedbackCommentsContent() {
               전체
             </p>
             <strong className="mt-2 block text-xl font-semibold text-foreground">
-              {commentItems.length}
+              {comments.length}
             </strong>
           </div>
           <div className="rounded-2xl border border-border/60 bg-white/70 px-4 py-3 text-sm shadow-sm dark:border-white/10 dark:bg-neutral-900/70">

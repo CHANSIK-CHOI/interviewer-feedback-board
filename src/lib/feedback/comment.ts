@@ -1,6 +1,10 @@
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { FeedbackPublicBase } from "@/types/feedback";
-import type { FeedbackComment, FeedbackCommentRow } from "@/types/feedback-comment";
+import type {
+  FeedbackComment,
+  FeedbackCommentCreatePayload,
+  FeedbackCommentRow,
+} from "@/types/feedback-comment";
 import type { SupabaseError } from "@/types/common";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -17,6 +21,18 @@ export type FeedbackCommentParentRow = Pick<
   "id" | "feedback_id" | "parent_comment_id"
 >;
 
+export type FeedbackCommentReplyTargetValidationError =
+  | "PARENT_NOT_FOUND"
+  | "DIFFERENT_FEEDBACK"
+  | "NESTED_REPLY_NOT_ALLOWED";
+
+export type FeedbackCommentMutationTarget = {
+  feedback: FeedbackCommentTargetRow | null;
+  feedbackError: SupabaseError;
+  comment: FeedbackCommentRow | null;
+  commentError: SupabaseError;
+};
+
 export const FEEDBACK_COMMENT_COLUMNS =
   "id, feedback_id, parent_comment_id, author_id, author_name, author_avatar_url, body, created_at, updated_at, edited_at";
 
@@ -32,7 +48,26 @@ export const validateCommentBody = (body: string) => {
   return null;
 };
 
-export const getFeedbackCommentTarget = async ({
+export const normalizeFeedbackCommentBody = (body: unknown) => {
+  return typeof body === "string" ? body.trim() : "";
+};
+
+export const normalizeCreateFeedbackCommentPayload = (
+  payload: Partial<FeedbackCommentCreatePayload>
+) => {
+  const body = normalizeFeedbackCommentBody(payload.body);
+  const parentCommentId =
+    typeof payload.parentCommentId === "string" && payload.parentCommentId.trim()
+      ? payload.parentCommentId.trim()
+      : null;
+
+  return {
+    body,
+    parentCommentId,
+  };
+};
+
+export const findFeedbackCommentTarget = async ({
   supabaseClient,
   feedbackId,
 }: {
@@ -46,7 +81,7 @@ export const getFeedbackCommentTarget = async ({
     .maybeSingle();
 };
 
-export const getFeedbackCommentParent = async ({
+export const findFeedbackCommentParent = async ({
   supabaseClient,
   parentCommentId,
 }: {
@@ -60,7 +95,58 @@ export const getFeedbackCommentParent = async ({
     .maybeSingle();
 };
 
-export const getFeedbackCommentById = async ({
+export const validateFeedbackCommentReplyTarget = async ({
+  supabaseClient,
+  feedbackId,
+  parentCommentId,
+}: {
+  supabaseClient: SupabaseClient;
+  feedbackId: FeedbackPublicBase["id"];
+  parentCommentId: FeedbackCommentParentRow["id"];
+}): Promise<{
+  validationError: FeedbackCommentReplyTargetValidationError | null;
+  error: SupabaseError;
+}> => {
+  const { data: parentRow, error } = await findFeedbackCommentParent({
+    supabaseClient,
+    parentCommentId,
+  });
+
+  if (error) {
+    return {
+      validationError: null,
+      error,
+    };
+  }
+
+  if (!parentRow) {
+    return {
+      validationError: "PARENT_NOT_FOUND",
+      error: null,
+    };
+  }
+
+  if (parentRow.feedback_id !== feedbackId) {
+    return {
+      validationError: "DIFFERENT_FEEDBACK",
+      error: null,
+    };
+  }
+
+  if (parentRow.parent_comment_id) {
+    return {
+      validationError: "NESTED_REPLY_NOT_ALLOWED",
+      error: null,
+    };
+  }
+
+  return {
+    validationError: null,
+    error: null,
+  };
+};
+
+export const findFeedbackCommentById = async ({
   supabaseClient,
   commentId,
 }: {
@@ -74,7 +160,63 @@ export const getFeedbackCommentById = async ({
     .maybeSingle();
 };
 
-export const getFeedbackComments = async ({
+export const findFeedbackCommentMutationTarget = async ({
+  supabaseClient,
+  feedbackId,
+  commentId,
+}: {
+  supabaseClient: SupabaseClient;
+  feedbackId: FeedbackPublicBase["id"];
+  commentId: FeedbackCommentRow["id"];
+}): Promise<FeedbackCommentMutationTarget> => {
+  const {
+    data: feedback,
+    error: feedbackError,
+  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } =
+    await findFeedbackCommentTarget(
+    {
+      supabaseClient,
+      feedbackId,
+    }
+  );
+
+  if (feedbackError) {
+    return {
+      feedback: null,
+      feedbackError,
+      comment: null,
+      commentError: null,
+    };
+  }
+
+  if (!feedback) {
+    return {
+      feedback: null,
+      feedbackError: null,
+      comment: null,
+      commentError: null,
+    };
+  }
+
+  const {
+    data: comment,
+    error: commentError,
+  }: { data: FeedbackCommentRow | null; error: SupabaseError } = await findFeedbackCommentById(
+    {
+      supabaseClient,
+      commentId,
+    }
+  );
+
+  return {
+    feedback,
+    feedbackError: null,
+    comment,
+    commentError,
+  };
+};
+
+export const listFeedbackComments = async ({
   supabaseClient,
   feedbackId,
 }: {
@@ -89,13 +231,13 @@ export const getFeedbackComments = async ({
       .order("created_at", { ascending: true });
 
   if (error) {
-    throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getFeedbackComments"));
+    throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch listFeedbackComments"));
   }
 
   return data ?? [];
 };
 
-export const getFeedbackCommentCounts = async ({
+export const countFeedbackCommentsByFeedbackIds = async ({
   supabaseClient,
   feedbackIds,
 }: {
@@ -116,7 +258,9 @@ export const getFeedbackCommentCounts = async ({
       .in("feedback_id", feedbackIds);
 
   if (error) {
-    throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getFeedbackCommentCounts"));
+    throw new Error(
+      resolveSupabaseErrorMessage(error, "Failed fetch countFeedbackCommentsByFeedbackIds")
+    );
   }
 
   return (data ?? []).reduce<Record<string, number>>((acc, row) => {

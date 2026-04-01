@@ -1,12 +1,4 @@
-import React, {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-} from "react";
+import { feedbackCommentsReducer } from "@/components/feedback/detail/FeedbackCommentsReducer";
 import { useSession } from "@/components/session";
 import { resolveAccessToken } from "@/lib/auth/client";
 import {
@@ -16,27 +8,26 @@ import {
 } from "@/lib/feedback/client";
 import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import type { FeedbackComment, FeedbackCommentRow } from "@/types/feedback-comment";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+} from "react";
 
 type FeedbackCommentsProviderProps = {
   feedback: FeedbackPublicAndEmailRow;
   isAuthor: boolean;
   isAdmin: boolean;
-  serverComments: FeedbackComment[];
+  initialComments: FeedbackComment[];
   children: ReactNode;
 };
 
-type FeedbackCommentsState = {
-  commentItems: FeedbackCommentRow[];
-};
-
-type FeedbackCommentsAction =
-  | { type: "reset_from_server"; serverComments: FeedbackCommentRow[] }
-  | { type: "append_comment"; commentItem: FeedbackCommentRow }
-  | { type: "replace_comment"; commentItem: FeedbackCommentRow }
-  | { type: "remove_comment_thread"; commentId: FeedbackComment["id"] };
-
 type FeedbackCommentsStateContextValue = {
-  commentItems: FeedbackCommentRow[];
+  comments: FeedbackCommentRow[];
   commentById: Map<FeedbackComment["id"], FeedbackCommentRow>;
   replyIdsByParentId: Map<FeedbackComment["id"], FeedbackComment["id"][]>;
   firstDepthCommentIds: FeedbackComment["id"][];
@@ -60,10 +51,7 @@ type FeedbackCommentsMetaContextValue = {
 type FeedbackCommentsActionsContextValue = {
   createComment: (newCommentText: string) => Promise<void>;
   createReply: (parentCommentId: string, replyText: string) => Promise<void>;
-  updateComment: (
-    commentId: FeedbackComment["id"],
-    updatedCommentText: string
-  ) => Promise<void>;
+  updateComment: (commentId: FeedbackComment["id"], updatedCommentText: string) => Promise<void>;
   deleteComment: (commentId: FeedbackComment["id"]) => Promise<void>;
 };
 
@@ -72,32 +60,6 @@ const FeedbackCommentsMetaContext = createContext<FeedbackCommentsMetaContextVal
 const FeedbackCommentsActionsContext = createContext<FeedbackCommentsActionsContextValue | null>(
   null
 );
-
-const feedbackCommentsReducer = (
-  state: FeedbackCommentsState,
-  action: FeedbackCommentsAction
-): FeedbackCommentsState => {
-  switch (action.type) {
-    case "reset_from_server":
-      return { commentItems: action.serverComments };
-    case "append_comment":
-      return { commentItems: [...state.commentItems, action.commentItem] };
-    case "replace_comment":
-      return {
-        commentItems: state.commentItems.map((item) =>
-          item.id === action.commentItem.id ? action.commentItem : item
-        ),
-      };
-    case "remove_comment_thread":
-      return {
-        commentItems: state.commentItems.filter(
-          (item) => item.id !== action.commentId && item.parent_comment_id !== action.commentId
-        ),
-      };
-    default:
-      return state;
-  }
-};
 
 const useRequiredContext = <T,>(value: T | null, name: string) => {
   if (!value) {
@@ -111,22 +73,23 @@ export default function FeedbackCommentsProvider({
   feedback,
   isAuthor,
   isAdmin,
-  serverComments,
+  initialComments,
   children,
 }: FeedbackCommentsProviderProps) {
   const { session, supabaseBrowserClient } = useSession();
-  const [{ commentItems }, dispatch] = useReducer(feedbackCommentsReducer, {
-    commentItems: serverComments,
+  const [{ comments }, dispatch] = useReducer(feedbackCommentsReducer, {
+    comments: initialComments,
   });
   const currentUserId = session?.user?.id ?? null;
-  const hasCommentsBeenUnlocked = Boolean(feedback.comments_unlocked_at);
-  const canEveryoneReadComments =
-    hasCommentsBeenUnlocked && feedback.status === "approved" && feedback.is_public;
-  const canWrite = canEveryoneReadComments && (isAuthor || isAdmin);
+  const canWrite =
+    Boolean(feedback.comments_unlocked_at) &&
+    feedback.status === "approved" &&
+    feedback.is_public &&
+    (isAuthor || isAdmin);
 
   useEffect(() => {
-    dispatch({ type: "reset_from_server", serverComments });
-  }, [feedback.id, serverComments]);
+    dispatch({ type: "RESET_TO_INITIAL_COMMENTS", comments: initialComments });
+  }, [feedback.id, initialComments]);
 
   const resolveCommentAccessToken = useCallback(async () => {
     return resolveAccessToken({
@@ -151,7 +114,7 @@ export default function FeedbackCommentsProvider({
         },
       });
 
-      dispatch({ type: "append_comment", commentItem: createdComment });
+      dispatch({ type: "APPEND_COMMENT", comment: createdComment });
     },
     [canWrite, feedback.id, resolveCommentAccessToken]
   );
@@ -172,7 +135,7 @@ export default function FeedbackCommentsProvider({
         },
       });
 
-      dispatch({ type: "append_comment", commentItem: createdComment });
+      dispatch({ type: "APPEND_COMMENT", comment: createdComment });
     },
     [canWrite, feedback.id, resolveCommentAccessToken]
   );
@@ -191,7 +154,7 @@ export default function FeedbackCommentsProvider({
         payload: { body: updatedCommentText },
       });
 
-      dispatch({ type: "replace_comment", commentItem: updatedComment });
+      dispatch({ type: "REPLACE_COMMENT", comment: updatedComment });
     },
     [canWrite, feedback.id, resolveCommentAccessToken]
   );
@@ -206,39 +169,45 @@ export default function FeedbackCommentsProvider({
         accessToken,
       });
 
-      dispatch({ type: "remove_comment_thread", commentId });
+      dispatch({ type: "REMOVE_COMMENT_THREAD", commentId });
     },
     [feedback.id, resolveCommentAccessToken]
   );
 
   const stateValue = useMemo<FeedbackCommentsStateContextValue>(() => {
     const commentById = new Map<FeedbackComment["id"], FeedbackCommentRow>();
-    const replyIdsByParentId = new Map<FeedbackComment["id"], FeedbackComment["id"][]>();
+    const replyIdsByParentId = new Map<
+      NonNullable<FeedbackComment["parent_comment_id"]>,
+      FeedbackComment["id"][]
+    >();
     const firstDepthCommentIds: FeedbackComment["id"][] = [];
 
-    commentItems.forEach((commentItem) => {
-      commentById.set(commentItem.id, commentItem);
+    comments.forEach((comment) => {
+      commentById.set(comment.id, comment);
 
-      if (commentItem.parent_comment_id === null) {
-        firstDepthCommentIds.push(commentItem.id);
+      if (comment.parent_comment_id === null) {
+        firstDepthCommentIds.push(comment.id);
         return;
       }
 
-      const replyIds = replyIdsByParentId.get(commentItem.parent_comment_id) ?? [];
-      replyIdsByParentId.set(commentItem.parent_comment_id, [...replyIds, commentItem.id]);
+      const replyIds = replyIdsByParentId.get(comment.parent_comment_id) ?? [];
+      replyIdsByParentId.set(comment.parent_comment_id, [...replyIds, comment.id]);
     });
 
     return {
-      commentItems,
+      comments,
       commentById,
       replyIdsByParentId,
       firstDepthCommentIds,
       firstDepthCount: firstDepthCommentIds.length,
-      replyCount: commentItems.length - firstDepthCommentIds.length,
+      replyCount: comments.length - firstDepthCommentIds.length,
     };
-  }, [commentItems]);
+  }, [comments]);
 
   const metaValue = useMemo<FeedbackCommentsMetaContextValue>(() => {
+    const hasCommentsBeenUnlocked = Boolean(feedback.comments_unlocked_at);
+    const canEveryoneReadComments =
+      hasCommentsBeenUnlocked && feedback.status === "approved" && feedback.is_public;
     const composerTitle = !hasCommentsBeenUnlocked
       ? "코멘트 잠금 전"
       : canWrite
@@ -269,16 +238,7 @@ export default function FeedbackCommentsProvider({
       composerDescription,
       composerPlaceholder,
     };
-  }, [
-    canEveryoneReadComments,
-    canWrite,
-    currentUserId,
-    feedback.author_id,
-    feedback.id,
-    hasCommentsBeenUnlocked,
-    isAdmin,
-    isAuthor,
-  ]);
+  }, [feedback, currentUserId, isAdmin, isAuthor, canWrite]);
 
   const actionsValue = useMemo<FeedbackCommentsActionsContextValue>(
     () => ({

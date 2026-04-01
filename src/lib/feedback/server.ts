@@ -10,7 +10,7 @@ import { getSupabaseServerAdminClient, getSupabaseServerAnonClient } from "@/lib
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import { APPROVED_PUBLIC_COLUMNS, PREVIEWCOLUMN } from "@/constants";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getFeedbackCommentCounts } from "@/lib/feedback/comment";
+import { countFeedbackCommentsByFeedbackIds } from "@/lib/feedback/comment";
 
 type FeedbackReadParams = {
   supabaseClient?: SupabaseClient | null;
@@ -38,7 +38,7 @@ export const getApprovedFeedbacks = async ({ supabaseClient }: FeedbackReadParam
     throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch getApprovedFeedbacks"));
   }
 
-  const commentCounts: Record<string, number> = await getFeedbackCommentCounts({
+  const commentCounts: Record<string, number> = await countFeedbackCommentsByFeedbackIds({
     supabaseClient: feedbackReader,
     feedbackIds: data.map((item) => item.id),
   }).catch(() => ({}));

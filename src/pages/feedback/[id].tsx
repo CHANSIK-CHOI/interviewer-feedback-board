@@ -5,7 +5,7 @@ import { Button } from "@/components/ui";
 import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
 import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
-import { getFeedbackComments } from "@/lib/feedback/comment";
+import { listFeedbackComments } from "@/lib/feedback/comment";
 import { getFeedbackDetailById, getFeedbackEmailById } from "@/lib/feedback/server";
 import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
@@ -51,7 +51,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     let isAuthor = false;
     let isAdmin = false;
     let mergedDetailFeedback: FeedbackPublicAndEmailRow = detailFeedback;
-    let serverComments: FeedbackComment[] = [];
+    let initialComments: FeedbackComment[] = [];
 
     if (authContext) {
       isAdmin = authContext.isAdmin;
@@ -69,7 +69,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     }
 
     if (detailFeedback.comments_unlocked_at && feedbackReader) {
-      serverComments = await getFeedbackComments({
+      initialComments = await listFeedbackComments({
         supabaseClient: feedbackReader,
         feedbackId: id,
       }).catch(() => []);
@@ -81,7 +81,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
         reviewerName,
         isAuthor,
         isAdmin,
-        serverComments,
+        initialComments,
       },
     };
   } catch (error) {
@@ -95,7 +95,7 @@ export default function FeedbackDetailPage({
   reviewerName,
   isAuthor,
   isAdmin,
-  serverComments,
+  initialComments,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [currentDetailFeedback, setCurrentDetailFeedback] =
     useState<FeedbackPublicAndEmailRow>(detailFeedback);
@@ -290,7 +290,7 @@ export default function FeedbackDetailPage({
           feedback={currentDetailFeedback}
           isAuthor={isAuthor}
           isAdmin={isAdmin}
-          serverComments={serverComments}
+          initialComments={initialComments}
         />
       </div>
     </>

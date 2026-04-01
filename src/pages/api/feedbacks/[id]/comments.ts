@@ -4,36 +4,24 @@ import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { getSupabaseServerAdminClient, getSupabaseServerAnonClient } from "@/lib/supabase/server";
 import {
   FEEDBACK_COMMENT_COLUMNS,
-  getFeedbackComments,
-  getFeedbackCommentParent,
-  getFeedbackCommentTarget,
-  type FeedbackCommentParentRow,
+  findFeedbackCommentTarget,
+  listFeedbackComments,
+  normalizeCreateFeedbackCommentPayload,
+  type FeedbackCommentReplyTargetValidationError,
   type FeedbackCommentTargetRow,
   validateCommentBody,
+  validateFeedbackCommentReplyTarget,
 } from "@/lib/feedback/comment";
 import { getAvatarUrl, getUserName } from "@/lib/user/profile";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
-import type { FeedbackCommentCreatePayload, FeedbackCommentRow } from "@/types/feedback-comment";
+import type { FeedbackCommentRow } from "@/types/feedback-comment";
 import type { FeedbackCommentListResponse, FeedbackCommentResponse } from "@/types/response";
 import type { SupabaseError } from "@/types/common";
 
 const COMMENT_CREATE_ERROR_MESSAGE = "코멘트 등록에 실패했습니다.";
 const COMMENT_READ_ERROR_MESSAGE = "댓글 조회에 실패했습니다.";
 
-const normalizeCommentPayload = (body: Partial<FeedbackCommentCreatePayload>) => {
-  const nextBody = typeof body.body === "string" ? body.body.trim() : "";
-  const parentCommentId =
-    typeof body.parentCommentId === "string" && body.parentCommentId.trim()
-      ? body.parentCommentId.trim()
-      : null;
-
-  return {
-    body: nextBody,
-    parentCommentId,
-  };
-};
-
-const getCommentReaderFromRequest = async (req: NextApiRequest) => {
+const resolveCommentReaderFromRequest = async (req: NextApiRequest) => {
   const { accessToken } = getRequestAccessToken(req);
   const authContext = accessToken ? (await getAuthContextByAccessToken(accessToken)).context : null;
   const supabaseServerUserClient = authContext?.supabaseServerUserClient ?? null;
@@ -42,58 +30,21 @@ const getCommentReaderFromRequest = async (req: NextApiRequest) => {
   return supabaseServerUserClient ?? supabaseServerAnonClient;
 };
 
-const validateReplyTarget = async ({
-  supabaseServerAdminClient,
-  feedbackId,
-  parentCommentId,
-}: {
-  supabaseServerAdminClient: NonNullable<ReturnType<typeof getSupabaseServerAdminClient>>;
-  feedbackId: string;
-  parentCommentId: string;
-}) => {
-  const {
-    data: parentRow,
-    error: parentError,
-  }: { data: FeedbackCommentParentRow | null; error: SupabaseError } = await getFeedbackCommentParent(
-    {
-      supabaseClient: supabaseServerAdminClient,
-      parentCommentId,
-    }
-  );
-
-  if (parentError) {
-    return {
-      status: 500,
-      error: resolveSupabaseErrorMessage(parentError, COMMENT_CREATE_ERROR_MESSAGE),
-    };
-  }
-
-  if (!parentRow) {
-    return { status: 404, error: "답글 대상 코멘트를 찾을 수 없습니다." };
-  }
-
-  if (parentRow.feedback_id !== feedbackId) {
-    return {
-      status: 400,
-      error: "같은 피드백의 코멘트에만 답글을 달 수 있습니다.",
-    };
-  }
-
-  if (parentRow.parent_comment_id) {
-    return { status: 400, error: "답글에는 다시 답글을 달 수 없습니다." };
-  }
-
-  return null;
-};
-
-const revalidateFeedbackList = async (
-  res: NextApiResponse<FeedbackCommentListResponse | FeedbackCommentResponse>,
-  action: "create" | "update" | "delete"
+const resolveReplyTargetValidationErrorResponse = (
+  validationError: FeedbackCommentReplyTargetValidationError
 ) => {
-  try {
-    await res.revalidate("/feedback");
-  } catch (error) {
-    console.warn(`Failed to revalidate /feedback after comment ${action}`, error);
+  switch (validationError) {
+    case "PARENT_NOT_FOUND":
+      return { status: 404, error: "답글 대상 코멘트를 찾을 수 없습니다." };
+    case "DIFFERENT_FEEDBACK":
+      return {
+        status: 400,
+        error: "같은 피드백의 코멘트에만 답글을 달 수 있습니다.",
+      };
+    case "NESTED_REPLY_NOT_ALLOWED":
+      return { status: 400, error: "답글에는 다시 답글을 달 수 없습니다." };
+    default:
+      return { status: 400, error: "유효하지 않은 답글 대상입니다." };
   }
 };
 
@@ -112,7 +63,7 @@ async function handleGetComments(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await getFeedbackCommentTarget(
+  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await findFeedbackCommentTarget(
     {
       supabaseClient: supabaseServerAdminClient,
       feedbackId,
@@ -130,7 +81,7 @@ async function handleGetComments(
     return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
   }
 
-  const commentReader = await getCommentReaderFromRequest(req);
+  const commentReader = await resolveCommentReaderFromRequest(req);
   if (!commentReader) {
     return res
       .status(500)
@@ -138,7 +89,7 @@ async function handleGetComments(
   }
 
   try {
-    const comments = await getFeedbackComments({
+    const comments = await listFeedbackComments({
       supabaseClient: commentReader,
       feedbackId,
     });
@@ -175,7 +126,7 @@ async function handleCreateComment(
   const {
     data: feedbackRow,
     error: feedbackError,
-  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await getFeedbackCommentTarget(
+  }: { data: FeedbackCommentTargetRow | null; error: SupabaseError } = await findFeedbackCommentTarget(
     {
       supabaseClient: supabaseServerAdminClient,
       feedbackId,
@@ -209,20 +160,29 @@ async function handleCreateComment(
     return res.status(403).json({ data: null, error: "코멘트 작성 권한이 없습니다." });
   }
 
-  const { body, parentCommentId } = normalizeCommentPayload(req.body ?? {});
+  const { body, parentCommentId } = normalizeCreateFeedbackCommentPayload(req.body ?? {});
   const bodyValidationError = validateCommentBody(body);
   if (bodyValidationError) {
     return res.status(400).json({ data: null, error: bodyValidationError });
   }
 
   if (parentCommentId) {
-    const replyTargetValidationError = await validateReplyTarget({
-      supabaseServerAdminClient,
+    const { validationError, error: replyTargetError } = await validateFeedbackCommentReplyTarget({
+      supabaseClient: supabaseServerAdminClient,
       feedbackId,
       parentCommentId,
     });
 
-    if (replyTargetValidationError) {
+    if (replyTargetError) {
+      return res.status(500).json({
+        data: null,
+        error: resolveSupabaseErrorMessage(replyTargetError, COMMENT_CREATE_ERROR_MESSAGE),
+      });
+    }
+
+    if (validationError) {
+      const replyTargetValidationError =
+        resolveReplyTargetValidationErrorResponse(validationError);
       return res
         .status(replyTargetValidationError.status)
         .json({ data: null, error: replyTargetValidationError.error });
@@ -254,8 +214,6 @@ async function handleCreateComment(
       error: resolveSupabaseErrorMessage(createError, COMMENT_CREATE_ERROR_MESSAGE),
     });
   }
-
-  await revalidateFeedbackList(res, "create");
 
   return res.status(201).json({
     data: createdComment,

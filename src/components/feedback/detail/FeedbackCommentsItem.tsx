@@ -13,8 +13,8 @@ import {
   useFeedbackCommentsActions,
   useFeedbackCommentsMeta,
   useFeedbackCommentsState,
-} from "@/components/feedback/detail/FeedbackComments.Provider";
-import FeedbackCommentsForm from "@/components/feedback/detail/FeedbackComments.Form";
+} from "@/components/feedback/detail/FeedbackCommentsProvider";
+import FeedbackCommentsForm from "@/components/feedback/detail/FeedbackCommentsForm";
 import { Button, useAlert, useConfirm } from "@/components/ui";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
@@ -41,9 +41,12 @@ const getRoleBadgeTone = (role: FeedbackCommentRole) => {
 export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItemProps) {
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
-  const { commentById, replyIdsByParentId } = useFeedbackCommentsState();
-  const { feedbackAuthorId, canWrite, currentUserId, isAdmin } = useFeedbackCommentsMeta();
-  const { createReply, updateComment, deleteComment } = useFeedbackCommentsActions();
+  const stateValue = useFeedbackCommentsState();
+  const metaValue = useFeedbackCommentsMeta();
+  const actionsValue = useFeedbackCommentsActions();
+  const { commentById, replyIdsByParentId } = stateValue;
+  const { feedbackAuthorId, canWrite, currentUserId, isAdmin } = metaValue;
+  const { createReply, updateComment, deleteComment } = actionsValue;
   const [isReplyOpen, setIsReplyOpen] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);

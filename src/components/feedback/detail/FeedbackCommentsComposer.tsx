@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import {
   useFeedbackCommentsActions,
   useFeedbackCommentsMeta,
-} from "@/components/feedback/detail/FeedbackComments.Provider";
+} from "@/components/feedback/detail/FeedbackCommentsProvider";
 import { Button, useAlert } from "@/components/ui";
 import { inputBaseStyle } from "@/constants";
 import { cn } from "@/lib/shared/cn";
@@ -15,14 +15,11 @@ type FeedbackCommentsComposerValues = {
 
 export default function FeedbackCommentsComposer() {
   const { openAlert } = useAlert();
-  const {
-    feedbackId,
-    composerTitle,
-    composerDescription,
-    composerPlaceholder,
-    canWrite,
-  } = useFeedbackCommentsMeta();
-  const { createComment } = useFeedbackCommentsActions();
+  const metaValue = useFeedbackCommentsMeta();
+  const actionsValue = useFeedbackCommentsActions();
+  const { feedbackId, composerTitle, composerDescription, composerPlaceholder, canWrite } =
+    metaValue;
+  const { createComment } = actionsValue;
   const {
     register,
     handleSubmit,
