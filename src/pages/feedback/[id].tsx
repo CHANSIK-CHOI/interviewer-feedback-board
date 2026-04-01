@@ -11,7 +11,10 @@ import { getAuthContextByAccessToken } from "@/lib/auth/server";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { checkUpdateData } from "@/lib/feedback/list";
 import { getAuthUserNameById } from "@/lib/user/profile.server";
-import { getSupabaseServerAnonClient } from "@/lib/supabase/server";
+import {
+  getSupabaseServerAnonClient,
+  resolveSupabaseServerReader,
+} from "@/lib/supabase/server";
 import type { AuthContext } from "@/lib/auth/server";
 import { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import { DeleteFeedbackButton, PageMeta, ReviewControls } from "@/components/common";
@@ -35,7 +38,10 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       authContext = authResult.context;
     }
     const supabaseServerUserClient = authContext?.supabaseServerUserClient ?? null;
-    const feedbackReader = supabaseServerUserClient ?? supabaseServerAnonClient;
+    const feedbackReader = resolveSupabaseServerReader({
+      supabaseServerUserClient,
+      supabaseServerAnonClient,
+    });
 
     const detailFeedback = await getFeedbackDetailById(id, {
       supabaseClient: feedbackReader,

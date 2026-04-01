@@ -72,3 +72,13 @@ export function createSupabaseServerUserClient(accessToken: string) {
 
   return supabaseServerUserClient;
 }
+
+export function resolveSupabaseServerReader({
+  supabaseServerUserClient,
+  supabaseServerAnonClient,
+}: {
+  supabaseServerUserClient: SupabaseClient | null;
+  supabaseServerAnonClient: SupabaseClient | null;
+}) {
+  return supabaseServerUserClient ?? supabaseServerAnonClient;
+}

@@ -1,7 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAccessToken, getRequestAuthContext } from "@/lib/auth/request";
-import { getAuthContextByAccessToken } from "@/lib/auth/server";
-import { getSupabaseServerAdminClient, getSupabaseServerAnonClient } from "@/lib/supabase/server";
+import {
+  getRequestAuthContext,
+  resolveRequestReadableSupabaseClient,
+} from "@/lib/auth/request";
+import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import {
   FEEDBACK_COMMENT_COLUMNS,
   findFeedbackCommentsFeedbackTarget,
@@ -20,15 +22,6 @@ import type { SupabaseError } from "@/types/common";
 
 const COMMENT_CREATE_ERROR_MESSAGE = "코멘트 등록에 실패했습니다.";
 const COMMENT_READ_ERROR_MESSAGE = "댓글 조회에 실패했습니다.";
-
-const resolveCommentReaderFromRequest = async (req: NextApiRequest) => {
-  const { accessToken } = getRequestAccessToken(req);
-  const authContext = accessToken ? (await getAuthContextByAccessToken(accessToken)).context : null;
-  const supabaseServerUserClient = authContext?.supabaseServerUserClient ?? null;
-  const supabaseServerAnonClient = getSupabaseServerAnonClient();
-
-  return supabaseServerUserClient ?? supabaseServerAnonClient;
-};
 
 const resolveReplyTargetValidationErrorResponse = (
   validationError: FeedbackCommentReplyTargetValidationError
@@ -81,16 +74,26 @@ async function handleGetComments(
     return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
   }
 
-  const commentReader = await resolveCommentReaderFromRequest(req);
-  if (!commentReader) {
+  const { readableSupabaseServerClient, isAuthenticatedRequester } =
+    await resolveRequestReadableSupabaseClient(req);
+  if (!readableSupabaseServerClient) {
     return res
       .status(500)
       .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
   }
 
+  const canEveryoneReadComments =
+    Boolean(feedbackRow.comments_unlocked_at) &&
+    feedbackRow.status === "approved" &&
+    feedbackRow.is_public;
+
+  if (!isAuthenticatedRequester && !canEveryoneReadComments) {
+    return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
+  }
+
   try {
     const comments = await listFeedbackComments({
-      supabaseClient: commentReader,
+      supabaseClient: readableSupabaseServerClient,
       feedbackId,
     });
 

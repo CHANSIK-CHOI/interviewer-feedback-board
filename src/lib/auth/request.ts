@@ -1,6 +1,11 @@
 import type { NextApiRequest } from "next";
 import type { AuthContext, AuthContextResult } from "@/lib/auth/server";
 import { getAuthContextByAccessToken } from "@/lib/auth/server";
+import {
+  getSupabaseServerAnonClient,
+  resolveSupabaseServerReader,
+} from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type RequestAccessTokenOptions = {
   missingAccessTokenError?: string;
@@ -49,6 +54,12 @@ export type RequestAuthResult = {
   accessToken: string | null;
   error: string | null;
   status: number;
+};
+
+export type RequestReadableSupabaseClientResult = {
+  authContext: AuthContext | null;
+  readableSupabaseServerClient: SupabaseClient | null;
+  isAuthenticatedRequester: boolean;
 };
 
 export const getRequestAuthContext = async (
@@ -106,5 +117,22 @@ export const getRequestAuthContext = async (
     accessToken,
     error: null,
     status: 200,
+  };
+};
+
+export const resolveRequestReadableSupabaseClient = async (
+  req: NextApiRequest
+): Promise<RequestReadableSupabaseClientResult> => {
+  const { accessToken } = getRequestAccessToken(req);
+  const authContext = accessToken ? (await getAuthContextByAccessToken(accessToken)).context : null;
+  const supabaseServerAnonClient = getSupabaseServerAnonClient();
+
+  return {
+    authContext,
+    readableSupabaseServerClient: resolveSupabaseServerReader({
+      supabaseServerUserClient: authContext?.supabaseServerUserClient ?? null,
+      supabaseServerAnonClient,
+    }),
+    isAuthenticatedRequester: Boolean(authContext),
   };
 };
