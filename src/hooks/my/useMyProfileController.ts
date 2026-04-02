@@ -17,7 +17,7 @@ import type { MyProfileForm } from "@/types/forms";
 
 export const useMyProfileController = () => {
   const { openAlert } = useAlert();
-  const { session, supabaseBrowserClient, isInitSessionComplete } = useSession();
+  const { session, supabaseBrowserClient, isInitSessionComplete, getAccessToken } = useSession();
   const router = useRouter();
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
@@ -120,7 +120,7 @@ export const useMyProfileController = () => {
 
   const onSubmit = async (values: MyProfileForm) => {
     if (isSubmitting) return;
-    if (!supabaseBrowserClient || !session?.user || !session.access_token) return;
+    if (!supabaseBrowserClient || !session?.user) return;
 
     const nextName = values.name.trim();
     let nextAvatar = values.avatar || AVATAR_PLACEHOLDER_SRC;
@@ -130,9 +130,10 @@ export const useMyProfileController = () => {
     if (pendingAvatarFile) {
       setIsUploadingAvatar(true);
       try {
+        const accessToken = await getAccessToken();
         const { avatarUrl }: AvatarUploadResult = await uploadAvatarToSupabase(
           pendingAvatarFile,
-          session.access_token
+          accessToken
         );
 
         nextAvatar = avatarUrl || AVATAR_PLACEHOLDER_SRC;

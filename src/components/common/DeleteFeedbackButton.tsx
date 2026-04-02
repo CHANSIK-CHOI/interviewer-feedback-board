@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "@/components/session";
-import { resolveAccessToken } from "@/lib/auth/client";
 import { replaceSafely } from "@/lib/navigation/client";
 import { DeleteFeedbackResult, deleteFeedback } from "@/lib/feedback/client";
 import { Button, useAlert, useConfirm } from "../ui";
@@ -24,7 +23,7 @@ export default function DeleteFeedbackButton({
   const router = useRouter();
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
-  const { session, supabaseBrowserClient } = useSession();
+  const { getAccessToken } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDelete = async () => {
@@ -42,10 +41,7 @@ export default function DeleteFeedbackButton({
     setIsSubmitting(true);
 
     try {
-      const accessToken = await resolveAccessToken({
-        supabaseBrowserClient,
-        fallbackAccessToken: session?.access_token ?? null,
-      });
+      const accessToken = await getAccessToken();
 
       const result: DeleteFeedbackResult = await deleteFeedback({
         feedbackId: id,

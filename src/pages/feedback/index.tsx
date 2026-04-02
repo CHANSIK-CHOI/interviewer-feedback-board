@@ -12,7 +12,6 @@ import {
   MergeFeedbackListParams,
 } from "@/lib/feedback/list";
 import { FeedbackBox, NewFeedbackLinkBtn } from "@/components/feedback";
-import { resolveAccessToken } from "@/lib/auth/client";
 import {
   AdminReviewFeedback,
   ApprovedFeedback,
@@ -63,7 +62,7 @@ export default function FeedbackBoardPage({
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const isAlertedRef = useRef(false);
   const { openAlert } = useAlert();
-  const { session, supabaseBrowserClient, isAdminUi, isRoleLoading } = useSession();
+  const { session, isAdminUi, isRoleLoading, getAccessToken } = useSession();
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
   const [ownerFeedbacks, setOwnerFeedbacks] = useState<OwnerFeedback[]>([]);
@@ -100,12 +99,9 @@ export default function FeedbackBoardPage({
     }
 
     const controller = new AbortController();
-    const loadPendingCount = async () => {
+    void (async () => {
       try {
-        const accessToken = await resolveAccessToken({
-          supabaseBrowserClient,
-          fallbackAccessToken: session.access_token,
-        });
+        const accessToken = await getAccessToken();
 
         const response = await fetch("/api/feedbacks/pending-count", {
           method: "GET",
@@ -134,11 +130,10 @@ export default function FeedbackBoardPage({
         console.error(error);
         setPendingCount(null);
       }
-    };
-    loadPendingCount();
+    })();
 
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token, supabaseBrowserClient]);
+  }, [isRoleLoading, isAdminUi, session?.access_token, getAccessToken]);
 
   useEffect(() => {
     if (!session?.access_token) {
@@ -146,12 +141,9 @@ export default function FeedbackBoardPage({
       return;
     }
     const controller = new AbortController();
-    const getOwnerFeedbacks = async () => {
+    void (async () => {
       try {
-        const accessToken = await resolveAccessToken({
-          supabaseBrowserClient,
-          fallbackAccessToken: session.access_token,
-        });
+        const accessToken = await getAccessToken();
 
         const response = await fetch(`/api/feedbacks/mine?${MINE_STATUS_QUERY}`, {
           method: "GET",
@@ -176,11 +168,10 @@ export default function FeedbackBoardPage({
         console.error(error);
         setOwnerFeedbacks([]);
       }
-    };
-    getOwnerFeedbacks();
+    })();
 
     return () => controller.abort();
-  }, [session?.access_token, supabaseBrowserClient]);
+  }, [session?.access_token, getAccessToken]);
 
   useEffect(() => {
     if (isRoleLoading || !isAdminUi || !session?.access_token) {
@@ -189,12 +180,9 @@ export default function FeedbackBoardPage({
     }
 
     const controller = new AbortController();
-    const getAdminReviewFeedbacks = async () => {
+    void (async () => {
       try {
-        const accessToken = await resolveAccessToken({
-          supabaseBrowserClient,
-          fallbackAccessToken: session.access_token,
-        });
+        const accessToken = await getAccessToken();
 
         const response = await fetch(`/api/feedbacks?${ADMIN_REVIEW_STATUS_QUERY}`, {
           method: "GET",
@@ -218,11 +206,9 @@ export default function FeedbackBoardPage({
         console.error(error);
         setAdminReviewFeedbacks([]);
       }
-    };
-
-    getAdminReviewFeedbacks();
+    })();
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token, supabaseBrowserClient]);
+  }, [isRoleLoading, isAdminUi, session?.access_token, getAccessToken]);
 
   return (
     <>

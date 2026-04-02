@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useSession } from "@/components/session";
-import { resolveAccessToken } from "@/lib/auth/client";
 import {
   ReviewFeedbackAction,
   ReviewFeedbackParams,
@@ -30,7 +29,7 @@ export default function ReviewControls({
   onSuccess,
 }: ReviewControlsProps) {
   const { openAlert } = useAlert();
-  const { session, supabaseBrowserClient } = useSession();
+  const { getAccessToken } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleReview = async (action: ReviewFeedbackAction) => {
@@ -39,10 +38,7 @@ export default function ReviewControls({
     setIsSubmitting(true);
 
     try {
-      const accessToken = await resolveAccessToken({
-        supabaseBrowserClient,
-        fallbackAccessToken: session?.access_token ?? null,
-      });
+      const accessToken = await getAccessToken();
 
       const result: ReviewFeedbackResultWithReviewerName = await reviewFeedback({
         feedbackId: id,

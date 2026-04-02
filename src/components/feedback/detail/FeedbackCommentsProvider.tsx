@@ -1,6 +1,5 @@
 import { feedbackCommentsReducer } from "@/components/feedback/detail/FeedbackCommentsReducer";
 import { useSession } from "@/components/session";
-import { resolveAccessToken } from "@/lib/auth/client";
 import {
   createFeedbackComment,
   deleteFeedbackComment,
@@ -79,7 +78,7 @@ export default function FeedbackCommentsProvider({
   initialComments,
   children,
 }: FeedbackCommentsProviderProps) {
-  const { session, supabaseBrowserClient } = useSession();
+  const { session, getAccessToken } = useSession();
   const [{ comments }, dispatch] = useReducer(feedbackCommentsReducer, {
     comments: initialComments,
   });
@@ -94,20 +93,13 @@ export default function FeedbackCommentsProvider({
     dispatch({ type: "RESET_TO_INITIAL_COMMENTS", comments: initialComments });
   }, [feedback.id, initialComments]);
 
-  const resolveCommentAccessToken = useCallback(async () => {
-    return resolveAccessToken({
-      supabaseBrowserClient,
-      fallbackAccessToken: session?.access_token ?? null,
-    });
-  }, [session?.access_token, supabaseBrowserClient]);
-
   const createComment = useCallback(
     async (newCommentText: string) => {
       if (!canWrite) {
         throw new Error("현재 상태에서는 새 코멘트를 작성할 수 없습니다.");
       }
 
-      const accessToken = await resolveCommentAccessToken();
+      const accessToken = await getAccessToken();
       const createdComment = await createFeedbackComment({
         feedbackId: feedback.id,
         accessToken,
@@ -119,7 +111,7 @@ export default function FeedbackCommentsProvider({
 
       dispatch({ type: "APPEND_COMMENT", comment: createdComment });
     },
-    [canWrite, feedback.id, resolveCommentAccessToken]
+    [canWrite, feedback.id, getAccessToken]
   );
 
   const createReply = useCallback(
@@ -128,7 +120,7 @@ export default function FeedbackCommentsProvider({
         throw new Error("현재 상태에서는 답글을 작성할 수 없습니다.");
       }
 
-      const accessToken = await resolveCommentAccessToken();
+      const accessToken = await getAccessToken();
       const createdComment = await createFeedbackComment({
         feedbackId: feedback.id,
         accessToken,
@@ -140,7 +132,7 @@ export default function FeedbackCommentsProvider({
 
       dispatch({ type: "APPEND_COMMENT", comment: createdComment });
     },
-    [canWrite, feedback.id, resolveCommentAccessToken]
+    [canWrite, feedback.id, getAccessToken]
   );
 
   const updateComment = useCallback(
@@ -149,7 +141,7 @@ export default function FeedbackCommentsProvider({
         throw new Error("현재 상태에서는 코멘트를 수정할 수 없습니다.");
       }
 
-      const accessToken = await resolveCommentAccessToken();
+      const accessToken = await getAccessToken();
       const updatedComment = await updateFeedbackComment({
         feedbackId: feedback.id,
         commentId,
@@ -159,12 +151,12 @@ export default function FeedbackCommentsProvider({
 
       dispatch({ type: "REPLACE_COMMENT", comment: updatedComment });
     },
-    [canWrite, feedback.id, resolveCommentAccessToken]
+    [canWrite, feedback.id, getAccessToken]
   );
 
   const deleteComment = useCallback(
     async (commentId: FeedbackComment["id"]) => {
-      const accessToken = await resolveCommentAccessToken();
+      const accessToken = await getAccessToken();
 
       await deleteFeedbackComment({
         feedbackId: feedback.id,
@@ -174,7 +166,7 @@ export default function FeedbackCommentsProvider({
 
       dispatch({ type: "REMOVE_COMMENT_THREAD", commentId });
     },
-    [feedback.id, resolveCommentAccessToken]
+    [feedback.id, getAccessToken]
   );
 
   const stateValue = useMemo<FeedbackCommentsStateContextValue>(() => {

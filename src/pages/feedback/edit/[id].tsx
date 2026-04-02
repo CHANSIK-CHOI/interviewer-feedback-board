@@ -7,7 +7,6 @@ import { useAlert } from "@/components/ui";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { getFeedbackDetailById } from "@/lib/feedback/server";
 import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
-import { resolveAccessToken } from "@/lib/auth/client";
 import {
   AVATAR_PLACEHOLDER_SRC,
   FEEDBACK_FORM_ERROR_MESSAGES,
@@ -102,7 +101,7 @@ export default function FeedbackEditPage({
   feedbackId,
   defaultValues,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const { session, supabaseBrowserClient } = useSession();
+  const { session, getAccessToken } = useSession();
   const { openAlert } = useAlert();
   const router = useRouter();
 
@@ -127,10 +126,7 @@ export default function FeedbackEditPage({
     }
 
     try {
-      const accessToken = await resolveAccessToken({
-        supabaseBrowserClient,
-        fallbackAccessToken: session.access_token,
-      });
+      const accessToken = await getAccessToken();
 
       const response = await fetch(`/api/feedbacks/${feedbackId}`, {
         method: "PATCH",

@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import type { SupabaseError } from "@/types/common";
 import type { UserRole } from "@/types/user-role";
-import { getRequestAccessToken, RequestAccessTokenResult } from "@/lib/auth/request";
 import { UserRoleSyncResponse } from "@/types/response";
 
 export default async function handler(
@@ -23,14 +22,11 @@ export default async function handler(
       .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
   }
 
-  const {
-    accessToken,
-    error: tokenError,
-    status: tokenStatus,
-  }: RequestAccessTokenResult = getRequestAccessToken(req);
-
-  if (tokenError || !accessToken) {
-    return res.status(tokenStatus).json({ data: null, error: tokenError });
+  const authHeader = req.headers.authorization;
+  const accessToken =
+    typeof authHeader === "string" && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!accessToken) {
+    return res.status(401).json({ data: null, error: "Missing access token" });
   }
 
   try {

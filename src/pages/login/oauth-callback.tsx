@@ -9,7 +9,7 @@ import { ApplyRoleUiStateParams } from "@/components/session/useSession";
 
 export default function OAuthCallbackPage() {
   const router = useRouter();
-  const { session, supabaseBrowserClient, applyRoleUiState } = useSession();
+  const { session, supabaseBrowserClient, applyRoleUiState, getAccessToken } = useSession();
   const isHandledRef = useRef(false);
 
   useEffect(() => {
@@ -30,15 +30,9 @@ export default function OAuthCallbackPage() {
     if (!router.isReady || !session?.user || isHandledRef.current) return;
 
     let isUnmounted = false;
-
-    const handleSession = async () => {
+    void (async () => {
       if (isUnmounted || isHandledRef.current) return;
       isHandledRef.current = true;
-
-      if (!session.access_token) {
-        await replaceSafely(router, "/login");
-        return;
-      }
 
       applyRoleUiState({
         userId: session.user.id,
@@ -49,7 +43,8 @@ export default function OAuthCallbackPage() {
 
       let roleSyncResult: { role: "admin" | "reviewer"; isNewUser: boolean };
       try {
-        roleSyncResult = await syncUserRole(session.access_token);
+        const accessToken = await getAccessToken();
+        roleSyncResult = await syncUserRole(accessToken);
       } catch {
         applyRoleUiState({
           userId: session.user.id,
@@ -71,14 +66,12 @@ export default function OAuthCallbackPage() {
         markSignUpRoleSyncSkip();
       }
       await replaceSafely(router, isNewUser ? "/my" : "/");
-    };
-
-    void handleSession();
+    })();
 
     return () => {
       isUnmounted = true;
     };
-  }, [router, router.isReady, session?.access_token, session?.user, applyRoleUiState]);
+  }, [router, router.isReady, session?.user, applyRoleUiState, getAccessToken]);
 
   return (
     <>

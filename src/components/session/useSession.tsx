@@ -16,6 +16,7 @@ type SessionContextValue = {
   isAdminUi: boolean;
   isRoleLoading: boolean;
   applyRoleUiState: (params: ApplyRoleUiStateParams) => void;
+  getAccessToken: () => Promise<string>;
 };
 
 export const SessionContext = createContext<SessionContextValue | null>(null);

@@ -1,9 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getRequestAuthContext } from "@/lib/auth/request";
 import {
-  getRequestAuthContext,
-  resolveRequestReadableSupabaseClient,
-} from "@/lib/auth/request";
-import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
+  getSupabaseServerAdminClient,
+  getSupabaseServerAnonClient,
+  resolveSupabaseServerReader,
+} from "@/lib/supabase/server";
 import {
   FEEDBACK_COMMENT_COLUMNS,
   findFeedbackCommentsFeedbackTarget,
@@ -74,8 +75,16 @@ async function handleGetComments(
     return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
   }
 
-  const { readableSupabaseServerClient, isAuthenticatedRequester } =
-    await resolveRequestReadableSupabaseClient(req);
+  const authHeader = req.headers.authorization;
+  const hasBearerAccessToken =
+    typeof authHeader === "string" && authHeader.startsWith("Bearer ");
+  const auth = hasBearerAccessToken ? await getRequestAuthContext(req) : null;
+  const authContext = auth?.context ?? null;
+  const readableSupabaseServerClient = resolveSupabaseServerReader({
+    supabaseServerUserClient: authContext?.supabaseServerUserClient ?? null,
+    supabaseServerAnonClient: getSupabaseServerAnonClient(),
+  });
+  const isAuthenticatedRequester = Boolean(authContext);
   if (!readableSupabaseServerClient) {
     return res
       .status(500)

@@ -1,10 +1,5 @@
 import type { FeedbackPublicBase, FeedbackPublicRow } from "@/types/feedback";
-import type {
-  DeleteFeedbackCommentResponse,
-  DeleteFeedbackResponse,
-  FeedbackCommentResponse,
-  ReviewFeedbackResponse,
-} from "@/types/response";
+import type { ApiResponse } from "@/types/common";
 import type {
   FeedbackComment,
   FeedbackCommentCreatePayload,
@@ -49,7 +44,7 @@ export async function reviewFeedback({
     body: JSON.stringify({ action }),
   });
 
-  const result: ReviewFeedbackResponse = await response
+  const result: ApiResponse<ReviewFeedbackResultWithReviewerName> = await response
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
@@ -84,7 +79,7 @@ export async function deleteFeedback({
     },
   });
 
-  const result: DeleteFeedbackResponse = await response
+  const result: ApiResponse<DeleteFeedbackResult> = await response
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
@@ -119,7 +114,7 @@ export async function createFeedbackComment({
     body: JSON.stringify(payload),
   });
 
-  const result: FeedbackCommentResponse = await response
+  const result: ApiResponse<FeedbackComment> = await response
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
@@ -159,7 +154,7 @@ export async function updateFeedbackComment({
     }
   );
 
-  const result: FeedbackCommentResponse = await response
+  const result: ApiResponse<FeedbackComment> = await response
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
@@ -199,7 +194,7 @@ export async function deleteFeedbackComment({
     }
   );
 
-  const result: DeleteFeedbackCommentResponse = await response
+  const result: ApiResponse<DeleteFeedbackCommentResult> = await response
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 

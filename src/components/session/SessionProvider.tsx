@@ -1,6 +1,7 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ApplyRoleUiStateParams, SessionContext } from "./useSession";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
+import { resolveAccessToken } from "@/lib/auth/client";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { syncUserRole, SyncUserRoleResult } from "@/lib/user-role/client";
 import { consumeSignUpRoleSyncSkip } from "@/lib/auth/signup-flow";
@@ -34,6 +35,13 @@ export default function SessionProvider({ children }: SessionProviderProps) {
     },
     []
   );
+
+  const getAccessToken = useCallback(() => {
+    return resolveAccessToken({
+      supabaseBrowserClient,
+      fallbackAccessToken: session?.access_token ?? null,
+    });
+  }, [session?.access_token, supabaseBrowserClient]);
 
   useEffect(() => {
     if (!supabaseBrowserClient) {
@@ -104,21 +112,20 @@ export default function SessionProvider({ children }: SessionProviderProps) {
       }
     }
 
-    const runRoleSync = async () => {
-      setIsRoleLoading(true);
-      const { role }: SyncUserRoleResult = await syncUserRole(session.access_token);
-      applyRoleUiState({ userId: session.user.id, role } satisfies ApplyRoleUiStateParams);
-    };
-
-    runRoleSync().catch((error) => {
-      console.error(error);
-      setIsAdminUi(false);
-      setIsRoleLoading(false);
-    });
+    setIsRoleLoading(true);
+    void syncUserRole(session.access_token)
+      .then(({ role }: SyncUserRoleResult) => {
+        applyRoleUiState({ userId: session.user.id, role } satisfies ApplyRoleUiStateParams);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsAdminUi(false);
+        setIsRoleLoading(false);
+      });
   }, [session?.user?.id, session?.access_token, applyRoleUiState]);
 
   useEffect(() => {
-    const syncSessionCookie = async () => {
+    void (async () => {
       if (!session?.access_token) {
         syncedTokenRef.current = null;
         await fetch("/api/auth/session", {
@@ -144,9 +151,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
       }
 
       syncedTokenRef.current = session.access_token;
-    };
-
-    syncSessionCookie().catch((error) => {
+    })().catch((error) => {
       console.error(error);
     });
   }, [session?.access_token]);
@@ -160,6 +165,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
         isAdminUi,
         isRoleLoading,
         applyRoleUiState,
+        getAccessToken,
       }}
     >
       {children}

@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createSupabaseServerUserClient } from "@/lib/supabase/server";
-import { getRequestAccessToken, RequestAccessTokenResult } from "@/lib/auth/request";
 import { SessionCookieSyncResponse } from "@/types/response";
 
 const ACCESS_TOKEN_COOKIE = "sb-access-token";
@@ -33,15 +32,11 @@ export default async function handler(
     return res.status(405).json({ data: null, error: "Method Not Allowed" });
   }
 
-  const {
-    accessToken,
-    error: tokenError,
-    status: tokenStatus,
-  }: RequestAccessTokenResult = getRequestAccessToken(req);
-  if (tokenError || !accessToken) {
-    return res
-      .status(tokenStatus)
-      .json({ data: null, error: tokenError ?? "Missing access token" });
+  const authHeader = req.headers.authorization;
+  const accessToken =
+    typeof authHeader === "string" && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!accessToken) {
+    return res.status(401).json({ data: null, error: "Missing access token" });
   }
 
   const supabaseServerUserClient = createSupabaseServerUserClient(accessToken);

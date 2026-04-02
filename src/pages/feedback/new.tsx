@@ -24,7 +24,7 @@ import { EditFeedbackResponse } from "@/types/response";
 const newFeedbackErrorMessages = new Set<string>(Object.values(FEEDBACK_FORM_ERROR_MESSAGES));
 
 export default function FeedbackNewPage() {
-  const { session } = useSession();
+  const { session, getAccessToken } = useSession();
   const { openAlert } = useAlert();
   const user = session?.user;
   const router = useRouter();
@@ -76,11 +76,13 @@ export default function FeedbackNewPage() {
     }
 
     try {
+      const accessToken = await getAccessToken();
+
       const response = await fetch("/api/feedbacks/new", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify(values),
       });

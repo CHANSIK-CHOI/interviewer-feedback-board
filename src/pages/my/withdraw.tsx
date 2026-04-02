@@ -8,7 +8,6 @@ import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { useRouter } from "next/router";
 import { inputBaseStyle } from "@/constants";
 import { getAuthProviderLabel, getAuthProviders } from "@/lib/auth/provider";
-import { resolveAccessToken } from "@/lib/auth/client";
 import { WithdrawResponse } from "@/types/response";
 
 type WithdrawForm = {
@@ -28,7 +27,8 @@ const WITHDRAW_CONFIRM_TEXT = "회원탈퇴";
 export default function WithdrawPage() {
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
-  const { session, supabaseBrowserClient, isInitSessionComplete } = useSession();
+  const { session, supabaseBrowserClient, isInitSessionComplete, getAccessToken } =
+    useSession();
   const router = useRouter();
   const user = session?.user;
   const providers = getAuthProviders(user);
@@ -93,10 +93,7 @@ export default function WithdrawPage() {
     }
 
     try {
-      const accessToken = await resolveAccessToken({
-        supabaseBrowserClient,
-        fallbackAccessToken: session.access_token,
-      });
+      const accessToken = await getAccessToken();
 
       const response = await fetch("/api/auth/withdraw", {
         method: "DELETE",
