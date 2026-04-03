@@ -9,7 +9,8 @@ import { ApplyRoleUiStateParams } from "@/components/session/useSession";
 
 export default function OAuthCallbackPage() {
   const router = useRouter();
-  const { session, supabaseBrowserClient, applyRoleUiState, getAccessToken } = useSession();
+  const { session, supabaseBrowserClient, applyRoleUiState, getAccessTokenOrThrow } =
+    useSession();
   const isHandledRef = useRef(false);
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export default function OAuthCallbackPage() {
 
       let roleSyncResult: { role: "admin" | "reviewer"; isNewUser: boolean };
       try {
-        const accessToken = await getAccessToken();
+        const accessToken = await getAccessTokenOrThrow();
         roleSyncResult = await syncUserRole(accessToken);
       } catch {
         applyRoleUiState({
@@ -71,7 +72,7 @@ export default function OAuthCallbackPage() {
     return () => {
       isUnmounted = true;
     };
-  }, [router, router.isReady, session?.user, applyRoleUiState, getAccessToken]);
+  }, [router, router.isReady, session?.user, applyRoleUiState, getAccessTokenOrThrow]);
 
   return (
     <>

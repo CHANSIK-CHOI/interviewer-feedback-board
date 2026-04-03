@@ -17,7 +17,7 @@ import {
 } from "@/components/feedback/detail/FeedbackCommentsUtils";
 import { Button, useAlert, useConfirm } from "@/components/ui";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
-import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
+import { isPrivateAvatarApiSrc, isSvgImageSrc } from "@/lib/avatar/path";
 import { formatDateTime } from "@/lib/feedback/presentation";
 import { cn } from "@/lib/shared/cn";
 import type { FeedbackComment } from "@/types/feedback-comment";
@@ -152,7 +152,7 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
             width={44}
             height={44}
             unoptimized={
-              checkSvgImageSrc(commentAvatarSrc) || checkAvatarApiSrcPrivate(commentAvatarSrc)
+              isSvgImageSrc(commentAvatarSrc) || isPrivateAvatarApiSrc(commentAvatarSrc)
             }
             className="h-full w-full object-cover"
           />

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { useFormContext, useWatch } from "react-hook-form";
 import { AVATAR_PLACEHOLDER_SRC, inputBaseStyle } from "@/constants";
-import { checkAvatarApiSrcPrivate } from "@/lib/avatar/path";
+import { isPrivateAvatarApiSrc } from "@/lib/avatar/path";
 import type { FeedbackFormValues } from "@/types/forms";
 
 type FeedbackFormProfileSectionProps = {
@@ -36,7 +36,7 @@ export default function FeedbackFormProfileSection({
               alt="유저 프로필"
               width={120}
               height={120}
-              unoptimized={avatarSrc.startsWith("data:") || checkAvatarApiSrcPrivate(avatarSrc)}
+              unoptimized={avatarSrc.startsWith("data:") || isPrivateAvatarApiSrc(avatarSrc)}
             />
           </div>
           <input type="hidden" {...register("avatar")} />

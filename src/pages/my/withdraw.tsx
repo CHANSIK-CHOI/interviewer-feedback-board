@@ -10,13 +10,13 @@ import { inputBaseStyle } from "@/constants";
 import { getAuthProviderLabel, getAuthProviders } from "@/lib/auth/provider";
 import { WithdrawResponse } from "@/types/response";
 
-type WithdrawForm = {
+type WithdrawFormValues = {
   confirm_text: string;
   password: string;
   isAgreementChecked: boolean;
 };
 
-const WITHD_RAW_FORM: WithdrawForm = {
+const WITHDRAW_FORM_DEFAULT_VALUES: WithdrawFormValues = {
   confirm_text: "",
   password: "",
   isAgreementChecked: false,
@@ -27,7 +27,7 @@ const WITHDRAW_CONFIRM_TEXT = "회원탈퇴";
 export default function WithdrawPage() {
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
-  const { session, supabaseBrowserClient, isInitSessionComplete, getAccessToken } =
+  const { session, supabaseBrowserClient, isInitSessionComplete, getAccessTokenOrThrow } =
     useSession();
   const router = useRouter();
   const user = session?.user;
@@ -40,18 +40,18 @@ export default function WithdrawPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<WithdrawForm>({
+  } = useForm<WithdrawFormValues>({
     mode: "onSubmit",
-    defaultValues: WITHD_RAW_FORM,
+    defaultValues: WITHDRAW_FORM_DEFAULT_VALUES,
   });
 
   useEffect(() => {
     if (!isInitSessionComplete) return;
     if (session?.access_token) return;
-    replaceSafely(router, buildLoginHref("/my/withdraw"));
+    void replaceSafely(router, buildLoginHref("/my/withdraw"));
   }, [isInitSessionComplete, router, session?.access_token]);
 
-  const onSubmit = async (values: WithdrawForm) => {
+  const onSubmit = async (values: WithdrawFormValues) => {
     if (isSubmitting) return;
     if (!session?.access_token || !supabaseBrowserClient) {
       openAlert({
@@ -93,7 +93,7 @@ export default function WithdrawPage() {
     }
 
     try {
-      const accessToken = await getAccessToken();
+      const accessToken = await getAccessTokenOrThrow();
 
       const response = await fetch("/api/auth/withdraw", {
         method: "DELETE",

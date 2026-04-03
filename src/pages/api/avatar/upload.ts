@@ -5,7 +5,11 @@ import { AVATAR_MAX_FILE_SIZE } from "@/constants";
 import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
 import { getDetectedAvatarMimeTypeFromBuffer } from "@/lib/avatar/signature";
 import { replaceUserAvatar, ReplaceUserAvatarResult } from "@/lib/avatar/storage.server";
-import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
+import {
+  ApiRequestAuthOptions,
+  ApiRequestAuthResult,
+  resolveApiRequestAuth,
+} from "@/lib/auth/request";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import type { ApiResponse } from "@/types/common";
 import { AvatarMimeType } from "@/types/avatar";
@@ -63,10 +67,10 @@ export default async function handler(
     return res.status(405).json({ data: null, error: "Method Not Allowed" });
   }
 
-  const auth: RequestAuthResult = await getRequestAuthContext(req, {
+  const auth: ApiRequestAuthResult = await resolveApiRequestAuth(req, {
     missingAccessTokenError: "로그인이 필요합니다.",
     unauthorizedError: "로그인 상태를 확인해주세요.",
-  } satisfies RequestAuthOptions);
+  } satisfies ApiRequestAuthOptions);
 
   if (auth.error || !auth.context) {
     return res

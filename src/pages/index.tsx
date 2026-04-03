@@ -26,7 +26,7 @@ const DELIVERY_BADGES: StackBadge[] = [
   { label: "GitHub", iconSrc: "/icons/github.svg", isInvertedInDarkMode: true },
 ];
 
-export default function MainPage() {
+export default function HomePage() {
   const { session, isAdminUi, isRoleLoading } = useSession();
   const roleLabel = isRoleLoading ? "확인 중..." : isAdminUi ? "admin" : "reviewer";
   const userName = getUserName(session?.user);

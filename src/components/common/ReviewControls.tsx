@@ -29,7 +29,7 @@ export default function ReviewControls({
   onSuccess,
 }: ReviewControlsProps) {
   const { openAlert } = useAlert();
-  const { getAccessToken } = useSession();
+  const { getAccessTokenOrThrow } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleReview = async (action: ReviewFeedbackAction) => {
@@ -38,7 +38,7 @@ export default function ReviewControls({
     setIsSubmitting(true);
 
     try {
-      const accessToken = await getAccessToken();
+      const accessToken = await getAccessTokenOrThrow();
 
       const result: ReviewFeedbackResultWithReviewerName = await reviewFeedback({
         feedbackId: id,

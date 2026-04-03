@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext } from "@/lib/auth/request";
+import { resolveApiRequestAuth } from "@/lib/auth/request";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import {
   FEEDBACK_COMMENT_COLUMNS,
+  type FeedbackCommentsFeedbackTargetRow,
   findFeedbackCommentMutationTarget,
   normalizeFeedbackCommentBody,
   validateCommentBody,
@@ -15,27 +16,35 @@ import type { DeleteFeedbackCommentResponse, FeedbackCommentResponse } from "@/t
 const COMMENT_UPDATE_ERROR_MESSAGE = "코멘트 수정에 실패했습니다.";
 const COMMENT_DELETE_ERROR_MESSAGE = "코멘트 삭제에 실패했습니다.";
 
-async function handleUpdateComment(
-  req: NextApiRequest,
-  res: NextApiResponse<FeedbackCommentResponse | DeleteFeedbackCommentResponse>,
+type CommentApiError = {
+  status: number;
+  error: string;
+};
+
+type CommentMutationTargetResult = {
+  feedback: FeedbackCommentsFeedbackTargetRow | null;
+  comment: FeedbackCommentRow | null;
+  errorResponse: CommentApiError | null;
+};
+
+const canManageCommentsOnPublicApprovedFeedback = (feedback: FeedbackCommentsFeedbackTargetRow) =>
+  Boolean(feedback.comments_unlocked_at) && feedback.status === "approved" && feedback.is_public;
+
+const loadCommentMutationTarget = async (
   feedbackId: string,
-  commentId: string
-) {
-  const auth = await getRequestAuthContext(req, {
-    missingAccessTokenError: "로그인이 필요합니다.",
-    unauthorizedError: "로그인 상태를 확인해주세요.",
-  });
-
-  if (auth.error || !auth.context) {
-    return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
-  }
-  const { supabaseServerUserClient, userId } = auth.context;
-
+  commentId: string,
+  errorMessage: string
+): Promise<CommentMutationTargetResult> => {
   const supabaseServerAdminClient = getSupabaseServerAdminClient();
   if (!supabaseServerAdminClient) {
-    return res
-      .status(500)
-      .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
+    return {
+      feedback: null,
+      comment: null,
+      errorResponse: {
+        status: 500,
+        error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+      },
+    };
   }
 
   const { feedback, feedbackError, comment, commentError } =
@@ -46,46 +55,144 @@ async function handleUpdateComment(
     });
 
   if (feedbackError) {
-    return res.status(500).json({
-      data: null,
-      error: resolveSupabaseErrorMessage(feedbackError, COMMENT_UPDATE_ERROR_MESSAGE),
-    });
+    return {
+      feedback: null,
+      comment: null,
+      errorResponse: {
+        status: 500,
+        error: resolveSupabaseErrorMessage(feedbackError, errorMessage),
+      },
+    };
   }
 
   if (!feedback) {
-    return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
+    return {
+      feedback: null,
+      comment: null,
+      errorResponse: { status: 404, error: "피드백을 찾을 수 없습니다." },
+    };
   }
 
   if (commentError) {
-    return res.status(500).json({
-      data: null,
-      error: resolveSupabaseErrorMessage(commentError, COMMENT_UPDATE_ERROR_MESSAGE),
-    });
+    return {
+      feedback,
+      comment: null,
+      errorResponse: {
+        status: 500,
+        error: resolveSupabaseErrorMessage(commentError, errorMessage),
+      },
+    };
   }
 
   if (!comment) {
-    return res.status(404).json({ data: null, error: "코멘트를 찾을 수 없습니다." });
+    return {
+      feedback,
+      comment: null,
+      errorResponse: { status: 404, error: "코멘트를 찾을 수 없습니다." },
+    };
   }
 
   if (comment.feedback_id !== feedbackId) {
-    return res.status(400).json({ data: null, error: "다른 피드백의 코멘트입니다." });
+    return {
+      feedback,
+      comment,
+      errorResponse: { status: 400, error: "다른 피드백의 코멘트입니다." },
+    };
   }
 
+  return {
+    feedback,
+    comment,
+    errorResponse: null,
+  };
+};
+
+const resolveCommentUpdatePolicyError = (
+  feedback: FeedbackCommentsFeedbackTargetRow,
+  comment: FeedbackCommentRow,
+  userId: string
+): CommentApiError | null => {
   if (!feedback.comments_unlocked_at) {
-    return res
-      .status(400)
-      .json({ data: null, error: "코멘트는 첫 승인 이후부터 사용할 수 있습니다." });
+    return {
+      status: 400,
+      error: "코멘트는 첫 승인 이후부터 사용할 수 있습니다.",
+    };
   }
 
-  if (feedback.status !== "approved" || !feedback.is_public) {
-    return res.status(403).json({
-      data: null,
+  if (!canManageCommentsOnPublicApprovedFeedback(feedback)) {
+    return {
+      status: 403,
       error: "현재는 승인된 공개 글에서만 코멘트를 수정할 수 있습니다.",
-    });
+    };
   }
 
   if (comment.author_id !== userId) {
-    return res.status(403).json({ data: null, error: "본인 코멘트만 수정할 수 있습니다." });
+    return {
+      status: 403,
+      error: "본인 코멘트만 수정할 수 있습니다.",
+    };
+  }
+
+  return null;
+};
+
+const resolveCommentDeletePolicyError = (
+  feedback: FeedbackCommentsFeedbackTargetRow,
+  comment: FeedbackCommentRow,
+  userId: string,
+  isAdmin: boolean
+): CommentApiError | null => {
+  if (isAdmin) {
+    return null;
+  }
+
+  if (comment.author_id !== userId) {
+    return {
+      status: 403,
+      error: "본인 코멘트만 삭제할 수 있습니다.",
+    };
+  }
+
+  if (!canManageCommentsOnPublicApprovedFeedback(feedback)) {
+    return {
+      status: 403,
+      error: "현재는 승인된 공개 글에서만 본인 코멘트를 삭제할 수 있습니다.",
+    };
+  }
+
+  return null;
+};
+
+async function handleUpdateComment(
+  req: NextApiRequest,
+  res: NextApiResponse<FeedbackCommentResponse | DeleteFeedbackCommentResponse>,
+  feedbackId: string,
+  commentId: string
+) {
+  const auth = await resolveApiRequestAuth(req, {
+    missingAccessTokenError: "로그인이 필요합니다.",
+    unauthorizedError: "로그인 상태를 확인해주세요.",
+  });
+
+  if (auth.error || !auth.context) {
+    return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
+  }
+  const { supabaseServerUserClient, userId } = auth.context;
+
+  const { comment, errorResponse, feedback } = await loadCommentMutationTarget(
+    feedbackId,
+    commentId,
+    COMMENT_UPDATE_ERROR_MESSAGE
+  );
+  if (errorResponse || !feedback || !comment) {
+    return res
+      .status(errorResponse?.status ?? 404)
+      .json({ data: null, error: errorResponse?.error ?? "코멘트를 찾을 수 없습니다." });
+  }
+
+  const updatePolicyError = resolveCommentUpdatePolicyError(feedback, comment, userId);
+  if (updatePolicyError) {
+    return res.status(updatePolicyError.status).json({ data: null, error: updatePolicyError.error });
   }
 
   const body = normalizeFeedbackCommentBody(req.body?.body);
@@ -123,7 +230,7 @@ async function handleDeleteComment(
   feedbackId: string,
   commentId: string
 ) {
-  const auth = await getRequestAuthContext(req, {
+  const auth = await resolveApiRequestAuth(req, {
     missingAccessTokenError: "로그인이 필요합니다.",
     unauthorizedError: "로그인 상태를 확인해주세요.",
   });
@@ -133,61 +240,25 @@ async function handleDeleteComment(
   }
   const { isAdmin, supabaseServerUserClient, userId } = auth.context;
 
-  const supabaseServerAdminClient = getSupabaseServerAdminClient();
-  if (!supabaseServerAdminClient) {
+  const { comment, errorResponse, feedback } = await loadCommentMutationTarget(
+    feedbackId,
+    commentId,
+    COMMENT_DELETE_ERROR_MESSAGE
+  );
+  if (errorResponse || !feedback || !comment) {
     return res
-      .status(500)
-      .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
+      .status(errorResponse?.status ?? 404)
+      .json({ data: null, error: errorResponse?.error ?? "코멘트를 찾을 수 없습니다." });
   }
 
-  const { feedback, feedbackError, comment, commentError } =
-    await findFeedbackCommentMutationTarget({
-      supabaseClient: supabaseServerAdminClient,
-      feedbackId,
-      commentId,
-    });
-
-  if (feedbackError) {
-    return res.status(500).json({
-      data: null,
-      error: resolveSupabaseErrorMessage(feedbackError, COMMENT_DELETE_ERROR_MESSAGE),
-    });
-  }
-
-  if (!feedback) {
-    return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
-  }
-
-  if (commentError) {
-    return res.status(500).json({
-      data: null,
-      error: resolveSupabaseErrorMessage(commentError, COMMENT_DELETE_ERROR_MESSAGE),
-    });
-  }
-
-  if (!comment) {
-    return res.status(404).json({ data: null, error: "코멘트를 찾을 수 없습니다." });
-  }
-
-  if (comment.feedback_id !== feedbackId) {
-    return res.status(400).json({ data: null, error: "다른 피드백의 코멘트입니다." });
-  }
-
-  if (!isAdmin) {
-    if (comment.author_id !== userId) {
-      return res.status(403).json({ data: null, error: "본인 코멘트만 삭제할 수 있습니다." });
-    }
-
-    if (
-      !feedback.comments_unlocked_at ||
-      feedback.status !== "approved" ||
-      !feedback.is_public
-    ) {
-      return res.status(403).json({
-        data: null,
-        error: "현재는 승인된 공개 글에서만 본인 코멘트를 삭제할 수 있습니다.",
-      });
-    }
+  const deletePolicyError = resolveCommentDeletePolicyError(
+    feedback,
+    comment,
+    userId,
+    isAdmin
+  );
+  if (deletePolicyError) {
+    return res.status(deletePolicyError.status).json({ data: null, error: deletePolicyError.error });
   }
 
   const {

@@ -23,7 +23,7 @@ export default function DeleteFeedbackButton({
   const router = useRouter();
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
-  const { getAccessToken } = useSession();
+  const { getAccessTokenOrThrow } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDelete = async () => {
@@ -41,7 +41,7 @@ export default function DeleteFeedbackButton({
     setIsSubmitting(true);
 
     try {
-      const accessToken = await getAccessToken();
+      const accessToken = await getAccessTokenOrThrow();
 
       const result: DeleteFeedbackResult = await deleteFeedback({
         feedbackId: id,

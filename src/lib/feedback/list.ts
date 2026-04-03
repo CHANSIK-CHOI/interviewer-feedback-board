@@ -58,13 +58,12 @@ export const mergeFeedbackList = ({
   return Array.from(mergedById.values()).sort(compareUpdatedAtDesc);
 };
 
-export const checkUpdateData = ({
+export const hasFeedbackBeenUpdated = ({
   created_at,
   updated_at,
 }: {
   created_at: FeedbackPublicBase["created_at"];
   updated_at: FeedbackPublicBase["updated_at"];
 }) => {
-  const isUpdateData = created_at !== updated_at;
-  return isUpdateData;
+  return created_at !== updated_at;
 };

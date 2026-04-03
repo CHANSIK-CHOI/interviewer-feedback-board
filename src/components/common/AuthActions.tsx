@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { Button } from "@/components/ui";
 import { useSession } from "@/components/session";
 import { pushSafely, replaceSafely } from "@/lib/navigation/client";
-import { checkAvatarApiSrcPrivate } from "@/lib/avatar/path";
+import { isPrivateAvatarApiSrc } from "@/lib/avatar/path";
 import { getUserName, getAvatarUrl } from "@/lib/user/profile";
 
 export default function AuthActions() {
@@ -64,7 +64,7 @@ export default function AuthActions() {
                 unoptimized={
                   avatarSrc.startsWith("data:") ||
                   avatarSrc.startsWith("blob:") ||
-                  checkAvatarApiSrcPrivate(avatarSrc)
+                  isPrivateAvatarApiSrc(avatarSrc)
                 }
               />
             </span>

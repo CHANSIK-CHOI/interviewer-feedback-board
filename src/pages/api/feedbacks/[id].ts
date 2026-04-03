@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
+import {
+  ApiRequestAuthOptions,
+  ApiRequestAuthResult,
+  resolveApiRequestAuth,
+} from "@/lib/auth/request";
 import type { SupabaseError } from "@/types/common";
 import type { FeedbackPublicAndEmailRow, FeedbackPublicBase } from "@/types/feedback";
 import type { FeedbackFormValues } from "@/types/forms";
@@ -12,7 +16,7 @@ import {
 import { toNullableTrimmedString, toStrictBoolean, toTrimmedString } from "@/lib/shared/normalize";
 import { EditFeedbackResponse } from "@/types/response";
 
-type UpdataCompleteReturnData = {
+type ExistingFeedbackRow = {
   id: FeedbackPublicAndEmailRow["id"];
   author_id: FeedbackPublicAndEmailRow["author_id"];
   status: FeedbackPublicAndEmailRow["status"];
@@ -36,10 +40,10 @@ export default async function handler(
   }
 
   try {
-    const auth: RequestAuthResult = await getRequestAuthContext(req, {
+    const auth: ApiRequestAuthResult = await resolveApiRequestAuth(req, {
       missingAccessTokenError: "로그인이 필요합니다.",
       unauthorizedError: "로그인 상태를 확인해주세요.",
-    } satisfies RequestAuthOptions);
+    } satisfies ApiRequestAuthOptions);
 
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
@@ -94,7 +98,7 @@ export default async function handler(
       data: feedbackRow,
       error: feedbackRowError,
     }: {
-      data: UpdataCompleteReturnData | null;
+      data: ExistingFeedbackRow | null;
       error: SupabaseError;
     } = await supabaseServerUserClient
       .from("feedbacks")

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button, Select } from "@/components/ui";
 import { compareUpdatedAtDesc } from "@/lib/feedback/list";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
-import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
+import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
 import { FeedbackRowsByStatusesParams, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { DeleteFeedbackResult, ReviewFeedbackResult } from "@/lib/feedback/client";
@@ -12,22 +12,24 @@ import { PageMeta } from "@/components/common";
 import { FeedbackPublicAndEmailRow } from "@/types/feedback";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+  const accessToken = context.req.cookies["sb-access-token"];
+  if (!accessToken) {
+    return { notFound: true };
+  }
+
+  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
+  const { context: authContext, error: authError } = authResult;
+  if (authError || !authContext || !authContext.isAdmin) {
+    return { notFound: true };
+  }
+
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
+    console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    return { notFound: true };
+  }
+
   try {
-    const accessToken = context.req.cookies["sb-access-token"];
-    if (!accessToken) throw new Error("Access Token Error");
-
-    const authResult: AuthContextResult = await getAuthContextByAccessToken(accessToken);
-
-    const { context: authContext, error: authError } = authResult;
-
-    if (authError || !authContext) throw new Error("Auth Context Error");
-
-    if (!authContext.isAdmin) return { notFound: true };
-    const supabaseServerAdminClient = getSupabaseServerAdminClient();
-    if (!supabaseServerAdminClient) {
-      throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
-    }
-
     const feedbacks: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses({
       supabaseClient: supabaseServerAdminClient,
       statuses: ["pending", "approved", "rejected", "revised_pending"],
@@ -69,15 +71,15 @@ export default function AdminFeedbackPage({
     setFeedbackItems((prev) => prev.filter((item) => item.id !== result.id));
   };
 
-  const feedbackLists = useMemo(() => {
-    const filteredData =
+  const visibleFeedbacks = useMemo(() => {
+    const filteredFeedbacks =
       viewType === "pending"
         ? feedbackItems.filter(
             (item) => item.status === "pending" || item.status === "revised_pending"
           )
         : feedbackItems;
 
-    return [...filteredData].sort((a, b) =>
+    return [...filteredFeedbacks].sort((a, b) =>
       sortType === "updated_desc" ? compareUpdatedAtDesc(a, b) : compareUpdatedAtDesc(b, a)
     );
   }, [feedbackItems, sortType, viewType]);
@@ -176,13 +178,13 @@ export default function AdminFeedbackPage({
         </section>
 
         <section className="grid gap-4">
-          {feedbackLists.length === 0 && (
+          {visibleFeedbacks.length === 0 && (
             <div className="rounded-2xl border border-border/60 bg-background/80 p-6 text-sm text-muted-foreground dark:border-white/10 dark:bg-neutral-900/70">
               검토할 피드백이 없습니다.
             </div>
           )}
 
-          {feedbackLists.map((item) => (
+          {visibleFeedbacks.map((item) => (
             <AdminFeedbackBox
               data={item}
               key={item.id}

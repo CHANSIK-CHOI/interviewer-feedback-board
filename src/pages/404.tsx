@@ -1,7 +1,7 @@
 import React from "react";
 import { PageMeta } from "@/components/common";
 
-export default function Page() {
+export default function NotFoundPage() {
   return (
     <>
       <PageMeta

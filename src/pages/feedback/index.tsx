@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Select, useAlert } from "@/components/ui";
 import { PageMeta } from "@/components/common";
+import {
+  getAdminReviewFeedbacks,
+  getMyFeedbacks,
+  getPendingFeedbackCount,
+} from "@/lib/feedback/client";
 import { getApprovedFeedbacks, getRevisedPendingPreviewFeedbacks } from "@/lib/feedback/server";
 import { cn } from "@/lib/shared/cn";
 import { InferGetStaticPropsType } from "next";
@@ -19,15 +24,6 @@ import {
   OwnerFeedback,
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
-import { FeedbackMineResponse, FeedbackResponse, PendingCountResponse } from "@/types/response";
-
-const MINE_STATUS_QUERY = new URLSearchParams({
-  status: "pending,revised_pending,rejected",
-}).toString();
-
-const ADMIN_REVIEW_STATUS_QUERY = new URLSearchParams({
-  status: "pending,revised_pending,rejected",
-}).toString();
 
 export const getStaticProps = async () => {
   try {
@@ -62,12 +58,12 @@ export default function FeedbackBoardPage({
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const isAlertedRef = useRef(false);
   const { openAlert } = useAlert();
-  const { session, isAdminUi, isRoleLoading, getAccessToken } = useSession();
+  const { session, isAdminUi, isRoleLoading, getAccessTokenOrThrow } = useSession();
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
   const [ownerFeedbacks, setOwnerFeedbacks] = useState<OwnerFeedback[]>([]);
   const [adminReviewFeedbacks, setAdminReviewFeedbacks] = useState<AdminReviewFeedback[]>([]);
-  const feedbackData = useMemo<FeedbackListItem[]>(
+  const mergedFeedbacks = useMemo<FeedbackListItem[]>(
     () =>
       mergeFeedbackList({
         approved: approvedFeedbacks,
@@ -77,11 +73,11 @@ export default function FeedbackBoardPage({
       } satisfies MergeFeedbackListParams),
     [approvedFeedbacks, revisedPendingPreviews, ownerFeedbacks, adminReviewFeedbacks]
   );
-  const sortedFeedbackData = useMemo(() => {
-    return [...feedbackData].sort((a, b) =>
+  const visibleFeedbacks = useMemo(() => {
+    return [...mergedFeedbacks].sort((a, b) =>
       sortType === "updated_desc" ? compareUpdatedAtDesc(a, b) : compareUpdatedAtDesc(b, a)
     );
-  }, [feedbackData, sortType]);
+  }, [mergedFeedbacks, sortType]);
 
   useEffect(() => {
     if (alertMessage && !isAlertedRef.current) {
@@ -101,30 +97,13 @@ export default function FeedbackBoardPage({
     const controller = new AbortController();
     void (async () => {
       try {
-        const accessToken = await getAccessToken();
-
-        const response = await fetch("/api/feedbacks/pending-count", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+        const accessToken = await getAccessTokenOrThrow();
+        const count = await getPendingFeedbackCount({
+          accessToken,
           signal: controller.signal,
         });
-
-        const result: PendingCountResponse = await response
-          .json()
-          .catch(() => ({ data: null, error: "Invalid response" }));
-
-        if (!response.ok || result.error) {
-          throw new Error(result.error ?? "Failed to fetch pending count");
-        }
-
-        if (typeof result.data?.count !== "number") {
-          throw new Error("Invalid pending count response");
-        }
-
         if (controller.signal.aborted) return;
-        setPendingCount(result.data.count);
+        setPendingCount(count);
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error(error);
@@ -133,7 +112,7 @@ export default function FeedbackBoardPage({
     })();
 
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token, getAccessToken]);
+  }, [isRoleLoading, isAdminUi, session?.access_token, getAccessTokenOrThrow]);
 
   useEffect(() => {
     if (!session?.access_token) {
@@ -143,26 +122,13 @@ export default function FeedbackBoardPage({
     const controller = new AbortController();
     void (async () => {
       try {
-        const accessToken = await getAccessToken();
-
-        const response = await fetch(`/api/feedbacks/mine?${MINE_STATUS_QUERY}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+        const accessToken = await getAccessTokenOrThrow();
+        const feedbacks = await getMyFeedbacks({
+          accessToken,
           signal: controller.signal,
         });
-
-        const result: FeedbackMineResponse = await response
-          .json()
-          .catch(() => ({ data: null, error: "Invalid response" }));
-
-        if (!response.ok || result.error) {
-          throw new Error(result.error ?? "Select failed Owner Pending Data");
-        }
-
         if (controller.signal.aborted) return;
-        setOwnerFeedbacks(result.data ?? []);
+        setOwnerFeedbacks(feedbacks);
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error(error);
@@ -171,7 +137,7 @@ export default function FeedbackBoardPage({
     })();
 
     return () => controller.abort();
-  }, [session?.access_token, getAccessToken]);
+  }, [session?.access_token, getAccessTokenOrThrow]);
 
   useEffect(() => {
     if (isRoleLoading || !isAdminUi || !session?.access_token) {
@@ -182,25 +148,13 @@ export default function FeedbackBoardPage({
     const controller = new AbortController();
     void (async () => {
       try {
-        const accessToken = await getAccessToken();
-
-        const response = await fetch(`/api/feedbacks?${ADMIN_REVIEW_STATUS_QUERY}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+        const accessToken = await getAccessTokenOrThrow();
+        const feedbacks = await getAdminReviewFeedbacks({
+          accessToken,
           signal: controller.signal,
         });
-
-        const result: FeedbackResponse<AdminReviewFeedback[]> = await response
-          .json()
-          .catch(() => ({ data: null, error: "Invalid response" }));
-
-        if (!response.ok || result.error) {
-          throw new Error(result.error ?? "Failed to fetch admin review feedbacks");
-        }
         if (controller.signal.aborted) return;
-        setAdminReviewFeedbacks(result.data ?? []);
+        setAdminReviewFeedbacks(feedbacks);
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error(error);
@@ -208,7 +162,7 @@ export default function FeedbackBoardPage({
       }
     })();
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token, getAccessToken]);
+  }, [isRoleLoading, isAdminUi, session?.access_token, getAccessTokenOrThrow]);
 
   return (
     <>
@@ -261,8 +215,8 @@ export default function FeedbackBoardPage({
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               전체
             </p>
-            <strong className="mt-2 block text-2xl font-semibold text-foreground">
-              {feedbackData.length}
+              <strong className="mt-2 block text-2xl font-semibold text-foreground">
+              {mergedFeedbacks.length}
             </strong>
           </div>
           <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
@@ -286,7 +240,7 @@ export default function FeedbackBoardPage({
         </section>
 
         <section className="grid gap-4">
-          {sortedFeedbackData.map((item) => {
+          {visibleFeedbacks.map((item) => {
             return <FeedbackBox data={item} key={item.id} />;
           })}
         </section>

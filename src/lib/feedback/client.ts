@@ -1,12 +1,126 @@
-import type { FeedbackPublicBase, FeedbackPublicRow } from "@/types/feedback";
+import type {
+  AdminReviewFeedback,
+  FeedbackPublicBase,
+  FeedbackPublicRow,
+  OwnerFeedback,
+} from "@/types/feedback";
 import type { ApiResponse } from "@/types/common";
 import type {
   FeedbackComment,
   FeedbackCommentCreatePayload,
   FeedbackCommentUpdatePayload,
 } from "@/types/feedback-comment";
+import type { FeedbackMineResponse, FeedbackResponse, PendingCountResponse } from "@/types/response";
 
 export type ReviewFeedbackAction = "approve" | "reject" | "reopen";
+
+const MINE_STATUS_QUERY = new URLSearchParams({
+  status: "pending,revised_pending,rejected",
+}).toString();
+
+const ADMIN_REVIEW_STATUS_QUERY = new URLSearchParams({
+  status: "pending,revised_pending,rejected",
+}).toString();
+
+export type GetPendingFeedbackCountParams = {
+  accessToken: string;
+  signal?: AbortSignal;
+};
+
+export async function getPendingFeedbackCount({
+  accessToken,
+  signal,
+}: GetPendingFeedbackCountParams): Promise<number> {
+  if (!accessToken) {
+    throw new Error("Missing access token");
+  }
+
+  const response = await fetch("/api/feedbacks/pending-count", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    signal,
+  });
+
+  const result: PendingCountResponse = await response
+    .json()
+    .catch(() => ({ data: null, error: "Invalid response" }));
+
+  if (!response.ok || result.error) {
+    throw new Error(result.error ?? "Failed to fetch pending count");
+  }
+
+  if (typeof result.data?.count !== "number") {
+    throw new Error("Invalid pending count response");
+  }
+
+  return result.data.count;
+}
+
+export type GetMyFeedbacksParams = {
+  accessToken: string;
+  signal?: AbortSignal;
+};
+
+export async function getMyFeedbacks({
+  accessToken,
+  signal,
+}: GetMyFeedbacksParams): Promise<OwnerFeedback[]> {
+  if (!accessToken) {
+    throw new Error("Missing access token");
+  }
+
+  const response = await fetch(`/api/feedbacks/mine?${MINE_STATUS_QUERY}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    signal,
+  });
+
+  const result: FeedbackMineResponse = await response
+    .json()
+    .catch(() => ({ data: null, error: "Invalid response" }));
+
+  if (!response.ok || result.error) {
+    throw new Error(result.error ?? "Select failed Owner Pending Data");
+  }
+
+  return result.data ?? [];
+}
+
+export type GetAdminReviewFeedbacksParams = {
+  accessToken: string;
+  signal?: AbortSignal;
+};
+
+export async function getAdminReviewFeedbacks({
+  accessToken,
+  signal,
+}: GetAdminReviewFeedbacksParams): Promise<AdminReviewFeedback[]> {
+  if (!accessToken) {
+    throw new Error("Missing access token");
+  }
+
+  const response = await fetch(`/api/feedbacks?${ADMIN_REVIEW_STATUS_QUERY}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    signal,
+  });
+
+  const result: FeedbackResponse<AdminReviewFeedback[]> = await response
+    .json()
+    .catch(() => ({ data: null, error: "Invalid response" }));
+
+  if (!response.ok || result.error) {
+    throw new Error(result.error ?? "Failed to fetch admin review feedbacks");
+  }
+
+  return result.data ?? [];
+}
 
 export type ReviewFeedbackResult = {
   id: FeedbackPublicBase["id"];

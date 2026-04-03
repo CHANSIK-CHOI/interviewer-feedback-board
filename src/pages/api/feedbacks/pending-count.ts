@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
+import {
+  ApiRequestAuthOptions,
+  ApiRequestAuthResult,
+  resolveApiRequestAuth,
+} from "@/lib/auth/request";
 import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { PendingCountResponse } from "@/types/response";
@@ -16,9 +20,9 @@ export default async function handler(
   }
 
   try {
-    const auth: RequestAuthResult = await getRequestAuthContext(req, {
+    const auth: ApiRequestAuthResult = await resolveApiRequestAuth(req, {
       requireAdmin: true,
-    } satisfies RequestAuthOptions);
+    } satisfies ApiRequestAuthOptions);
 
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });

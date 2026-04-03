@@ -1,6 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { buildAvatarPath } from "@/lib/avatar/path";
-import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
+import {
+  ApiRequestAuthOptions,
+  ApiRequestAuthResult,
+  resolveApiRequestAuth,
+} from "@/lib/auth/request";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { removeUserAvatar } from "@/lib/avatar/storage.server";
 import { WithdrawResponse } from "@/types/response";
@@ -15,10 +19,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(405).json({ data: null, error: "Method Not Allowed" });
   }
 
-  const auth: RequestAuthResult = await getRequestAuthContext(req, {
+  const auth: ApiRequestAuthResult = await resolveApiRequestAuth(req, {
     missingAccessTokenError: "로그인이 필요합니다.",
     unauthorizedError: "로그인 상태를 확인해주세요.",
-  } satisfies RequestAuthOptions);
+  } satisfies ApiRequestAuthOptions);
   if (auth.error || !auth.context) {
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }

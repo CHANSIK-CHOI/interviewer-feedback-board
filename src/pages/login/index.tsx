@@ -8,12 +8,12 @@ import { Button, useAlert } from "@/components/ui";
 import { useSession } from "@/components/session";
 import { getSafeNextPath, replaceSafely } from "@/lib/navigation/client";
 
-type LoginForm = {
+type LoginFormValues = {
   login_email: string;
   login_password: string;
 };
 
-const LOGIN_EMAIL_FORM: LoginForm = {
+const LOGIN_FORM_DEFAULT_VALUES: LoginFormValues = {
   login_email: "",
   login_password: "",
 };
@@ -41,12 +41,12 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({
+  } = useForm<LoginFormValues>({
     mode: "onSubmit",
-    defaultValues: LOGIN_EMAIL_FORM,
+    defaultValues: LOGIN_FORM_DEFAULT_VALUES,
   });
 
-  const onSubmit = async (values: LoginForm) => {
+  const onSubmit = async (values: LoginFormValues) => {
     if (isSubmitting) return;
     if (!supabaseBrowserClient) return;
 

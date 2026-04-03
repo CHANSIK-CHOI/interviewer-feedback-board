@@ -3,7 +3,7 @@ import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
 import { AvatarMimeType } from "@/types/avatar";
 import { ApiResponse } from "@/types/common";
 
-export const validateAvatarFile = (file: File) => {
+export const assertValidAvatarFile = (file: File) => {
   const mimeType: AvatarMimeType | null = getNormalizedAvatarMimeType(file.type);
   const isAvatarMimeTypeAllowed = mimeType !== null;
 
@@ -31,7 +31,7 @@ export async function uploadAvatarToSupabase(
     throw new Error("로그인이 필요합니다.");
   }
 
-  validateAvatarFile(file);
+  assertValidAvatarFile(file);
 
   const formData = new FormData();
   formData.append("avatar", file);

@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
+import {
+  ApiRequestAuthOptions,
+  ApiRequestAuthResult,
+  resolveApiRequestAuth,
+} from "@/lib/auth/request";
 import { getApprovedFeedbacks, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import type {
@@ -37,17 +41,17 @@ export default async function handler(
   }
 
   try {
-    const isRequiresAdmin = statuses.some((status) => status !== "approved");
+    const requiresAdmin = statuses.some((status) => status !== "approved");
 
-    if (!isRequiresAdmin) {
+    if (!requiresAdmin) {
       const publicFeedbacks: ApprovedFeedback[] = await getApprovedFeedbacks();
 
       return res.status(200).json({ data: publicFeedbacks, error: null });
     }
 
-    const auth: RequestAuthResult = await getRequestAuthContext(req, {
+    const auth: ApiRequestAuthResult = await resolveApiRequestAuth(req, {
       requireAdmin: true,
-    } satisfies RequestAuthOptions);
+    } satisfies ApiRequestAuthOptions);
 
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });

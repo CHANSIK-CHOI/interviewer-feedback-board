@@ -9,13 +9,13 @@ import { useSession } from "@/components/session";
 import { markSignUpRoleSyncSkip } from "@/lib/auth/signup-flow";
 import { replaceSafely } from "@/lib/navigation/client";
 
-type SignUpForm = {
+type SignupFormValues = {
   signup_name?: string;
   signup_email: string;
   signup_password: string;
 };
 
-const SIGNUP_EMAIL_FORM: SignUpForm = {
+const SIGNUP_FORM_DEFAULT_VALUES: SignupFormValues = {
   signup_name: "",
   signup_email: "",
   signup_password: "",
@@ -50,12 +50,12 @@ export default function SignupPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SignUpForm>({
+  } = useForm<SignupFormValues>({
     mode: "onSubmit",
-    defaultValues: SIGNUP_EMAIL_FORM,
+    defaultValues: SIGNUP_FORM_DEFAULT_VALUES,
   });
 
-  const onSubmit = async (values: SignUpForm) => {
+  const onSubmit = async (values: SignupFormValues) => {
     if (isSubmitting) return;
     if (!supabaseBrowserClient) return;
 

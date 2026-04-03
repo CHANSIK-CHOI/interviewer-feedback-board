@@ -1,25 +1,25 @@
 import type { NextApiRequest } from "next";
 import type { AuthContext, AuthContextResult } from "@/lib/auth/server";
-import { getAuthContextByAccessToken } from "@/lib/auth/server";
+import { resolveAuthContextByAccessToken } from "@/lib/auth/server";
 
-export type RequestAuthOptions = {
+export type ApiRequestAuthOptions = {
   missingAccessTokenError?: string;
   unauthorizedError?: string;
   requireAdmin?: boolean;
   forbiddenError?: string;
 };
 
-export type RequestAuthResult = {
+export type ApiRequestAuthResult = {
   context: AuthContext | null;
   accessToken: string | null;
   error: string | null;
   status: number;
 };
 
-export const getRequestAuthContext = async (
+export const resolveApiRequestAuth = async (
   req: NextApiRequest,
-  options: RequestAuthOptions = {}
-): Promise<RequestAuthResult> => {
+  options: ApiRequestAuthOptions = {}
+): Promise<ApiRequestAuthResult> => {
   const {
     missingAccessTokenError = "Missing access token",
     unauthorizedError,
@@ -43,7 +43,7 @@ export const getRequestAuthContext = async (
     context,
     error: authError,
     status: authStatus,
-  }: AuthContextResult = await getAuthContextByAccessToken(accessToken);
+  }: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
   if (authError || !context) {
     return {
       context: null,

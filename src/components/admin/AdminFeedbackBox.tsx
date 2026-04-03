@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui";
 import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
 import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
-import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
+import { isPrivateAvatarApiSrc, isSvgImageSrc } from "@/lib/avatar/path";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
-import { checkUpdateData } from "@/lib/feedback/list";
+import { hasFeedbackBeenUpdated } from "@/lib/feedback/list";
 import { DeleteFeedbackResult, ReviewFeedbackResult } from "@/lib/feedback/client";
 import { DeleteFeedbackButton, ReviewControls } from "../common";
 
@@ -17,7 +17,7 @@ type AdminFeedbackBoxProps = {
 };
 export default function AdminFeedbackBox({ data, onReviewed, onDeleted }: AdminFeedbackBoxProps) {
   const avatarSrc = data.avatar_url || AVATAR_PLACEHOLDER_SRC;
-  const isUpdateData = checkUpdateData(data);
+  const hasBeenUpdated = hasFeedbackBeenUpdated(data);
 
   return (
     <article className="rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-neutral-900/70">
@@ -29,7 +29,7 @@ export default function AdminFeedbackBox({ data, onReviewed, onDeleted }: AdminF
             {statusLabel(data.status)}
           </span>
           <span className="text-xs text-muted-foreground">
-            {isUpdateData ? "마지막 수정" : "등록"} : {formatDateTime(data.updated_at)}
+            {hasBeenUpdated ? "마지막 수정" : "등록"} : {formatDateTime(data.updated_at)}
           </span>
         </div>
         <span className="text-sm font-semibold text-amber-500">{ratingStars(data.rating)}</span>
@@ -43,7 +43,7 @@ export default function AdminFeedbackBox({ data, onReviewed, onDeleted }: AdminF
               alt={`${data.display_name} avatar`}
               width={40}
               height={40}
-              unoptimized={checkSvgImageSrc(avatarSrc) || checkAvatarApiSrcPrivate(avatarSrc)}
+              unoptimized={isSvgImageSrc(avatarSrc) || isPrivateAvatarApiSrc(avatarSrc)}
               className="h-full w-full object-cover"
             />
           </div>

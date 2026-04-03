@@ -1,40 +1,29 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type FreshAccessTokenParams = {
+type AccessTokenParams = {
   supabaseBrowserClient: SupabaseClient | null;
   fallbackAccessToken: string | null;
 };
 
-type ResolveAccessTokenParams = FreshAccessTokenParams & {
+type GetClientAccessTokenOrThrowParams = AccessTokenParams & {
   errorMessage?: string;
 };
 
-async function getFreshAccessToken({
-  supabaseBrowserClient,
-  fallbackAccessToken,
-}: FreshAccessTokenParams): Promise<string | null> {
-  if (!supabaseBrowserClient) {
-    return fallbackAccessToken;
-  }
-
-  const { data, error } = await supabaseBrowserClient.auth.getSession();
-  if (!data || !data.session || !data.session.access_token || error) {
-    console.error(error);
-    return fallbackAccessToken;
-  }
-
-  return data.session.access_token;
-}
-
-export async function resolveAccessToken({
+export async function getClientAccessTokenOrThrow({
   supabaseBrowserClient,
   fallbackAccessToken,
   errorMessage = "로그인 상태를 확인해주세요.",
-}: ResolveAccessTokenParams): Promise<string> {
-  const accessToken = await getFreshAccessToken({
-    supabaseBrowserClient,
-    fallbackAccessToken,
-  });
+}: GetClientAccessTokenOrThrowParams): Promise<string> {
+  let accessToken = fallbackAccessToken;
+
+  if (supabaseBrowserClient) {
+    const { data, error } = await supabaseBrowserClient.auth.getSession();
+    if (!data || !data.session || !data.session.access_token || error) {
+      console.error(error);
+    } else {
+      accessToken = data.session.access_token;
+    }
+  }
 
   if (!accessToken) {
     throw new Error(errorMessage);

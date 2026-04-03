@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext } from "@/lib/auth/request";
+import type { AuthContext } from "@/lib/auth/server";
+import { resolveApiRequestAuth } from "@/lib/auth/request";
 import {
   getSupabaseServerAdminClient,
   getSupabaseServerAnonClient,
@@ -20,13 +21,25 @@ import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { FeedbackCommentRow } from "@/types/feedback-comment";
 import type { FeedbackCommentListResponse, FeedbackCommentResponse } from "@/types/response";
 import type { SupabaseError } from "@/types/common";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const COMMENT_CREATE_ERROR_MESSAGE = "코멘트 등록에 실패했습니다.";
 const COMMENT_READ_ERROR_MESSAGE = "댓글 조회에 실패했습니다.";
 
+type CommentApiError = {
+  status: number;
+  error: string;
+};
+
+type FeedbackCommentTargetResult = {
+  supabaseServerAdminClient: SupabaseClient | null;
+  feedback: FeedbackCommentsFeedbackTargetRow | null;
+  errorResponse: CommentApiError | null;
+};
+
 const resolveReplyTargetValidationErrorResponse = (
   validationError: FeedbackCommentReplyTargetValidationError
-) => {
+): CommentApiError => {
   switch (validationError) {
     case "PARENT_NOT_FOUND":
       return { status: 404, error: "답글 대상 코멘트를 찾을 수 없습니다." };
@@ -42,48 +55,135 @@ const resolveReplyTargetValidationErrorResponse = (
   }
 };
 
+const canEveryoneReadComments = (feedback: FeedbackCommentsFeedbackTargetRow) =>
+  Boolean(feedback.comments_unlocked_at) && feedback.status === "approved" && feedback.is_public;
+
+const loadFeedbackCommentTarget = async (
+  feedbackId: string,
+  errorMessage: string
+): Promise<FeedbackCommentTargetResult> => {
+  const supabaseServerAdminClient = getSupabaseServerAdminClient();
+  if (!supabaseServerAdminClient) {
+    return {
+      supabaseServerAdminClient: null,
+      feedback: null,
+      errorResponse: {
+        status: 500,
+        error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+      },
+    };
+  }
+
+  const {
+    data: feedback,
+    error,
+  }: { data: FeedbackCommentsFeedbackTargetRow | null; error: SupabaseError } =
+    await findFeedbackCommentsFeedbackTarget({
+      supabaseClient: supabaseServerAdminClient,
+      feedbackId,
+    });
+
+  if (error) {
+    return {
+      supabaseServerAdminClient,
+      feedback: null,
+      errorResponse: {
+        status: 500,
+        error: resolveSupabaseErrorMessage(error, errorMessage),
+      },
+    };
+  }
+
+  if (!feedback) {
+    return {
+      supabaseServerAdminClient,
+      feedback: null,
+      errorResponse: { status: 404, error: "피드백을 찾을 수 없습니다." },
+    };
+  }
+
+  return {
+    supabaseServerAdminClient,
+    feedback,
+    errorResponse: null,
+  };
+};
+
+const resolveOptionalApiAuthContext = async (req: NextApiRequest): Promise<AuthContext | null> => {
+  const authHeader = req.headers.authorization;
+  const hasBearerAccessToken =
+    typeof authHeader === "string" && authHeader.startsWith("Bearer ");
+  if (!hasBearerAccessToken) {
+    return null;
+  }
+
+  const auth = await resolveApiRequestAuth(req);
+  return auth.context ?? null;
+};
+
+const resolveReadableCommentsClient = (authContext: AuthContext | null) =>
+  resolveSupabaseServerReader({
+    supabaseServerUserClient: authContext?.supabaseServerUserClient ?? null,
+    supabaseServerAnonClient: getSupabaseServerAnonClient(),
+  });
+
+const resolveCommentReadPolicyError = (
+  feedback: FeedbackCommentsFeedbackTargetRow,
+  isAuthenticatedRequester: boolean
+): CommentApiError | null => {
+  if (!isAuthenticatedRequester && !canEveryoneReadComments(feedback)) {
+    return { status: 404, error: "피드백을 찾을 수 없습니다." };
+  }
+
+  return null;
+};
+
+const resolveCommentCreatePolicyError = (
+  feedback: FeedbackCommentsFeedbackTargetRow,
+  userId: string,
+  isAdmin: boolean
+): CommentApiError | null => {
+  if (!feedback.comments_unlocked_at) {
+    return {
+      status: 400,
+      error: "코멘트는 첫 승인 이후부터 사용할 수 있습니다.",
+    };
+  }
+
+  if (!canEveryoneReadComments(feedback)) {
+    return {
+      status: 403,
+      error: "현재는 승인된 공개 글에서만 코멘트를 작성할 수 있습니다.",
+    };
+  }
+
+  if (!isAdmin && feedback.author_id !== userId) {
+    return {
+      status: 403,
+      error: "코멘트 작성 권한이 없습니다.",
+    };
+  }
+
+  return null;
+};
+
 async function handleGetComments(
   req: NextApiRequest,
   res: NextApiResponse<FeedbackCommentListResponse | FeedbackCommentResponse>,
   feedbackId: string
 ) {
-  const supabaseServerAdminClient = getSupabaseServerAdminClient();
-  if (!supabaseServerAdminClient) {
-    return res
-      .status(500)
-      .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
-  }
-
-  const {
-    data: feedbackRow,
-    error: feedbackError,
-  }: { data: FeedbackCommentsFeedbackTargetRow | null; error: SupabaseError } = await findFeedbackCommentsFeedbackTarget(
-    {
-      supabaseClient: supabaseServerAdminClient,
-      feedbackId,
-    }
+  const { feedback, errorResponse } = await loadFeedbackCommentTarget(
+    feedbackId,
+    COMMENT_READ_ERROR_MESSAGE
   );
-
-  if (feedbackError) {
-    return res.status(500).json({
-      data: null,
-      error: resolveSupabaseErrorMessage(feedbackError, COMMENT_READ_ERROR_MESSAGE),
-    });
+  if (errorResponse || !feedback) {
+    return res
+      .status(errorResponse?.status ?? 404)
+      .json({ data: null, error: errorResponse?.error ?? "피드백을 찾을 수 없습니다." });
   }
 
-  if (!feedbackRow) {
-    return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
-  }
-
-  const authHeader = req.headers.authorization;
-  const hasBearerAccessToken =
-    typeof authHeader === "string" && authHeader.startsWith("Bearer ");
-  const auth = hasBearerAccessToken ? await getRequestAuthContext(req) : null;
-  const authContext = auth?.context ?? null;
-  const readableSupabaseServerClient = resolveSupabaseServerReader({
-    supabaseServerUserClient: authContext?.supabaseServerUserClient ?? null,
-    supabaseServerAnonClient: getSupabaseServerAnonClient(),
-  });
+  const authContext = await resolveOptionalApiAuthContext(req);
+  const readableSupabaseServerClient = resolveReadableCommentsClient(authContext);
   const isAuthenticatedRequester = Boolean(authContext);
   if (!readableSupabaseServerClient) {
     return res
@@ -91,13 +191,9 @@ async function handleGetComments(
       .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
   }
 
-  const canEveryoneReadComments =
-    Boolean(feedbackRow.comments_unlocked_at) &&
-    feedbackRow.status === "approved" &&
-    feedbackRow.is_public;
-
-  if (!isAuthenticatedRequester && !canEveryoneReadComments) {
-    return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
+  const readPolicyError = resolveCommentReadPolicyError(feedback, isAuthenticatedRequester);
+  if (readPolicyError) {
+    return res.status(readPolicyError.status).json({ data: null, error: readPolicyError.error });
   }
 
   try {
@@ -118,7 +214,7 @@ async function handleCreateComment(
   res: NextApiResponse<FeedbackCommentListResponse | FeedbackCommentResponse>,
   feedbackId: string
 ) {
-  const auth = await getRequestAuthContext(req, {
+  const auth = await resolveApiRequestAuth(req, {
     missingAccessTokenError: "로그인이 필요합니다.",
     unauthorizedError: "로그인 상태를 확인해주세요.",
   });
@@ -128,48 +224,21 @@ async function handleCreateComment(
   }
   const { authData, isAdmin, supabaseServerUserClient, userId } = auth.context;
 
-  const supabaseServerAdminClient = getSupabaseServerAdminClient();
-  if (!supabaseServerAdminClient) {
-    return res
-      .status(500)
-      .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
-  }
-
-  const {
-    data: feedbackRow,
-    error: feedbackError,
-  }: { data: FeedbackCommentsFeedbackTargetRow | null; error: SupabaseError } = await findFeedbackCommentsFeedbackTarget(
-    {
-      supabaseClient: supabaseServerAdminClient,
-      feedbackId,
-    }
+  const { supabaseServerAdminClient, feedback, errorResponse } = await loadFeedbackCommentTarget(
+    feedbackId,
+    COMMENT_CREATE_ERROR_MESSAGE
   );
-
-  if (feedbackError) {
-    return res.status(500).json({
-      data: null,
-      error: resolveSupabaseErrorMessage(feedbackError, COMMENT_CREATE_ERROR_MESSAGE),
-    });
-  }
-
-  if (!feedbackRow) {
-    return res.status(404).json({ data: null, error: "피드백을 찾을 수 없습니다." });
-  }
-
-  if (!feedbackRow.comments_unlocked_at) {
+  if (errorResponse || !feedback) {
     return res
-      .status(400)
-      .json({ data: null, error: "코멘트는 첫 승인 이후부터 사용할 수 있습니다." });
+      .status(errorResponse?.status ?? 404)
+      .json({ data: null, error: errorResponse?.error ?? "피드백을 찾을 수 없습니다." });
   }
 
-  if (feedbackRow.status !== "approved" || !feedbackRow.is_public) {
+  const createPolicyError = resolveCommentCreatePolicyError(feedback, userId, isAdmin);
+  if (createPolicyError) {
     return res
-      .status(403)
-      .json({ data: null, error: "현재는 승인된 공개 글에서만 코멘트를 작성할 수 있습니다." });
-  }
-
-  if (!isAdmin && feedbackRow.author_id !== userId) {
-    return res.status(403).json({ data: null, error: "코멘트 작성 권한이 없습니다." });
+      .status(createPolicyError.status)
+      .json({ data: null, error: createPolicyError.error });
   }
 
   const { body, parentCommentId } = normalizeCreateFeedbackCommentPayload(req.body ?? {});
@@ -179,6 +248,12 @@ async function handleCreateComment(
   }
 
   if (parentCommentId) {
+    if (!supabaseServerAdminClient) {
+      return res
+        .status(500)
+        .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
+    }
+
     const { validationError, error: replyTargetError } = await validateFeedbackCommentReplyTarget({
       supabaseClient: supabaseServerAdminClient,
       feedbackId,

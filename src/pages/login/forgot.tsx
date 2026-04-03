@@ -6,15 +6,15 @@ import { useForm } from "react-hook-form";
 import { EMAIL_PATTERN, inputBaseStyle } from "@/constants";
 import { useSession } from "@/components/session";
 
-type ForgotEmail = {
+type ForgotPasswordFormValues = {
   forgot_email: string;
 };
 
-const FORGOT_EMAIL_FORM: ForgotEmail = {
+const FORGOT_PASSWORD_FORM_DEFAULT_VALUES: ForgotPasswordFormValues = {
   forgot_email: "",
 };
 
-const getResetPasswordErrorMessage = (message?: string) => {
+const getForgotPasswordErrorMessage = (message?: string) => {
   const normalized = (message ?? "").toLowerCase();
   if (normalized.includes("email rate limit exceeded")) {
     return "인증 메일 발송 한도를 초과했습니다. 잠시 후 다시 시도해주세요.";
@@ -22,19 +22,19 @@ const getResetPasswordErrorMessage = (message?: string) => {
   return "비밀번호 변경요청에 실패했습니다. 다시 시도해주세요.";
 };
 
-export default function Page() {
+export default function ForgotPasswordPage() {
   const { openAlert } = useAlert();
   const { supabaseBrowserClient } = useSession();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<ForgotEmail>({
+  } = useForm<ForgotPasswordFormValues>({
     mode: "onSubmit",
-    defaultValues: FORGOT_EMAIL_FORM,
+    defaultValues: FORGOT_PASSWORD_FORM_DEFAULT_VALUES,
   });
 
-  const onSubmit = async (values: ForgotEmail) => {
+  const onSubmit = async (values: ForgotPasswordFormValues) => {
     if (isSubmitting) return;
     if (!supabaseBrowserClient) return;
 
@@ -47,7 +47,7 @@ export default function Page() {
 
     if (error) {
       openAlert({
-        description: getResetPasswordErrorMessage(error.message),
+        description: getForgotPasswordErrorMessage(error.message),
       });
       return;
     }

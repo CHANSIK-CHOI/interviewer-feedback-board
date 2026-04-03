@@ -3,13 +3,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui";
 import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
-import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
+import { isPrivateAvatarApiSrc, isSvgImageSrc } from "@/lib/avatar/path";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { listFeedbackComments } from "@/lib/feedback/comment";
 import { getFeedbackDetailById, getFeedbackEmailById } from "@/lib/feedback/server";
-import { getAuthContextByAccessToken } from "@/lib/auth/server";
+import { resolveAuthContextByAccessToken } from "@/lib/auth/server";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
-import { checkUpdateData } from "@/lib/feedback/list";
+import { hasFeedbackBeenUpdated } from "@/lib/feedback/list";
 import { getAuthUserNameById } from "@/lib/user/profile.server";
 import {
   getSupabaseServerAnonClient,
@@ -28,21 +28,21 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     return { notFound: true };
   }
 
+  const accessToken = context.req.cookies["sb-access-token"];
+  const supabaseServerAnonClient = getSupabaseServerAnonClient();
+  let authContext: AuthContext | null = null;
+
+  if (accessToken) {
+    const authResult = await resolveAuthContextByAccessToken(accessToken);
+    authContext = authResult.context;
+  }
+
+  const feedbackReader = resolveSupabaseServerReader({
+    supabaseServerUserClient: authContext?.supabaseServerUserClient ?? null,
+    supabaseServerAnonClient,
+  });
+
   try {
-    const accessToken = context.req.cookies["sb-access-token"];
-    const supabaseServerAnonClient = getSupabaseServerAnonClient();
-    let authContext: AuthContext | null = null;
-
-    if (accessToken) {
-      const authResult = await getAuthContextByAccessToken(accessToken);
-      authContext = authResult.context;
-    }
-    const supabaseServerUserClient = authContext?.supabaseServerUserClient ?? null;
-    const feedbackReader = resolveSupabaseServerReader({
-      supabaseServerUserClient,
-      supabaseServerAnonClient,
-    });
-
     const detailFeedback = await getFeedbackDetailById(id, {
       supabaseClient: feedbackReader,
     });
@@ -54,23 +54,18 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       ? await getAuthUserNameById(detailFeedback.reviewed_by).catch(() => null)
       : null;
 
-    let isAuthor = false;
-    let isAdmin = false;
-    let mergedDetailFeedback: FeedbackPublicAndEmailRow = detailFeedback;
+    const isAdmin = authContext?.isAdmin ?? false;
+    const isAuthor = authContext?.userId === detailFeedback.author_id;
+    let feedbackWithEmail: FeedbackPublicAndEmailRow = detailFeedback;
     let initialComments: FeedbackComment[] = [];
 
-    if (authContext) {
-      isAdmin = authContext.isAdmin;
-      isAuthor = authContext.userId === detailFeedback.author_id;
-
-      if (isAuthor || isAdmin) {
-        const email: string | null = await getFeedbackEmailById(id).catch(() => null);
-        if (email) {
-          mergedDetailFeedback = {
-            ...detailFeedback,
-            email,
-          };
-        }
+    if (isAuthor || isAdmin) {
+      const email: string | null = await getFeedbackEmailById(id).catch(() => null);
+      if (email) {
+        feedbackWithEmail = {
+          ...detailFeedback,
+          email,
+        };
       }
     }
 
@@ -83,7 +78,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
     return {
       props: {
-        detailFeedback: mergedDetailFeedback,
+        detailFeedback: feedbackWithEmail,
         reviewerName,
         isAuthor,
         isAdmin,
@@ -123,7 +118,7 @@ export default function FeedbackDetailPage({
   };
 
   const avatarSrc = currentDetailFeedback.avatar_url || AVATAR_PLACEHOLDER_SRC;
-  const isUpdateData = checkUpdateData(currentDetailFeedback);
+  const hasBeenUpdated = hasFeedbackBeenUpdated(currentDetailFeedback);
 
   return (
     <>
@@ -197,7 +192,7 @@ export default function FeedbackDetailPage({
                   alt={`${currentDetailFeedback.display_name} avatar`}
                   width={48}
                   height={48}
-                  unoptimized={checkSvgImageSrc(avatarSrc) || checkAvatarApiSrcPrivate(avatarSrc)}
+                  unoptimized={isSvgImageSrc(avatarSrc) || isPrivateAvatarApiSrc(avatarSrc)}
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -239,7 +234,7 @@ export default function FeedbackDetailPage({
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-border/60 bg-white/70 p-4 text-sm text-muted-foreground shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {isUpdateData ? "마지막 수정일" : "등록일"}
+                {hasBeenUpdated ? "마지막 수정일" : "등록일"}
               </p>
               <p className="mt-2 text-base text-foreground">
                 {formatDateTime(currentDetailFeedback.updated_at)}
@@ -283,7 +278,7 @@ export default function FeedbackDetailPage({
               </span>
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              {isUpdateData ? "마지막 수정" : "등록"}
+              {hasBeenUpdated ? "마지막 수정" : "등록"}
               {" : "}
               <span className="text-foreground">
                 {formatDateTime(currentDetailFeedback.updated_at)}

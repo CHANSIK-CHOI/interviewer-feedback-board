@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext, RequestAuthOptions, RequestAuthResult } from "@/lib/auth/request";
+import {
+  ApiRequestAuthOptions,
+  ApiRequestAuthResult,
+  resolveApiRequestAuth,
+} from "@/lib/auth/request";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { getUserName } from "@/lib/user/profile";
 import type { SupabaseError } from "@/types/common";
@@ -87,12 +91,12 @@ export default async function handler(
     return res.status(400).json({ data: null, error: "Invalid feedback id" });
   }
 
-  const auth: RequestAuthResult = await getRequestAuthContext(req, {
+  const auth: ApiRequestAuthResult = await resolveApiRequestAuth(req, {
     requireAdmin: true,
     missingAccessTokenError: "로그인이 필요합니다.",
     unauthorizedError: "로그인 상태를 확인해주세요.",
     forbiddenError: "관리자만 검토할 수 있습니다.",
-  } satisfies RequestAuthOptions);
+  } satisfies ApiRequestAuthOptions);
   if (auth.error || !auth.context) {
     return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
   }

@@ -17,7 +17,7 @@ export type AuthContextResult = {
   status: number;
 };
 
-export const getAuthContextByAccessToken = async (
+export const resolveAuthContextByAccessToken = async (
   accessToken: string
 ): Promise<AuthContextResult> => {
   const supabaseServerUserClient = createSupabaseServerUserClient(accessToken);

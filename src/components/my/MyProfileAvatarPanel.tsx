@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui";
 import { AVATAR_PLACEHOLDER_SRC, AVATAR_UPLOAD_ACCEPT } from "@/constants";
-import { checkAvatarApiSrcPrivate } from "@/lib/avatar/path";
+import { isPrivateAvatarApiSrc } from "@/lib/avatar/path";
 import { getAuthProviderLabel } from "@/lib/auth/provider";
 import type { MyProfileForm } from "@/types/forms";
 
@@ -51,7 +51,7 @@ export default function MyProfileAvatarPanel({
             unoptimized={
               avatarSrc.startsWith("data:") ||
               avatarSrc.startsWith("blob:") ||
-              checkAvatarApiSrcPrivate(avatarSrc)
+              isPrivateAvatarApiSrc(avatarSrc)
             }
           />
         </div>

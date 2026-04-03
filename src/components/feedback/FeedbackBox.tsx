@@ -1,13 +1,13 @@
 import { cn } from "@/lib/shared/cn";
 import type { FeedbackListItem } from "@/types/feedback";
 import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
-import { checkAvatarApiSrcPrivate, checkSvgImageSrc } from "@/lib/avatar/path";
+import { isPrivateAvatarApiSrc, isSvgImageSrc } from "@/lib/avatar/path";
 import Image from "next/image";
 import React from "react";
 import { Button } from "@/components/ui";
 import Link from "next/link";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
-import { checkUpdateData } from "@/lib/feedback/list";
+import { hasFeedbackBeenUpdated } from "@/lib/feedback/list";
 import { MessageCircle } from "lucide-react";
 
 type FeedbackBoxProps = {
@@ -17,7 +17,7 @@ type FeedbackBoxProps = {
 export default function FeedbackBox({ data }: FeedbackBoxProps) {
   const isPreview = data.isPreview;
   const avatarSrc = data.avatar_url || AVATAR_PLACEHOLDER_SRC;
-  const isUpdateData = checkUpdateData(data);
+  const hasBeenUpdated = hasFeedbackBeenUpdated(data);
   const commentCount = isPreview ? 0 : (data.comment_count ?? 0);
 
   return (
@@ -30,7 +30,7 @@ export default function FeedbackBox({ data }: FeedbackBoxProps) {
             {statusLabel(data.status)}
           </span>
           <span className="text-xs text-muted-foreground">
-            {isUpdateData ? "마지막 수정" : "등록"} : {formatDateTime(data.updated_at)}
+            {hasBeenUpdated ? "마지막 수정" : "등록"} : {formatDateTime(data.updated_at)}
           </span>
         </div>
         {!isPreview && (
@@ -46,7 +46,7 @@ export default function FeedbackBox({ data }: FeedbackBoxProps) {
               alt={`${data.display_name} avatar`}
               width={40}
               height={40}
-              unoptimized={checkSvgImageSrc(avatarSrc) || checkAvatarApiSrcPrivate(avatarSrc)}
+              unoptimized={isSvgImageSrc(avatarSrc) || isPrivateAvatarApiSrc(avatarSrc)}
               className="h-full w-full object-cover"
             />
           </div>

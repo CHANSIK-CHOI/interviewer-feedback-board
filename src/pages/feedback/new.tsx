@@ -24,7 +24,7 @@ import { EditFeedbackResponse } from "@/types/response";
 const newFeedbackErrorMessages = new Set<string>(Object.values(FEEDBACK_FORM_ERROR_MESSAGES));
 
 export default function FeedbackNewPage() {
-  const { session, getAccessToken } = useSession();
+  const { session, getAccessTokenOrThrow } = useSession();
   const { openAlert } = useAlert();
   const user = session?.user;
   const router = useRouter();
@@ -76,7 +76,7 @@ export default function FeedbackNewPage() {
     }
 
     try {
-      const accessToken = await getAccessToken();
+      const accessToken = await getAccessTokenOrThrow();
 
       const response = await fetch("/api/feedbacks/new", {
         method: "POST",
@@ -98,7 +98,7 @@ export default function FeedbackNewPage() {
       openAlert({
         description: "피드백이 등록되었습니다.\n관리자 승인 후 전체 공개됩니다.",
         onOk: () => {
-          replaceSafely(router, "/feedback");
+          void replaceSafely(router, "/feedback");
         },
       });
     } catch (error) {

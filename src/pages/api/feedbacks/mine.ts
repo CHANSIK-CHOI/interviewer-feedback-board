@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getRequestAuthContext } from "@/lib/auth/request";
-import type { RequestAuthResult } from "@/lib/auth/request";
+import { resolveApiRequestAuth } from "@/lib/auth/request";
+import type { ApiRequestAuthResult } from "@/lib/auth/request";
 import type { OwnerFeedback } from "@/types/feedback";
 import type { FeedbackMineResponse } from "@/types/response";
 
@@ -62,7 +62,7 @@ export default async function handler(
   }
 
   try {
-    const auth: RequestAuthResult = await getRequestAuthContext(req);
+    const auth: ApiRequestAuthResult = await resolveApiRequestAuth(req);
     if (auth.error || !auth.context) {
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }

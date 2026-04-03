@@ -8,7 +8,7 @@ import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import {
   AvatarUploadResult,
   uploadAvatarToSupabase,
-  validateAvatarFile,
+  assertValidAvatarFile,
 } from "@/lib/avatar/client";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { getAuthProviders } from "@/lib/auth/provider";
@@ -17,7 +17,8 @@ import type { MyProfileForm } from "@/types/forms";
 
 export const useMyProfileController = () => {
   const { openAlert } = useAlert();
-  const { session, supabaseBrowserClient, isInitSessionComplete, getAccessToken } = useSession();
+  const { session, supabaseBrowserClient, isInitSessionComplete, getAccessTokenOrThrow } =
+    useSession();
   const router = useRouter();
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
@@ -86,7 +87,7 @@ export const useMyProfileController = () => {
     }
 
     try {
-      validateAvatarFile(file);
+      assertValidAvatarFile(file);
     } catch (error) {
       openAlert({
         description: error instanceof Error ? error.message : "아바타 업로드에 실패했습니다.",
@@ -130,7 +131,7 @@ export const useMyProfileController = () => {
     if (pendingAvatarFile) {
       setIsUploadingAvatar(true);
       try {
-        const accessToken = await getAccessToken();
+        const accessToken = await getAccessTokenOrThrow();
         const { avatarUrl }: AvatarUploadResult = await uploadAvatarToSupabase(
           pendingAvatarFile,
           accessToken

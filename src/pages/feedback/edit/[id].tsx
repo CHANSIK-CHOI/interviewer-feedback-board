@@ -6,7 +6,7 @@ import { useSession } from "@/components/session";
 import { useAlert } from "@/components/ui";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { getFeedbackDetailById } from "@/lib/feedback/server";
-import { AuthContextResult, getAuthContextByAccessToken } from "@/lib/auth/server";
+import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
 import {
   AVATAR_PLACEHOLDER_SRC,
   FEEDBACK_FORM_ERROR_MESSAGES,
@@ -47,28 +47,23 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     };
   }
 
+  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
+  const { context: authContext, error: authError } = authResult;
+  if (authError || !authContext) {
+    return {
+      redirect: {
+        destination: buildLoginHref(`/feedback/edit/${feedbackId}`),
+        permanent: false,
+      },
+    };
+  }
+
   try {
-    const authResult: AuthContextResult = await getAuthContextByAccessToken(accessToken);
-    const { context: authContext, error: authError } = authResult;
-
-    if (authError || !authContext) {
-      return {
-        redirect: {
-          destination: buildLoginHref(`/feedback/edit/${feedbackId}`),
-          permanent: false,
-        },
-      };
-    }
-
     const feedback = await getFeedbackDetailById(feedbackId, {
       supabaseClient: authContext.supabaseServerUserClient,
     });
 
-    if (!feedback) {
-      return { notFound: true };
-    }
-
-    if (feedback.author_id !== authContext.userId) {
+    if (!feedback || feedback.author_id !== authContext.userId) {
       return { notFound: true };
     }
 
@@ -101,7 +96,7 @@ export default function FeedbackEditPage({
   feedbackId,
   defaultValues,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const { session, getAccessToken } = useSession();
+  const { session, getAccessTokenOrThrow } = useSession();
   const { openAlert } = useAlert();
   const router = useRouter();
 
@@ -126,7 +121,7 @@ export default function FeedbackEditPage({
     }
 
     try {
-      const accessToken = await getAccessToken();
+      const accessToken = await getAccessTokenOrThrow();
 
       const response = await fetch(`/api/feedbacks/${feedbackId}`, {
         method: "PATCH",

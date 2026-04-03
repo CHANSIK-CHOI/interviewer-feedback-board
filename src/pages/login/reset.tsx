@@ -8,15 +8,15 @@ import { useSession } from "@/components/session";
 import { replaceSafely } from "@/lib/navigation/client";
 import { inputBaseStyle } from "@/constants";
 
-type ResetPassword = {
+type ResetPasswordFormValues = {
   reset_password: string;
 };
 
-const RESET_PASSWORD_FORM: ResetPassword = {
+const RESET_PASSWORD_FORM_DEFAULT_VALUES: ResetPasswordFormValues = {
   reset_password: "",
 };
 
-export default function PasswordResetPage() {
+export default function ResetPasswordPage() {
   const { openAlert } = useAlert();
   const { session, supabaseBrowserClient } = useSession();
   const router = useRouter();
@@ -33,12 +33,12 @@ export default function PasswordResetPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<ResetPassword>({
+  } = useForm<ResetPasswordFormValues>({
     mode: "onSubmit",
-    defaultValues: RESET_PASSWORD_FORM,
+    defaultValues: RESET_PASSWORD_FORM_DEFAULT_VALUES,
   });
 
-  const onSubmit = async (values: ResetPassword) => {
+  const onSubmit = async (values: ResetPasswordFormValues) => {
     if (isSubmitting) return;
     if (!supabaseBrowserClient) return;
     if (!isRecovery) {
