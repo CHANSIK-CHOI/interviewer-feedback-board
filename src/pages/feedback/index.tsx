@@ -2,15 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Select, useAlert } from "@/components/ui";
 import { PageMeta } from "@/components/common";
-import {
-  getAdminReviewFeedbacks,
-  getMyFeedbacks,
-  getPendingFeedbackCount,
-} from "@/lib/feedback/client";
 import { getApprovedFeedbacks, getRevisedPendingPreviewFeedbacks } from "@/lib/feedback/server";
 import { cn } from "@/lib/shared/cn";
 import { InferGetStaticPropsType } from "next";
 import { useSession } from "@/components/session";
+import { useFeedbackBoardData } from "@/hooks/feedback/useFeedbackBoardData";
 import {
   compareUpdatedAtDesc,
   mergeFeedbackList,
@@ -18,10 +14,8 @@ import {
 } from "@/lib/feedback/list";
 import { FeedbackBox, NewFeedbackLinkBtn } from "@/components/feedback";
 import {
-  AdminReviewFeedback,
   ApprovedFeedback,
   FeedbackListItem,
-  OwnerFeedback,
   RevisedPendingPreviewFeedback,
 } from "@/types/feedback";
 
@@ -59,10 +53,13 @@ export default function FeedbackBoardPage({
   const isAlertedRef = useRef(false);
   const { openAlert } = useAlert();
   const { session, hasAdminRole, isRoleLoading, getAccessTokenOrThrow } = useSession();
-  const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
-  const [ownerFeedbacks, setOwnerFeedbacks] = useState<OwnerFeedback[]>([]);
-  const [adminReviewFeedbacks, setAdminReviewFeedbacks] = useState<AdminReviewFeedback[]>([]);
+  const { pendingCount, ownerFeedbacks, adminReviewFeedbacks } = useFeedbackBoardData({
+    hasAdminRole,
+    isRoleLoading,
+    sessionAccessToken: session?.access_token,
+    getAccessTokenOrThrow,
+  });
   const mergedFeedbacks = useMemo<FeedbackListItem[]>(
     () =>
       mergeFeedbackList({
@@ -87,82 +84,6 @@ export default function FeedbackBoardPage({
       isAlertedRef.current = true;
     }
   }, [alertMessage, openAlert]);
-
-  useEffect(() => {
-    if (isRoleLoading || !hasAdminRole || !session?.access_token) {
-      setPendingCount(null);
-      return;
-    }
-
-    const controller = new AbortController();
-    void (async () => {
-      try {
-        const accessToken = await getAccessTokenOrThrow();
-        const count = await getPendingFeedbackCount({
-          accessToken,
-          signal: controller.signal,
-        });
-        if (controller.signal.aborted) return;
-        setPendingCount(count);
-      } catch (error) {
-        if (controller.signal.aborted) return;
-        console.error(error);
-        setPendingCount(null);
-      }
-    })();
-
-    return () => controller.abort();
-  }, [isRoleLoading, hasAdminRole, session?.access_token, getAccessTokenOrThrow]);
-
-  useEffect(() => {
-    if (!session?.access_token) {
-      setOwnerFeedbacks([]);
-      return;
-    }
-    const controller = new AbortController();
-    void (async () => {
-      try {
-        const accessToken = await getAccessTokenOrThrow();
-        const feedbacks = await getMyFeedbacks({
-          accessToken,
-          signal: controller.signal,
-        });
-        if (controller.signal.aborted) return;
-        setOwnerFeedbacks(feedbacks);
-      } catch (error) {
-        if (controller.signal.aborted) return;
-        console.error(error);
-        setOwnerFeedbacks([]);
-      }
-    })();
-
-    return () => controller.abort();
-  }, [session?.access_token, getAccessTokenOrThrow]);
-
-  useEffect(() => {
-    if (isRoleLoading || !hasAdminRole || !session?.access_token) {
-      setAdminReviewFeedbacks([]);
-      return;
-    }
-
-    const controller = new AbortController();
-    void (async () => {
-      try {
-        const accessToken = await getAccessTokenOrThrow();
-        const feedbacks = await getAdminReviewFeedbacks({
-          accessToken,
-          signal: controller.signal,
-        });
-        if (controller.signal.aborted) return;
-        setAdminReviewFeedbacks(feedbacks);
-      } catch (error) {
-        if (controller.signal.aborted) return;
-        console.error(error);
-        setAdminReviewFeedbacks([]);
-      }
-    })();
-    return () => controller.abort();
-  }, [isRoleLoading, hasAdminRole, session?.access_token, getAccessTokenOrThrow]);
 
   return (
     <>
@@ -215,7 +136,7 @@ export default function FeedbackBoardPage({
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               전체
             </p>
-              <strong className="mt-2 block text-2xl font-semibold text-foreground">
+            <strong className="mt-2 block text-2xl font-semibold text-foreground">
               {mergedFeedbacks.length}
             </strong>
           </div>
