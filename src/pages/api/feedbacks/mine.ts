@@ -1,8 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { resolveApiRequestAuth } from "@/lib/auth/request";
 import type { ApiRequestAuthResult } from "@/lib/auth/request";
+import { resolveApiRequestAuth } from "@/lib/auth/request";
+import { countFeedbackCommentsByFeedbackIds } from "@/lib/feedback/comment";
 import type { OwnerFeedback } from "@/types/feedback";
 import type { FeedbackMineResponse } from "@/types/response";
+import type { NextApiRequest, NextApiResponse } from "next";
 
 const ALLOWED_STATUSES = ["pending", "revised_pending", "rejected"] as const;
 type MineStatus = (typeof ALLOWED_STATUSES)[number];
@@ -67,14 +68,15 @@ export default async function handler(
       return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
     }
 
-    if (auth.context.isAdmin) {
-      return res.status(200).json({ data: null, error: null });
+    const { supabaseServerUserClient, userId, isAdmin } = auth.context;
+
+    if (isAdmin) {
+      return res.status(200).json({ data: [], error: null });
     }
-    const { supabaseServerUserClient, userId } = auth.context;
 
     const { data, error: dataError } = await supabaseServerUserClient
       .from("feedbacks")
-      .select()
+      .select("*")
       .eq("author_id", userId)
       .in("status", statuses);
 
@@ -85,25 +87,10 @@ export default async function handler(
     }
 
     const feedbackIds = data.map((item) => item.id);
-    const commentCounts =
-      feedbackIds.length === 0
-        ? {}
-        : await supabaseServerUserClient
-            .from("feedback_comments")
-            .select("feedback_id")
-            .in("feedback_id", feedbackIds)
-            .then(({ data: commentRows, error: commentError }) => {
-              if (commentError || !commentRows) {
-                return {};
-              }
-
-              return commentRows.reduce<Record<string, number>>((acc, row) => {
-                const feedbackId = typeof row.feedback_id === "string" ? row.feedback_id : null;
-                if (!feedbackId) return acc;
-                acc[feedbackId] = (acc[feedbackId] ?? 0) + 1;
-                return acc;
-              }, {});
-            });
+    const commentCounts = await countFeedbackCommentsByFeedbackIds({
+      supabaseClient: supabaseServerUserClient,
+      feedbackIds,
+    });
 
     const ownerFeedbacks: OwnerFeedback[] = data.map((item) => ({
       ...item,

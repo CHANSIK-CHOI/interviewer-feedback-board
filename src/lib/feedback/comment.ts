@@ -1,4 +1,3 @@
-import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { FeedbackPublicBase } from "@/types/feedback";
 import type {
   FeedbackComment,
@@ -231,7 +230,10 @@ export const listFeedbackComments = async ({
       .order("created_at", { ascending: true });
 
   if (error) {
-    throw new Error(resolveSupabaseErrorMessage(error, "Failed fetch listFeedbackComments"));
+    const errorMessage = error.message?.trim();
+    throw new Error(
+      errorMessage ? `Failed fetch listFeedbackComments: ${errorMessage}` : "Failed fetch listFeedbackComments"
+    );
   }
 
   return data ?? [];
@@ -258,8 +260,11 @@ export const countFeedbackCommentsByFeedbackIds = async ({
       .in("feedback_id", feedbackIds);
 
   if (error) {
+    const errorMessage = error.message?.trim();
     throw new Error(
-      resolveSupabaseErrorMessage(error, "Failed fetch countFeedbackCommentsByFeedbackIds")
+      errorMessage
+        ? `Failed fetch countFeedbackCommentsByFeedbackIds: ${errorMessage}`
+        : "Failed fetch countFeedbackCommentsByFeedbackIds"
     );
   }
 

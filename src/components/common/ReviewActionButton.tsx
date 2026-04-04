@@ -1,5 +1,5 @@
 import React from "react";
-import { ReviewFeedbackAction } from "@/lib/feedback/client";
+import type { ReviewFeedbackAction } from "@/types/feedback";
 import { Button } from "../ui";
 
 type ReviewActionButtonProps = {

@@ -27,8 +27,8 @@ const DELIVERY_BADGES: StackBadge[] = [
 ];
 
 export default function HomePage() {
-  const { session, isAdminUi, isRoleLoading } = useSession();
-  const roleLabel = isRoleLoading ? "확인 중..." : isAdminUi ? "admin" : "reviewer";
+  const { session, hasAdminRole, isRoleLoading } = useSession();
+  const roleLabel = isRoleLoading ? "확인 중..." : hasAdminRole ? "admin" : "reviewer";
   const userName = getUserName(session?.user);
 
   return (
@@ -143,7 +143,7 @@ export default function HomePage() {
                 <Link href="/login">로그인</Link>
               </Button>
             )}
-            {!isRoleLoading && isAdminUi && (
+            {!isRoleLoading && hasAdminRole && (
               <Button asChild variant="outline">
                 <Link href="/admin/feedback">관리자 검토 큐</Link>
               </Button>

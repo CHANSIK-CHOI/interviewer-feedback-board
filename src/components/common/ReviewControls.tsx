@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { useSession } from "@/components/session";
-import {
+import { ReviewFeedbackParams, reviewFeedback } from "@/lib/feedback/client";
+import type {
+  FeedbackPublicRow,
   ReviewFeedbackAction,
-  ReviewFeedbackParams,
   ReviewFeedbackResultWithReviewerName,
-  reviewFeedback,
-} from "@/lib/feedback/client";
-import type { FeedbackPublicRow } from "@/types/feedback";
+} from "@/types/feedback";
 import { Button, useAlert } from "../ui";
 import ReviewActionButton from "./ReviewActionButton";
 

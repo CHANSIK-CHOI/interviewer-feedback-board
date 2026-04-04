@@ -1,6 +1,9 @@
-import type { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
 import type { ApiResponse } from "./common";
-import type { FeedbackPublicBase, OwnerFeedback } from "./feedback";
+import type {
+  FeedbackPublicBase,
+  OwnerFeedback,
+  ReviewFeedbackResultWithReviewerName,
+} from "./feedback";
 import type { FeedbackComment } from "./feedback-comment";
 import type { UserRole } from "./user-role";
 

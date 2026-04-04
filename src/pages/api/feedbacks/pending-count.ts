@@ -4,7 +4,6 @@ import {
   ApiRequestAuthResult,
   resolveApiRequestAuth,
 } from "@/lib/auth/request";
-import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { PendingCountResponse } from "@/types/response";
 
@@ -37,10 +36,13 @@ export default async function handler(
       .select("id", { count: "exact", head: true })
       .in("status", ["pending", "revised_pending"]);
 
-    if (countError || count === null) {
+    if (countError || typeof count !== "number") {
+      const errorMessage = countError?.message?.trim();
       return res.status(500).json({
         data: null,
-        error: resolveSupabaseErrorMessage(countError, "Select failed Pending Data Count"),
+        error: errorMessage
+          ? `Select failed Pending Data Count: ${errorMessage}`
+          : "Select failed Pending Data Count",
       });
     }
 

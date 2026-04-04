@@ -58,7 +58,7 @@ export default function FeedbackBoardPage({
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const isAlertedRef = useRef(false);
   const { openAlert } = useAlert();
-  const { session, isAdminUi, isRoleLoading, getAccessTokenOrThrow } = useSession();
+  const { session, hasAdminRole, isRoleLoading, getAccessTokenOrThrow } = useSession();
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
   const [ownerFeedbacks, setOwnerFeedbacks] = useState<OwnerFeedback[]>([]);
@@ -89,7 +89,7 @@ export default function FeedbackBoardPage({
   }, [alertMessage, openAlert]);
 
   useEffect(() => {
-    if (isRoleLoading || !isAdminUi || !session?.access_token) {
+    if (isRoleLoading || !hasAdminRole || !session?.access_token) {
       setPendingCount(null);
       return;
     }
@@ -112,7 +112,7 @@ export default function FeedbackBoardPage({
     })();
 
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token, getAccessTokenOrThrow]);
+  }, [isRoleLoading, hasAdminRole, session?.access_token, getAccessTokenOrThrow]);
 
   useEffect(() => {
     if (!session?.access_token) {
@@ -140,7 +140,7 @@ export default function FeedbackBoardPage({
   }, [session?.access_token, getAccessTokenOrThrow]);
 
   useEffect(() => {
-    if (isRoleLoading || !isAdminUi || !session?.access_token) {
+    if (isRoleLoading || !hasAdminRole || !session?.access_token) {
       setAdminReviewFeedbacks([]);
       return;
     }
@@ -162,7 +162,7 @@ export default function FeedbackBoardPage({
       }
     })();
     return () => controller.abort();
-  }, [isRoleLoading, isAdminUi, session?.access_token, getAccessTokenOrThrow]);
+  }, [isRoleLoading, hasAdminRole, session?.access_token, getAccessTokenOrThrow]);
 
   return (
     <>
@@ -196,7 +196,7 @@ export default function FeedbackBoardPage({
                 </Select.Content>
               </Select>
               <NewFeedbackLinkBtn />
-              {!isRoleLoading && isAdminUi && (
+              {!isRoleLoading && hasAdminRole && (
                 <Button asChild>
                   <Link href="/admin/feedback">관리자 보기</Link>
                 </Button>
@@ -207,8 +207,8 @@ export default function FeedbackBoardPage({
 
         <section
           className={cn("grid gap-4", {
-            "md:grid-cols-3": isAdminUi,
-            "md:grid-cols-2": !isAdminUi,
+            "md:grid-cols-3": hasAdminRole,
+            "md:grid-cols-2": !hasAdminRole,
           })}
         >
           <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
@@ -227,7 +227,7 @@ export default function FeedbackBoardPage({
               {approvedFeedbacks.length}
             </strong>
           </div>
-          {isAdminUi && (
+          {hasAdminRole && (
             <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 승인 대기

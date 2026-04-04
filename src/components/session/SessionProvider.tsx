@@ -14,7 +14,7 @@ type SessionProviderProps = {
 export default function SessionProvider({ children }: SessionProviderProps) {
   const supabaseBrowserClient: SupabaseClient | null = getSupabaseBrowserClient();
   const { session, isInitSessionComplete } = useBrowserSession(supabaseBrowserClient);
-  const { isAdminUi, isRoleLoading, applyRoleUiState } = useSessionRoleUi(session);
+  const { hasAdminRole, isRoleLoading, applyRoleUiState } = useSessionRoleUi(session);
 
   const getAccessTokenOrThrow = useCallback(() => {
     return getClientAccessTokenOrThrow({
@@ -31,7 +31,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
         session,
         supabaseBrowserClient,
         isInitSessionComplete,
-        isAdminUi,
+        hasAdminRole,
         isRoleLoading,
         applyRoleUiState,
         getAccessTokenOrThrow,

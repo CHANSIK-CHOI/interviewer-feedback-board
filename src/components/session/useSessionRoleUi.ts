@@ -11,7 +11,7 @@ type CachedRoleState = {
 };
 
 type UseSessionRoleUiResult = {
-  isAdminUi: boolean;
+  hasAdminRole: boolean;
   isRoleLoading: boolean;
   applyRoleUiState: (params: ApplyRoleUiStateParams) => void;
 };
@@ -48,12 +48,12 @@ const readCachedRoleState = (
 };
 
 export function useSessionRoleUi(session: Session | null): UseSessionRoleUiResult {
-  const [isAdminUi, setIsAdminUi] = useState(false);
+  const [hasAdminRole, setHasAdminRole] = useState(false);
   const [isRoleLoading, setIsRoleLoading] = useState(false);
 
   const applyRoleUiState = useCallback(
     ({ userId, role, isLoading = false, isCacheWriteEnabled = true }: ApplyRoleUiStateParams) => {
-      setIsAdminUi(role === "admin");
+      setHasAdminRole(role === "admin");
       setIsRoleLoading(isLoading);
 
       if (isCacheWriteEnabled) {
@@ -71,13 +71,13 @@ export function useSessionRoleUi(session: Session | null): UseSessionRoleUiResul
 
     const isSignUpComplete = consumeSignUpRoleSyncSkip();
     if (isSignUpComplete) {
-      setIsAdminUi(false);
+      setHasAdminRole(false);
       setIsRoleLoading(false);
       return;
     }
 
     if (!session?.user?.id || !session.access_token) {
-      setIsAdminUi(false);
+      setHasAdminRole(false);
       setIsRoleLoading(false);
       return;
     }
@@ -103,13 +103,13 @@ export function useSessionRoleUi(session: Session | null): UseSessionRoleUiResul
       })
       .catch((error) => {
         console.error(error);
-        setIsAdminUi(false);
+        setHasAdminRole(false);
         setIsRoleLoading(false);
       });
   }, [session?.user?.id, session?.access_token, applyRoleUiState]);
 
   return {
-    isAdminUi,
+    hasAdminRole,
     isRoleLoading,
     applyRoleUiState,
   };

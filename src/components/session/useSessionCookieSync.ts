@@ -28,8 +28,12 @@ export function useSessionCookieSync(accessToken: string | null) {
       const payload: SessionCookieSyncResponse = await response
         .json()
         .catch(() => ({ data: null, error: "Invalid response" }));
-      if (!response.ok || payload.error) {
+      if (payload.error !== null) {
         throw new Error(payload.error ?? "Failed to sync session cookie");
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to sync session cookie");
       }
 
       syncedSessionCookieTokenRef.current = accessToken;

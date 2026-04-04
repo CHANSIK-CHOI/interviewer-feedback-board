@@ -7,11 +7,12 @@ import {
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { getUserName } from "@/lib/user/profile";
 import type { SupabaseError } from "@/types/common";
-import type { FeedbackPublicRow } from "@/types/feedback";
-import type { ReviewFeedbackResult } from "@/lib/feedback/client";
+import type {
+  FeedbackPublicRow,
+  ReviewFeedbackAction,
+  ReviewFeedbackResult,
+} from "@/types/feedback";
 import type { ReviewFeedbackResponse } from "@/types/response";
-
-type ReviewFeedbackAction = "approve" | "reject" | "reopen";
 type ReviewableFeedbackStatus = "pending" | "revised_pending";
 type ReopenableFeedbackStatus = "approved" | "rejected";
 

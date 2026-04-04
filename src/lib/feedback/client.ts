@@ -1,8 +1,9 @@
 import type {
   AdminReviewFeedback,
   FeedbackPublicBase,
-  FeedbackPublicRow,
   OwnerFeedback,
+  ReviewFeedbackAction,
+  ReviewFeedbackResultWithReviewerName,
 } from "@/types/feedback";
 import type { ApiResponse } from "@/types/common";
 import type {
@@ -12,7 +13,11 @@ import type {
 } from "@/types/feedback-comment";
 import type { FeedbackMineResponse, FeedbackResponse, PendingCountResponse } from "@/types/response";
 
-export type ReviewFeedbackAction = "approve" | "reject" | "reopen";
+export type {
+  ReviewFeedbackAction,
+  ReviewFeedbackResult,
+  ReviewFeedbackResultWithReviewerName,
+} from "@/types/feedback";
 
 const MINE_STATUS_QUERY = new URLSearchParams({
   status: "pending,revised_pending,rejected",
@@ -47,12 +52,8 @@ export async function getPendingFeedbackCount({
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || result.error) {
+  if (!response.ok || result.error !== null) {
     throw new Error(result.error ?? "Failed to fetch pending count");
-  }
-
-  if (typeof result.data?.count !== "number") {
-    throw new Error("Invalid pending count response");
   }
 
   return result.data.count;
@@ -83,11 +84,15 @@ export async function getMyFeedbacks({
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || result.error) {
+  if (result.error !== null) {
     throw new Error(result.error ?? "Select failed Owner Pending Data");
   }
 
-  return result.data ?? [];
+  if (!response.ok) {
+    throw new Error("Select failed Owner Pending Data");
+  }
+
+  return result.data;
 }
 
 export type GetAdminReviewFeedbacksParams = {
@@ -115,24 +120,16 @@ export async function getAdminReviewFeedbacks({
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || result.error) {
+  if (result.error !== null) {
     throw new Error(result.error ?? "Failed to fetch admin review feedbacks");
   }
 
-  return result.data ?? [];
+  if (!response.ok) {
+    throw new Error("Failed to fetch admin review feedbacks");
+  }
+
+  return result.data;
 }
-
-export type ReviewFeedbackResult = {
-  id: FeedbackPublicBase["id"];
-  status: FeedbackPublicRow["status"];
-  is_public: FeedbackPublicBase["is_public"];
-  reviewed_at: FeedbackPublicBase["reviewed_at"];
-  reviewed_by: FeedbackPublicBase["reviewed_by"];
-};
-
-export type ReviewFeedbackResultWithReviewerName = ReviewFeedbackResult & {
-  reviewer_name: string | null;
-};
 
 export type ReviewFeedbackParams = {
   feedbackId: FeedbackPublicBase["id"];
@@ -162,8 +159,12 @@ export async function reviewFeedback({
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || result.error || !result.data) {
+  if (result.error !== null) {
     throw new Error(result.error ?? "피드백 검토 처리에 실패했습니다.");
+  }
+
+  if (!response.ok) {
+    throw new Error("피드백 검토 처리에 실패했습니다.");
   }
 
   return result.data;
@@ -197,8 +198,12 @@ export async function deleteFeedback({
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || result.error || !result.data) {
+  if (result.error !== null) {
     throw new Error(result.error ?? "피드백 삭제에 실패했습니다.");
+  }
+
+  if (!response.ok) {
+    throw new Error("피드백 삭제에 실패했습니다.");
   }
 
   return result.data;
@@ -232,8 +237,12 @@ export async function createFeedbackComment({
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || result.error || !result.data) {
+  if (result.error !== null) {
     throw new Error(result.error ?? "코멘트 등록에 실패했습니다.");
+  }
+
+  if (!response.ok) {
+    throw new Error("코멘트 등록에 실패했습니다.");
   }
 
   return result.data;
@@ -272,8 +281,12 @@ export async function updateFeedbackComment({
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || result.error || !result.data) {
+  if (result.error !== null) {
     throw new Error(result.error ?? "코멘트 수정에 실패했습니다.");
+  }
+
+  if (!response.ok) {
+    throw new Error("코멘트 수정에 실패했습니다.");
   }
 
   return result.data;
@@ -312,8 +325,12 @@ export async function deleteFeedbackComment({
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || result.error || !result.data) {
+  if (result.error !== null) {
     throw new Error(result.error ?? "코멘트 삭제에 실패했습니다.");
+  }
+
+  if (!response.ok) {
+    throw new Error("코멘트 삭제에 실패했습니다.");
   }
 
   return result.data;

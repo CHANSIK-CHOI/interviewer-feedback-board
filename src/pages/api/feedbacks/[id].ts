@@ -5,7 +5,7 @@ import {
   resolveApiRequestAuth,
 } from "@/lib/auth/request";
 import type { SupabaseError } from "@/types/common";
-import type { FeedbackPublicAndEmailRow, FeedbackPublicBase } from "@/types/feedback";
+import type { FeedbackPublicBase, FeedbackPublicRow } from "@/types/feedback";
 import type { FeedbackFormValues } from "@/types/forms";
 import {
   FEEDBACK_FORM_ERROR_MESSAGES,
@@ -17,10 +17,10 @@ import { toNullableTrimmedString, toStrictBoolean, toTrimmedString } from "@/lib
 import { EditFeedbackResponse } from "@/types/response";
 
 type ExistingFeedbackRow = {
-  id: FeedbackPublicAndEmailRow["id"];
-  author_id: FeedbackPublicAndEmailRow["author_id"];
-  status: FeedbackPublicAndEmailRow["status"];
-  revision_count: FeedbackPublicAndEmailRow["revision_count"];
+  id: FeedbackPublicRow["id"];
+  author_id: FeedbackPublicRow["author_id"];
+  status: FeedbackPublicRow["status"];
+  revision_count: FeedbackPublicRow["revision_count"];
 };
 
 export default async function handler(

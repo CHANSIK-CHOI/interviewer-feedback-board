@@ -7,12 +7,12 @@ import FeedbackCommentsProvider, {
 } from "@/components/feedback/detail/FeedbackCommentsProvider";
 import FeedbackCommentsReplyItem from "@/components/feedback/detail/FeedbackCommentsReplyItem";
 import { cn } from "@/lib/shared/cn";
-import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
+import type { FeedbackPublicRow } from "@/types/feedback";
 import type { FeedbackComment } from "@/types/feedback-comment";
 import { Lock, MessageCircle } from "lucide-react";
 
 type FeedbackCommentsProps = {
-  feedback: FeedbackPublicAndEmailRow;
+  feedback: FeedbackPublicRow;
   isAuthor: boolean;
   isAdmin: boolean;
   initialComments: FeedbackComment[];

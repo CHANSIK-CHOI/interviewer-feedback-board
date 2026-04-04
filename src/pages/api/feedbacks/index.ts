@@ -9,7 +9,7 @@ import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import type {
   AdminReviewFeedback,
   ApprovedFeedback,
-  FeedbackPublicAndEmailRow,
+  FeedbackPublicWithEmailRow,
 } from "@/types/feedback";
 import { parseStatusQuery, ParseStatusQueryResult } from "@/lib/status/query";
 import { FeedbackResponse } from "@/types/response";
@@ -62,7 +62,7 @@ export default async function handler(
       throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
     }
 
-    const feedbackRows: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses({
+    const feedbackRows: FeedbackPublicWithEmailRow[] = await getFeedbackRowsByStatuses({
       supabaseClient: supabaseServerAdminClient,
       statuses,
     });

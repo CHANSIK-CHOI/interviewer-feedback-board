@@ -1,12 +1,10 @@
-import { ApiResponse } from "@/types/common";
 import type { UserRole } from "@/types/user-role";
+import type { UserRoleSyncResponse } from "@/types/response";
 
 export type SyncUserRoleResult = {
   role: UserRole["role"];
   isNewUser: boolean;
 };
-
-type UserRoleSyncResponse = ApiResponse<{ role: UserRole["role"]; isNewUser: boolean }>;
 
 export async function syncUserRole(accessToken: string): Promise<SyncUserRoleResult> {
   if (!accessToken) {
@@ -21,16 +19,20 @@ export async function syncUserRole(accessToken: string): Promise<SyncUserRoleRes
     },
   });
 
-  const { data, error }: UserRoleSyncResponse = await response
+  const result: UserRoleSyncResponse = await response
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || error || !data || !data.role) {
-    throw new Error(error ?? "Failed Post user roles");
+  if (result.error !== null) {
+    throw new Error(result.error ?? "Failed Post user roles");
+  }
+
+  if (!response.ok || !result.data.role) {
+    throw new Error("Failed Post user roles");
   }
 
   return {
-    role: data.role,
-    isNewUser: data.isNewUser,
+    role: result.data.role,
+    isNewUser: result.data.isNewUser,
   };
 }

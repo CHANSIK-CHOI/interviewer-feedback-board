@@ -3,29 +3,20 @@ import { AVATAR_PLACEHOLDER_SRC, USER_ID_PATTERN } from "@/constants";
 import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
 import { buildAvatarPath } from "@/lib/avatar/path";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
-import type { ApiResponse } from "@/types/common";
 import { AvatarMimeType } from "@/types/avatar";
 
 const AVATAR_BUCKET = process.env.SUPABASE_AVATAR_BUCKET;
-type AvatarProxyErrorResponse = ApiResponse<null> | Buffer<ArrayBuffer>;
 
 const respondWithPlaceholder = (res: NextApiResponse) => {
   res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300");
   return res.redirect(302, AVATAR_PLACEHOLDER_SRC);
 };
 
-const respondWithError = (
-  res: NextApiResponse<AvatarProxyErrorResponse>,
-  status: number,
-  message: string
-) => {
+const respondWithError = (res: NextApiResponse, status: number, message: string) => {
   return res.status(status).json({ data: null, error: message });
 };
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<AvatarProxyErrorResponse>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.setHeader("Allow", ["GET"]);
     return respondWithError(res, 405, "Method Not Allowed");

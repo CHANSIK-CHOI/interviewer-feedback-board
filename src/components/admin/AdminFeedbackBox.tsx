@@ -2,16 +2,16 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui";
-import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
+import type { FeedbackPublicWithEmailRow, ReviewFeedbackResult } from "@/types/feedback";
 import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
 import { isPrivateAvatarApiSrc, isSvgImageSrc } from "@/lib/avatar/path";
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { hasFeedbackBeenUpdated } from "@/lib/feedback/list";
-import { DeleteFeedbackResult, ReviewFeedbackResult } from "@/lib/feedback/client";
+import { DeleteFeedbackResult } from "@/lib/feedback/client";
 import { DeleteFeedbackButton, ReviewControls } from "../common";
 
 type AdminFeedbackBoxProps = {
-  data: FeedbackPublicAndEmailRow;
+  data: FeedbackPublicWithEmailRow;
   onReviewed: (result: ReviewFeedbackResult) => void;
   onDeleted: (result: DeleteFeedbackResult) => void;
 };

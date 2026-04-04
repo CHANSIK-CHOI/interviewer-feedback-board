@@ -6,10 +6,10 @@ import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
 import { FeedbackRowsByStatusesParams, getFeedbackRowsByStatuses } from "@/lib/feedback/server";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
-import { DeleteFeedbackResult, ReviewFeedbackResult } from "@/lib/feedback/client";
+import { DeleteFeedbackResult } from "@/lib/feedback/client";
 import AdminFeedbackBox from "@/components/admin/AdminFeedbackBox";
 import { PageMeta } from "@/components/common";
-import { FeedbackPublicAndEmailRow } from "@/types/feedback";
+import { FeedbackPublicWithEmailRow, ReviewFeedbackResult } from "@/types/feedback";
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
   const accessToken = context.req.cookies["sb-access-token"];
@@ -30,7 +30,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   }
 
   try {
-    const feedbacks: FeedbackPublicAndEmailRow[] = await getFeedbackRowsByStatuses({
+    const feedbacks: FeedbackPublicWithEmailRow[] = await getFeedbackRowsByStatuses({
       supabaseClient: supabaseServerAdminClient,
       statuses: ["pending", "approved", "rejected", "revised_pending"],
     } satisfies FeedbackRowsByStatusesParams);
@@ -47,7 +47,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 export default function AdminFeedbackPage({
   feedbackData,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [feedbackItems, setFeedbackItems] = useState<FeedbackPublicAndEmailRow[]>(feedbackData);
+  const [feedbackItems, setFeedbackItems] = useState<FeedbackPublicWithEmailRow[]>(feedbackData);
   const [viewType, setViewType] = useState<"all" | "pending">("all");
   const [sortType, setSortType] = useState<"updated_desc" | "updated_asc">("updated_desc");
 

@@ -24,7 +24,7 @@ export default async function handler(
 
   if (req.method === "DELETE") {
     res.setHeader("Set-Cookie", buildCookie("", 0));
-    return res.status(200).json({ data: null, error: null });
+    return res.status(200).json({ data: { success: true }, error: null });
   }
 
   if (req.method !== "POST") {

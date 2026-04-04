@@ -13,7 +13,7 @@ type SessionContextValue = {
   session: Session | null;
   supabaseBrowserClient: SupabaseClient | null;
   isInitSessionComplete: boolean;
-  isAdminUi: boolean;
+  hasAdminRole: boolean;
   isRoleLoading: boolean;
   applyRoleUiState: (params: ApplyRoleUiStateParams) => void;
   getAccessTokenOrThrow: () => Promise<string>;

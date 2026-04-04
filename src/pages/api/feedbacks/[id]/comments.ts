@@ -17,7 +17,6 @@ import {
   validateFeedbackCommentReplyTarget,
 } from "@/lib/feedback/comment";
 import { getAvatarUrl, getUserName } from "@/lib/user/profile";
-import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { FeedbackCommentRow } from "@/types/feedback-comment";
 import type { FeedbackCommentListResponse, FeedbackCommentResponse } from "@/types/response";
 import type { SupabaseError } from "@/types/common";
@@ -84,12 +83,13 @@ const loadFeedbackCommentTarget = async (
     });
 
   if (error) {
+    const errorMessageText = error.message?.trim();
     return {
       supabaseServerAdminClient,
       feedback: null,
       errorResponse: {
         status: 500,
-        error: resolveSupabaseErrorMessage(error, errorMessage),
+        error: errorMessageText ? `${errorMessage}: ${errorMessageText}` : errorMessage,
       },
     };
   }
@@ -261,9 +261,12 @@ async function handleCreateComment(
     });
 
     if (replyTargetError) {
+      const errorMessage = replyTargetError.message?.trim();
       return res.status(500).json({
         data: null,
-        error: resolveSupabaseErrorMessage(replyTargetError, COMMENT_CREATE_ERROR_MESSAGE),
+        error: errorMessage
+          ? `${COMMENT_CREATE_ERROR_MESSAGE}: ${errorMessage}`
+          : COMMENT_CREATE_ERROR_MESSAGE,
       });
     }
 
@@ -296,9 +299,12 @@ async function handleCreateComment(
     .maybeSingle();
 
   if (createError || !createdComment) {
+    const errorMessage = createError?.message?.trim();
     return res.status(500).json({
       data: null,
-      error: resolveSupabaseErrorMessage(createError, COMMENT_CREATE_ERROR_MESSAGE),
+      error: errorMessage
+        ? `${COMMENT_CREATE_ERROR_MESSAGE}: ${errorMessage}`
+        : COMMENT_CREATE_ERROR_MESSAGE,
     });
   }
 

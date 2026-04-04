@@ -5,7 +5,7 @@ import {
   deleteFeedbackComment,
   updateFeedbackComment,
 } from "@/lib/feedback/client";
-import type { FeedbackPublicAndEmailRow } from "@/types/feedback";
+import type { FeedbackPublicRow } from "@/types/feedback";
 import type { FeedbackComment, FeedbackCommentRow } from "@/types/feedback-comment";
 import {
   createContext,
@@ -18,7 +18,7 @@ import {
 } from "react";
 
 type FeedbackCommentsProviderProps = {
-  feedback: FeedbackPublicAndEmailRow;
+  feedback: FeedbackPublicRow;
   isAuthor: boolean;
   isAdmin: boolean;
   initialComments: FeedbackComment[];
@@ -38,8 +38,8 @@ type FeedbackCommentsStateContextValue = {
 };
 
 type FeedbackCommentsMetaContextValue = {
-  feedbackId: FeedbackPublicAndEmailRow["id"];
-  feedbackAuthorId: FeedbackPublicAndEmailRow["author_id"];
+  feedbackId: FeedbackPublicRow["id"];
+  feedbackAuthorId: FeedbackPublicRow["author_id"];
   currentUserId: string | null;
   isAdmin: boolean;
   canWrite: boolean;

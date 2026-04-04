@@ -16,9 +16,8 @@ import {
   resolveSupabaseServerReader,
 } from "@/lib/supabase/server";
 import type { AuthContext } from "@/lib/auth/server";
-import { FeedbackPublicAndEmailRow } from "@/types/feedback";
+import type { FeedbackDetailRow, ReviewFeedbackResultWithReviewerName } from "@/types/feedback";
 import { DeleteFeedbackButton, PageMeta, ReviewControls } from "@/components/common";
-import { ReviewFeedbackResultWithReviewerName } from "@/lib/feedback/client";
 import FeedbackComments from "@/components/feedback/detail/FeedbackComments";
 import type { FeedbackComment } from "@/types/feedback-comment";
 
@@ -56,7 +55,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
     const isAdmin = authContext?.isAdmin ?? false;
     const isAuthor = authContext?.userId === detailFeedback.author_id;
-    let feedbackWithEmail: FeedbackPublicAndEmailRow = detailFeedback;
+    let feedbackWithEmail: FeedbackDetailRow = detailFeedback;
     let initialComments: FeedbackComment[] = [];
 
     if (isAuthor || isAdmin) {
@@ -98,8 +97,7 @@ export default function FeedbackDetailPage({
   isAdmin,
   initialComments,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [currentDetailFeedback, setCurrentDetailFeedback] =
-    useState<FeedbackPublicAndEmailRow>(detailFeedback);
+  const [currentDetailFeedback, setCurrentDetailFeedback] = useState<FeedbackDetailRow>(detailFeedback);
   const [currentReviewerName, setCurrentReviewerName] = useState<string | null>(reviewerName);
 
   const handleReviewed = (result: ReviewFeedbackResultWithReviewerName) => {

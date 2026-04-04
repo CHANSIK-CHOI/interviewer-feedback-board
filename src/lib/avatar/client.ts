@@ -44,14 +44,18 @@ export async function uploadAvatarToSupabase(
     body: formData,
   });
 
-  const { data, error }: AvatarUploadResponse = await response
+  const result: AvatarUploadResponse = await response
     .json()
     .catch(() => ({ data: null, error: "Invalid response" }));
 
-  if (!response.ok || error || !data) {
-    const errorMessage = error ?? "아바타 업로드에 실패했습니다.";
+  if (result.error !== null) {
+    const errorMessage = result.error ?? "아바타 업로드에 실패했습니다.";
     throw new Error(errorMessage);
   }
 
-  return data;
+  if (!response.ok) {
+    throw new Error("아바타 업로드에 실패했습니다.");
+  }
+
+  return result.data;
 }

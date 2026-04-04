@@ -12,7 +12,6 @@ export type FeedbackPublicBase = {
   reviewed_at: string | null;
   reviewed_by: string | null;
   comments_unlocked_at: string | null;
-  comment_count?: number;
 };
 
 export type FeedbackPublicRow = FeedbackPublicBase & {
@@ -25,13 +24,14 @@ export type FeedbackPublicRow = FeedbackPublicBase & {
   status: "pending" | "approved" | "rejected" | "revised_pending";
 };
 
-export type FeedbackPublicAndEmailRow = FeedbackPublicRow & {
-  email?: string;
+export type FeedbackPublicWithEmailRow = FeedbackPublicRow & {
+  email: string;
 };
 
 export type ApprovedFeedback = FeedbackPublicBase & {
   status: "approved";
   isPreview: false;
+  comment_count: number;
   summary: string;
   strengths: string | null;
   questions: string | null;
@@ -48,6 +48,7 @@ export type RevisedPendingPreviewFeedback = FeedbackPublicBase & {
 export type OwnerFeedback = FeedbackPublicBase & {
   status: "pending" | "revised_pending" | "rejected";
   isPreview: false;
+  comment_count: number;
   summary: string;
   strengths: string | null;
   questions: string | null;
@@ -56,8 +57,27 @@ export type OwnerFeedback = FeedbackPublicBase & {
   tags: string[];
 };
 
-type AdminReviewBase = FeedbackPublicAndEmailRow & {
+export type FeedbackDetailRow = FeedbackPublicRow & {
+  email?: string;
+};
+
+export type ReviewFeedbackAction = "approve" | "reject" | "reopen";
+
+export type ReviewFeedbackResult = {
+  id: FeedbackPublicBase["id"];
+  status: FeedbackPublicRow["status"];
+  is_public: FeedbackPublicBase["is_public"];
+  reviewed_at: FeedbackPublicBase["reviewed_at"];
+  reviewed_by: FeedbackPublicBase["reviewed_by"];
+};
+
+export type ReviewFeedbackResultWithReviewerName = ReviewFeedbackResult & {
+  reviewer_name: string | null;
+};
+
+type AdminReviewBase = FeedbackPublicWithEmailRow & {
   isPreview: false;
+  comment_count: number;
 };
 
 export type AdminReviewFeedback = Omit<AdminReviewBase, "email">;

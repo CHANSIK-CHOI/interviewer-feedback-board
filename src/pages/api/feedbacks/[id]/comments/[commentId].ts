@@ -8,7 +8,6 @@ import {
   normalizeFeedbackCommentBody,
   validateCommentBody,
 } from "@/lib/feedback/comment";
-import { resolveSupabaseErrorMessage } from "@/lib/supabase/error";
 import type { SupabaseError } from "@/types/common";
 import type { FeedbackCommentRow } from "@/types/feedback-comment";
 import type { DeleteFeedbackCommentResponse, FeedbackCommentResponse } from "@/types/response";
@@ -55,12 +54,13 @@ const loadCommentMutationTarget = async (
     });
 
   if (feedbackError) {
+    const feedbackErrorMessage = feedbackError.message?.trim();
     return {
       feedback: null,
       comment: null,
       errorResponse: {
         status: 500,
-        error: resolveSupabaseErrorMessage(feedbackError, errorMessage),
+        error: feedbackErrorMessage ? `${errorMessage}: ${feedbackErrorMessage}` : errorMessage,
       },
     };
   }
@@ -74,12 +74,13 @@ const loadCommentMutationTarget = async (
   }
 
   if (commentError) {
+    const commentErrorMessage = commentError.message?.trim();
     return {
       feedback,
       comment: null,
       errorResponse: {
         status: 500,
-        error: resolveSupabaseErrorMessage(commentError, errorMessage),
+        error: commentErrorMessage ? `${errorMessage}: ${commentErrorMessage}` : errorMessage,
       },
     };
   }
@@ -212,9 +213,12 @@ async function handleUpdateComment(
     .maybeSingle();
 
   if (updateError || !updatedComment) {
+    const errorMessage = updateError?.message?.trim();
     return res.status(500).json({
       data: null,
-      error: resolveSupabaseErrorMessage(updateError, COMMENT_UPDATE_ERROR_MESSAGE),
+      error: errorMessage
+        ? `${COMMENT_UPDATE_ERROR_MESSAGE}: ${errorMessage}`
+        : COMMENT_UPDATE_ERROR_MESSAGE,
     });
   }
 
@@ -273,9 +277,12 @@ async function handleDeleteComment(
       .maybeSingle();
 
   if (deleteError || !deletedComment) {
+    const errorMessage = deleteError?.message?.trim();
     return res.status(500).json({
       data: null,
-      error: resolveSupabaseErrorMessage(deleteError, COMMENT_DELETE_ERROR_MESSAGE),
+      error: errorMessage
+        ? `${COMMENT_DELETE_ERROR_MESSAGE}: ${errorMessage}`
+        : COMMENT_DELETE_ERROR_MESSAGE,
     });
   }
 
