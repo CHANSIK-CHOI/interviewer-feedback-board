@@ -15,13 +15,13 @@ export default async function handler(
 
   if (method !== "GET" && method !== "PATCH") {
     res.setHeader("Allow", ["GET", "PATCH"]);
-    return res.status(405).json({ data: null, error: "Method Not Allowed" });
+    return res.status(405).json({ data: null, error: "지원하지 않는 요청 방식입니다." });
   }
 
   const auth: ApiRequestAuthResult = await resolveApiRequestAuth(req);
 
   if (auth.error || !auth.context) {
-    return res.status(auth.status).json({ data: null, error: auth.error ?? "Unauthorized" });
+    return res.status(auth.status).json({ data: null, error: auth.error ?? "인증이 필요합니다." });
   }
   const { supabaseServerUserClient, userId } = auth.context;
 
@@ -48,13 +48,13 @@ export default async function handler(
       if (error || !data) {
         return res.status(500).json({
           data: null,
-          error: error?.message ?? "Select failed notifications Data",
+          error: error?.message ?? "알림 목록을 불러오지 못했습니다.",
         });
       }
 
       return res.status(200).json({ data, error: null });
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Unknown error";
+      const message = e instanceof Error ? e.message : "알림 목록 조회 중 오류가 발생했습니다.";
       return res.status(500).json({ data: null, error: message });
     }
   }
@@ -70,7 +70,7 @@ export default async function handler(
       if (countError || count == null) {
         return res.status(500).json({
           data: null,
-          error: countError?.message ?? "Select failed notifications Data",
+          error: countError?.message ?? "읽지 않은 알림 수를 확인하지 못했습니다.",
         });
       }
       if (count == 0) {
@@ -90,12 +90,12 @@ export default async function handler(
       if (error || !data) {
         return res.status(500).json({
           data: null,
-          error: error?.message ?? "Update failed notifications Data",
+          error: error?.message ?? "알림을 모두 읽음 처리하지 못했습니다.",
         });
       }
       return res.status(200).json({ data, error: null });
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Unknown error";
+      const message = e instanceof Error ? e.message : "알림 읽음 처리 중 오류가 발생했습니다.";
       return res.status(500).json({ data: null, error: message });
     }
   }

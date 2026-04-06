@@ -8,8 +8,8 @@ import {
   NotificationIcon,
   NOTIFICATION_TONE_BY_TYPE,
   NOTIFICATION_TONE_STYLE,
-} from "./notification-presentation";
-import { useNotifications } from "./useNotifications";
+} from "./presentation";
+import { useNotifications } from "./context";
 
 export default function NotificationBell() {
   const { notifications, markAllAsRead, markAsRead } = useNotifications();

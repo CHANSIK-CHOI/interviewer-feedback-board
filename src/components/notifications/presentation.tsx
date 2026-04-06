@@ -1,11 +1,11 @@
-import { cn } from "@/lib/shared/cn";
-import type { NotificationType } from "@/types/notification";
 import {
   CircleAlert,
   MessageSquareText,
   RefreshCcw,
   ShieldCheck,
 } from "lucide-react";
+import { cn } from "@/lib/shared/cn";
+import type { NotificationType } from "@/types/notification";
 
 export type NotificationTone = "info" | "success" | "warning" | "danger";
 

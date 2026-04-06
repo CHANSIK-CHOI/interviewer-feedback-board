@@ -1,7 +1,4 @@
-import type { Dispatch, SetStateAction } from "react";
 import type { NotificationItemData, NotificationRow } from "@/types/notification";
-
-export type SetNotificationsState = Dispatch<SetStateAction<NotificationItemData[]>>;
 
 export function toNotificationItemData(notification: NotificationRow): NotificationItemData {
   return {

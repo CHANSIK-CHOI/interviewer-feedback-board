@@ -4,10 +4,10 @@ import { toast } from "sonner";
 import { NotificationItemData } from "@/types/notification";
 import { useSession } from "../session";
 import { useAlert } from "../ui";
+import { NotificationsContext } from "./context";
 import { useNotificationActions } from "./useNotificationActions";
 import { useNotificationRealtime } from "./useNotificationRealtime";
 import { useNotificationUnreadSync } from "./useNotificationUnreadSync";
-import { NotificationsContext } from "./useNotifications";
 
 type NotificationsProviderProps = {
   children: ReactNode;

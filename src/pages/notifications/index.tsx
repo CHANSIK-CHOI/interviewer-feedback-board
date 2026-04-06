@@ -1,5 +1,4 @@
 import { PageMeta } from "@/components/common";
-import { useNotificationRealtime } from "@/components/notifications/useNotificationRealtime";
 import { useSession } from "@/components/session";
 import { Button, useAlert } from "@/components/ui";
 import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
@@ -9,6 +8,7 @@ import {
   markAllNotificationAsRead,
   markNotificationAsRead,
 } from "@/lib/notification";
+import { useNotificationRealtime } from "@/components/notifications/useNotificationRealtime";
 import { cn } from "@/lib/shared/cn";
 import { SupabaseError } from "@/types/common";
 import { NotificationItemData } from "@/types/notification";
@@ -22,7 +22,7 @@ import {
   NOTIFICATION_TONE_BY_TYPE,
   NOTIFICATION_TONE_STYLE,
   NOTIFICATION_TYPE_LABEL,
-} from "@/components/notifications/notification-presentation";
+} from "@/components/notifications/presentation";
 
 type NotificationFilter = "all" | "unread" | "read";
 
@@ -224,7 +224,7 @@ export default function NotificationsPage({
     } catch (markAllError) {
       console.error(markAllError);
       openAlert({
-        description: "알림 모두 읽기가 실패했습니다.\n다시 시도해주세요.",
+        description: "알림을 모두 읽음 처리하지 못했습니다.\n다시 시도해주세요.",
       });
     } finally {
       setIsMarkingAllAsRead(false);
@@ -259,7 +259,7 @@ export default function NotificationsPage({
     } catch (error) {
       console.error(error);
       openAlert({
-        description: "알림 읽기가 실패했습니다.\n다시 시도해주세요.",
+        description: "알림을 읽음 처리하지 못했습니다.\n다시 시도해주세요.",
       });
     } finally {
       await router.push(item.link);

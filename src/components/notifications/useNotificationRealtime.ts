@@ -1,7 +1,7 @@
-import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { useEffect } from "react";
+import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { NotificationItemData, NotificationRow } from "@/types/notification";
-import { toNotificationItemData } from "./notification-data";
+import { toNotificationItemData } from "@/lib/notification";
 
 type UseNotificationRealtimeParams = {
   session: Session | null;

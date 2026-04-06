@@ -1,7 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import { getAllNotifications } from "@/lib/notification";
-import type { SetNotificationsState } from "./notification-data";
+import type { SetNotificationsState } from "./state";
 
 type UseNotificationUnreadSyncParams = {
   session: Session | null;
