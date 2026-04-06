@@ -3,8 +3,8 @@ import { createContext, useContext } from "react";
 
 type NotificationsContextValue = {
   notifications: NotificationItemData[];
-  markAllAsRead: () => void;
-  markAsRead: (id: string) => void;
+  markAllAsRead: () => Promise<void>;
+  markAsRead: (id: string) => Promise<void>;
 };
 export const NotificationsContext = createContext<NotificationsContextValue | null>(null);
 

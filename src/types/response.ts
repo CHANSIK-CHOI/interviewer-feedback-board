@@ -5,6 +5,7 @@ import type {
   ReviewFeedbackResultWithReviewerName,
 } from "./feedback";
 import type { FeedbackComment } from "./feedback-comment";
+import type { NotificationItemData } from "./notification";
 import type { UserRole } from "./user-role";
 
 export type SessionCookieSyncResponse = ApiResponse<{
@@ -42,3 +43,6 @@ type UserRoleSyncData = {
   isNewUser: boolean;
 };
 export type UserRoleSyncResponse = ApiResponse<UserRoleSyncData>;
+
+export type NotificationsResponse = ApiResponse<NotificationItemData[]>;
+export type NotificationResponse = ApiResponse<NotificationItemData | null>;

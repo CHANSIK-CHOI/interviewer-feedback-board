@@ -17,6 +17,7 @@ export type AuthContextResult = {
   status: number;
 };
 
+// SSR 전용
 export const resolveAuthContextByAccessToken = async (
   accessToken: string
 ): Promise<AuthContextResult> => {

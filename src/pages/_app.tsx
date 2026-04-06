@@ -80,15 +80,15 @@ export default function App({ Component, pageProps }: AppProps) {
 
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <SessionProvider>
-          <NotificationsProvider>
-            <DialogProvider container={container}>
+          <DialogProvider container={container}>
+            <NotificationsProvider>
               <GlobalLayout>
                 <Component {...pageProps} />
               </GlobalLayout>
               <Toaster />
               <div ref={setContainer} className="z-[9999]" />
-            </DialogProvider>
-          </NotificationsProvider>
+            </NotificationsProvider>
+          </DialogProvider>
         </SessionProvider>
       </ThemeProvider>
     </>

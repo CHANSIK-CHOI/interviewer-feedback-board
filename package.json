@@ -11,6 +11,7 @@
     "test:e2e:headed": "playwright test --headed",
     "format": "prettier --write .",
     "seed:feedback": "node src/scripts/seed-feedback.mjs",
+    "seed:notifications": "node src/scripts/seed-notifications.mjs",
     "reset:avatars": "node src/scripts/reset-avatar-storage.mjs"
   },
   "dependencies": {

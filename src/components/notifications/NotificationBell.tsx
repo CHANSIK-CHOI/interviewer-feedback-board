@@ -1,38 +1,32 @@
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@/components/ui";
+import { formatDateTime } from "@/lib/feedback/presentation";
 import { cn } from "@/lib/shared/cn";
-import { MockNotificationItem } from "@/types/notification";
-import { Bell, CheckCheck, MessageSquareText, RefreshCcw, ShieldCheck } from "lucide-react";
-import { useMemo } from "react";
+import { Bell, CheckCheck } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import {
+  NotificationIcon,
+  NOTIFICATION_TONE_BY_TYPE,
+  NOTIFICATION_TONE_STYLE,
+} from "./notification-presentation";
 import { useNotifications } from "./useNotifications";
-
-const toneStyles: Record<MockNotificationItem["tone"], string> = {
-  info: "bg-slate-100 text-slate-700 dark:bg-slate-800/80 dark:text-slate-200",
-  success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300",
-  warning: "bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300",
-};
-
-function NotificationIcon({ tone }: { tone: MockNotificationItem["tone"] }) {
-  if (tone === "success") {
-    return <ShieldCheck className="h-4 w-4" />;
-  }
-
-  if (tone === "warning") {
-    return <RefreshCcw className="h-4 w-4" />;
-  }
-
-  return <MessageSquareText className="h-4 w-4" />;
-}
 
 export default function NotificationBell() {
   const { notifications, markAllAsRead, markAsRead } = useNotifications();
+  const [open, setOpen] = useState(false);
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.is_read).length,
     [notifications]
   );
 
+  const handleClickNotiItemLink = async (id: string) => {
+    setOpen(false);
+    await markAsRead(id);
+  };
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -56,20 +50,27 @@ export default function NotificationBell() {
         collisionPadding={32}
         className="w-[calc(100vw-4rem)] max-w-[25rem] rounded-[1.5rem] border-border/70 bg-white/95 p-0 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-neutral-950/95 sm:w-[25rem]"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border/60 px-5 py-4 dark:border-white/10">
-          <div>
-            <p className="text-sm font-semibold text-foreground">알림함</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              승인 상태, 코멘트, 답글 흐름을 여기서 모아봅니다.
-            </p>
-          </div>
+        <div className="flex items-start justify-end gap-4 border-b border-border/60 px-5 py-4 dark:border-white/10">
           <div className="flex shrink-0 items-center gap-2">
+            <Button
+              asChild
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-full px-3 text-xs"
+            >
+              <Link href="/notifications" onClick={() => setOpen(false)}>
+                알림함으로 이동
+              </Link>
+            </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
               className="h-8 rounded-full px-3 text-xs"
-              onClick={markAllAsRead}
+              onClick={() => {
+                void markAllAsRead();
+              }}
             >
               <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
               모두 읽음
@@ -91,53 +92,58 @@ export default function NotificationBell() {
           </div>
         ) : (
           <div className="max-h-[26rem] overflow-y-auto overscroll-y-contain [overscroll-behavior-y:contain] px-2 py-2">
-            {notifications.map((item, index) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => markAsRead(item.id)}
-                className={cn(
-                  "group flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition",
-                  item.isRead
-                    ? "opacity-80 hover:bg-muted/60 hover:opacity-100"
-                    : "bg-muted/30 hover:bg-muted/80"
-                )}
-              >
-                <span
+            {notifications.map((item, index) => {
+              const { type } = item;
+              const tone = NOTIFICATION_TONE_BY_TYPE[type];
+
+              return (
+                <Link
+                  key={item.id}
+                  href={item.link}
+                  onClick={() => handleClickNotiItemLink(item.id)}
                   className={cn(
-                    "mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-                    toneStyles[item.tone]
+                    "group flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition",
+                    item.is_read
+                      ? "opacity-80 hover:bg-muted/60 hover:opacity-100"
+                      : "bg-muted/30 hover:bg-muted/80"
                   )}
                 >
-                  <NotificationIcon tone={item.tone} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-semibold text-foreground">{item.title}</p>
-                    {!item.isRead && (
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-sky-500" aria-hidden />
-                    )}
-                  </div>
-                  <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
-                    {item.body}
-                  </p>
-                  <div className="mt-2 flex items-center justify-between gap-3">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
-                      {item.timeLabel}
-                    </span>
-                    <span className="text-xs font-medium text-foreground/75 group-hover:text-foreground">
-                      열어보기
-                    </span>
-                  </div>
-                </div>
-                {index !== notifications.length - 1 && (
                   <span
-                    aria-hidden
-                    className="absolute inset-x-5 bottom-0 hidden h-px bg-border/50 dark:bg-white/10"
-                  />
-                )}
-              </button>
-            ))}
+                    className={cn(
+                      "mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                      NOTIFICATION_TONE_STYLE[tone]
+                    )}
+                  >
+                    <NotificationIcon tone={tone} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-semibold text-foreground">{item.title}</p>
+                      {!item.is_read && (
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-sky-500" aria-hidden />
+                      )}
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
+                      {item.body}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
+                        {formatDateTime(item.created_at)}
+                      </span>
+                      <span className="text-xs font-medium text-foreground/75 group-hover:text-foreground">
+                        열어보기
+                      </span>
+                    </div>
+                  </div>
+                  {index !== notifications.length - 1 && (
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-5 bottom-0 hidden h-px bg-border/50 dark:bg-white/10"
+                    />
+                  )}
+                </Link>
+              );
+            })}
           </div>
         )}
       </PopoverContent>
