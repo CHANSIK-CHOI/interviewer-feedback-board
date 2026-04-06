@@ -49,6 +49,13 @@ export default async function handler(
         });
       }
 
+      if (!data) {
+        return res.status(404).json({
+          data: null,
+          error: "해당 알림을 찾을 수 없습니다.",
+        });
+      }
+
       return res.status(200).json({ data, error: null });
     } catch (e) {
       const message = e instanceof Error ? e.message : "알림 조회 중 오류가 발생했습니다.";

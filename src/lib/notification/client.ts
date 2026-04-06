@@ -71,6 +71,10 @@ export const getNotifications = async ({
     .json()
     .catch(() => ({ data: null, error: "서버 응답을 확인하지 못했습니다." }));
 
+  if (response.status === 404) {
+    throw new Error(result.error ?? "해당 알림을 찾을 수 없습니다.");
+  }
+
   if (!response.ok || result.error !== null) {
     throw new Error(result.error ?? "알림을 불러오지 못했습니다.");
   }
