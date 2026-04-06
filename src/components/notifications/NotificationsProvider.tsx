@@ -1,13 +1,10 @@
-import { ReactNode, useEffect, useState } from "react";
-
-import {
-  getAllNotifications,
-  markAllNotificationAsRead,
-  markNotificationAsRead,
-} from "@/lib/notification";
+import { ReactNode, useState } from "react";
 import { NotificationItemData } from "@/types/notification";
 import { useSession } from "../session";
 import { useAlert } from "../ui";
+import { useNotificationActions } from "./useNotificationActions";
+import { useNotificationRealtime } from "./useNotificationRealtime";
+import { useNotificationUnreadSync } from "./useNotificationUnreadSync";
 import { NotificationsContext } from "./useNotifications";
 
 type NotificationsProviderProps = {
@@ -25,65 +22,27 @@ type NotificationsProviderProps = {
 */
 
 export default function NotificationsProvider({ children }: NotificationsProviderProps) {
-  const { session, getAccessTokenOrThrow } = useSession();
+  const { session, getAccessTokenOrThrow, supabaseBrowserClient } = useSession();
   const [notifications, setNotifications] = useState<NotificationItemData[]>([]);
   const { openAlert } = useAlert();
 
-  useEffect(() => {
-    if (!session) {
-      setNotifications([]);
-      return;
-    }
-    const controller = new AbortController();
+  useNotificationUnreadSync({
+    session,
+    getAccessTokenOrThrow,
+    setNotifications,
+  });
 
-    void (async () => {
-      try {
-        const accessToken = await getAccessTokenOrThrow();
+  useNotificationRealtime({
+    session,
+    supabaseBrowserClient,
+    setNotifications,
+  });
 
-        const data: NotificationItemData[] = await getAllNotifications({
-          accessToken,
-          signal: controller.signal,
-          unread: true,
-        });
-        if (controller.signal.aborted) return;
-        setNotifications(data);
-      } catch (error) {
-        if (controller.signal.aborted) return;
-        console.error(error);
-        setNotifications([]);
-      }
-    })();
-
-    return () => {
-      controller.abort();
-    };
-  }, [session, getAccessTokenOrThrow]);
-
-  const markAllAsRead = async () => {
-    const accessToken = await getAccessTokenOrThrow();
-    try {
-      await markAllNotificationAsRead(accessToken);
-      setNotifications([]);
-    } catch (error) {
-      console.error(error);
-      openAlert({
-        description: "알림 모두 읽기가 실패했습니다.\n다시 시도해주세요.",
-      });
-    }
-  };
-
-  const markAsRead = async (id: string) => {
-    const accessToken = await getAccessTokenOrThrow();
-    try {
-      await markNotificationAsRead({ accessToken, notiId: id });
-      setNotifications((prev) => prev.filter((item) => item.id !== id));
-    } catch (error) {
-      console.error(error);
-      openAlert({
-        description: "알림 읽기가 실패했습니다.\n다시 시도해주세요.",
-      });
-    }
-  };
+  const { markAllAsRead, markAsRead } = useNotificationActions({
+    getAccessTokenOrThrow,
+    openAlert,
+    setNotifications,
+  });
 
   return (
     <NotificationsContext.Provider
