@@ -15,9 +15,8 @@ export function useNotificationActions({
   setNotifications,
 }: UseNotificationActionsParams) {
   const markAllAsRead = useCallback(async () => {
-    const accessToken = await getAccessTokenOrThrow();
-
     try {
+      const accessToken = await getAccessTokenOrThrow();
       await markAllNotificationAsRead(accessToken);
       setNotifications([]);
     } catch (error) {
@@ -30,9 +29,8 @@ export function useNotificationActions({
 
   const markAsRead = useCallback(
     async (id: string) => {
-      const accessToken = await getAccessTokenOrThrow();
-
       try {
+        const accessToken = await getAccessTokenOrThrow();
         await markNotificationAsRead({ accessToken, notiId: id });
         setNotifications((prev) => prev.filter((item) => item.id !== id));
       } catch (error) {

@@ -68,6 +68,7 @@ export default function NotificationBell() {
               variant="outline"
               size="sm"
               className="h-8 rounded-full px-3 text-xs"
+              disabled={unreadCount === 0}
               onClick={() => {
                 void markAllAsRead();
               }}

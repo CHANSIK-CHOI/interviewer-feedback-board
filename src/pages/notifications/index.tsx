@@ -1,13 +1,22 @@
 import { PageMeta } from "@/components/common";
+import { useNotificationRealtime } from "@/components/notifications/useNotificationRealtime";
 import { useSession } from "@/components/session";
-import { Button } from "@/components/ui";
+import { Button, useAlert } from "@/components/ui";
+import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
 import { formatDateTime } from "@/lib/feedback/presentation";
-import { getAllNotifications } from "@/lib/notification";
+import {
+  getAllNotifications,
+  markAllNotificationAsRead,
+  markNotificationAsRead,
+} from "@/lib/notification";
 import { cn } from "@/lib/shared/cn";
+import { SupabaseError } from "@/types/common";
 import { NotificationItemData } from "@/types/notification";
-import { Bell, LoaderCircle } from "lucide-react";
+import { Bell, CheckCheck } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import {
   NotificationIcon,
   NOTIFICATION_TONE_BY_TYPE,
@@ -17,26 +26,94 @@ import {
 
 type NotificationFilter = "all" | "unread" | "read";
 
-export default function NotificationsPage() {
-  const { session, isInitSessionComplete, getAccessTokenOrThrow } = useSession();
+type NotificationsPageProps = {
+  initialNotifications: NotificationItemData[];
+  initialAlertMessage: string | null;
+  isSsrAuthenticated: boolean;
+};
+
+export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+  const accessToken = context.req.cookies["sb-access-token"];
+
+  if (!accessToken) {
+    return {
+      props: {
+        initialNotifications: [],
+        initialAlertMessage: null,
+        isSsrAuthenticated: false,
+      } satisfies NotificationsPageProps,
+    };
+  }
+
+  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
+  const { context: authContext, error: authError } = authResult;
+
+  if (authError || !authContext) {
+    return {
+      props: {
+        initialNotifications: [],
+        initialAlertMessage: null,
+        isSsrAuthenticated: false,
+      } satisfies NotificationsPageProps,
+    };
+  }
+
+  const { data, error }: { data: NotificationItemData[] | null; error: SupabaseError } =
+    await authContext.supabaseServerUserClient
+      .from("notifications")
+      .select("id, type, title, body, link, is_read, read_at, created_at")
+      .eq("recipient_user_id", authContext.userId)
+      .order("created_at", {
+        ascending: false,
+      });
+
+  return {
+    props: {
+      initialNotifications: data ?? [],
+      initialAlertMessage: error?.message ?? null,
+      isSsrAuthenticated: true,
+    } satisfies NotificationsPageProps,
+  };
+};
+
+export default function NotificationsPage({
+  initialNotifications,
+  initialAlertMessage,
+  isSsrAuthenticated,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const isAlertedRef = useRef(false);
+  const router = useRouter();
+  const { session, isInitSessionComplete, getAccessTokenOrThrow, supabaseBrowserClient } =
+    useSession();
+  const { openAlert } = useAlert();
   const [filter, setFilter] = useState<NotificationFilter>("all");
-  const [notifications, setNotifications] = useState<NotificationItemData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<NotificationItemData[]>(initialNotifications);
+  const [isMarkingAllAsRead, setIsMarkingAllAsRead] = useState(false);
 
   useEffect(() => {
-    if (!isInitSessionComplete) return;
-
-    if (!session) {
-      setNotifications([]);
-      setError(null);
-      setIsLoading(false);
-      return;
+    if (initialAlertMessage && !isAlertedRef.current) {
+      openAlert({
+        description: initialAlertMessage,
+      });
+      isAlertedRef.current = true;
     }
+  }, [initialAlertMessage, openAlert]);
+
+  useEffect(() => {
+    setNotifications(initialNotifications);
+  }, [initialNotifications]);
+
+  useEffect(() => {
+    if (!isInitSessionComplete || session) return;
+
+    setNotifications([]);
+  }, [isInitSessionComplete, session]);
+
+  useEffect(() => {
+    if (!isInitSessionComplete || !session) return;
+    if (isSsrAuthenticated && initialAlertMessage === null) return;
 
     const controller = new AbortController();
-    setIsLoading(true);
-    setError(null);
 
     void (async () => {
       try {
@@ -45,25 +122,60 @@ export default function NotificationsPage() {
           accessToken,
           signal: controller.signal,
         });
-        if (controller.signal.aborted) return;
 
+        if (controller.signal.aborted) return;
         setNotifications(data);
       } catch (fetchError) {
         if (controller.signal.aborted) return;
 
         const message =
           fetchError instanceof Error ? fetchError.message : "알림을 불러오지 못했습니다.";
-        setError(message);
+        openAlert({
+          description: message,
+        });
         setNotifications([]);
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
-        }
       }
     })();
 
     return () => controller.abort();
-  }, [session, isInitSessionComplete, getAccessTokenOrThrow]);
+  }, [
+    getAccessTokenOrThrow,
+    initialAlertMessage,
+    isInitSessionComplete,
+    isSsrAuthenticated,
+    openAlert,
+    session,
+  ]);
+
+  const handleRealtimeInsert = useCallback((next: NotificationItemData) => {
+    setNotifications((prev) => {
+      if (prev.some((item) => item.id === next.id)) {
+        return prev;
+      }
+
+      return [next, ...prev];
+    });
+  }, []);
+
+  const handleRealtimeUpdate = useCallback((next: NotificationItemData) => {
+    setNotifications((prev) => {
+      if (prev.some((item) => item.id === next.id)) {
+        return prev.map((item) => (item.id === next.id ? next : item));
+      }
+
+      return [next, ...prev];
+    });
+  }, []);
+
+  useNotificationRealtime({
+    session,
+    supabaseBrowserClient,
+    channelNamePrefix: "notifications-page",
+    onInsert: handleRealtimeInsert,
+    onUpdate: handleRealtimeUpdate,
+  });
+
+  const isSignedIn = Boolean(session) || isSsrAuthenticated;
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.is_read).length,
@@ -89,6 +201,71 @@ export default function NotificationsPage() {
     { value: "read", label: "읽음", count: readCount },
   ];
 
+  const handleMarkAllAsRead = async () => {
+    if (!session || unreadCount === 0 || isMarkingAllAsRead) return;
+
+    setIsMarkingAllAsRead(true);
+
+    try {
+      const accessToken = await getAccessTokenOrThrow();
+      await markAllNotificationAsRead(accessToken);
+
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.is_read
+            ? item
+            : {
+                ...item,
+                is_read: true,
+                read_at: new Date().toISOString(),
+              }
+        )
+      );
+    } catch (markAllError) {
+      console.error(markAllError);
+      openAlert({
+        description: "알림 모두 읽기가 실패했습니다.\n다시 시도해주세요.",
+      });
+    } finally {
+      setIsMarkingAllAsRead(false);
+    }
+  };
+
+  const handleClickNotificationItemLink = async (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    item: NotificationItemData
+  ) => {
+    event.preventDefault();
+
+    if (!session || item.is_read) {
+      await router.push(item.link);
+      return;
+    }
+
+    try {
+      const accessToken = await getAccessTokenOrThrow();
+      await markNotificationAsRead({ accessToken, notiId: item.id });
+      setNotifications((prev) =>
+        prev.map((prevItem) =>
+          prevItem.id === item.id
+            ? {
+                ...prevItem,
+                is_read: true,
+                read_at: new Date().toISOString(),
+              }
+            : prevItem
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      openAlert({
+        description: "알림 읽기가 실패했습니다.\n다시 시도해주세요.",
+      });
+    } finally {
+      await router.push(item.link);
+    }
+  };
+
   return (
     <>
       <PageMeta
@@ -110,6 +287,17 @@ export default function NotificationsPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  void handleMarkAllAsRead();
+                }}
+                disabled={!session || unreadCount === 0 || isMarkingAllAsRead}
+              >
+                <CheckCheck className="mr-1.5 h-4 w-4" />
+                모두 읽음
+              </Button>
               <Button asChild variant="outline">
                 <Link href="/feedback">피드백 보드로 이동</Link>
               </Button>
@@ -179,14 +367,7 @@ export default function NotificationsPage() {
         </section>
 
         <section className="grid gap-4">
-          {isLoading && (
-            <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-background/80 p-6 text-center shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
-              <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">알림을 불러오는 중입니다.</p>
-            </div>
-          )}
-
-          {!isLoading && !session && (
+          {!isSignedIn && (
             <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-background/80 p-6 text-center shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                 <Bell className="h-5 w-5" />
@@ -202,13 +383,7 @@ export default function NotificationsPage() {
             </div>
           )}
 
-          {!isLoading && session && error && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50/80 p-6 text-sm text-rose-700 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300">
-              {error}
-            </div>
-          )}
-
-          {!isLoading && session && !error && filteredNotifications.length === 0 && (
+          {isSignedIn && filteredNotifications.length === 0 && (
             <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-background/80 p-6 text-center shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                 <Bell className="h-5 w-5" />
@@ -226,9 +401,7 @@ export default function NotificationsPage() {
             </div>
           )}
 
-          {!isLoading &&
-            session &&
-            !error &&
+          {isSignedIn &&
             filteredNotifications.map((item) => {
               const tone = NOTIFICATION_TONE_BY_TYPE[item.type];
 
@@ -236,6 +409,9 @@ export default function NotificationsPage() {
                 <Link
                   href={item.link}
                   key={item.id}
+                  onClick={(event) => {
+                    void handleClickNotificationItemLink(event, item);
+                  }}
                   className={cn(
                     "group flex items-start gap-4 rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-border hover:bg-background dark:border-white/10 dark:bg-neutral-900/70 dark:hover:border-white/20",
                     !item.is_read && "ring-1 ring-sky-400/40"

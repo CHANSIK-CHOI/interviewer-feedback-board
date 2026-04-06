@@ -1,4 +1,6 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useCallback, useState } from "react";
+import { useRouter } from "next/router";
+import { toast } from "sonner";
 import { NotificationItemData } from "@/types/notification";
 import { useSession } from "../session";
 import { useAlert } from "../ui";
@@ -22,6 +24,7 @@ type NotificationsProviderProps = {
 */
 
 export default function NotificationsProvider({ children }: NotificationsProviderProps) {
+  const router = useRouter();
   const { session, getAccessTokenOrThrow, supabaseBrowserClient } = useSession();
   const [notifications, setNotifications] = useState<NotificationItemData[]>([]);
   const { openAlert } = useAlert();
@@ -32,16 +35,64 @@ export default function NotificationsProvider({ children }: NotificationsProvide
     setNotifications,
   });
 
-  useNotificationRealtime({
-    session,
-    supabaseBrowserClient,
-    setNotifications,
-  });
-
   const { markAllAsRead, markAsRead } = useNotificationActions({
     getAccessTokenOrThrow,
     openAlert,
     setNotifications,
+  });
+
+  const handleRealtimeInsert = useCallback(
+    (next: NotificationItemData) => {
+      if (!next.is_read) {
+        setNotifications((prev) => {
+          if (prev.some((item) => item.id === next.id)) {
+            return prev;
+          }
+
+          return [next, ...prev];
+        });
+
+        toast.custom((toastId) => (
+          <button
+            type="button"
+            className="flex w-full max-w-sm flex-col items-start gap-1 rounded-xl border border-border bg-background px-4 py-3 text-left shadow-lg transition hover:bg-muted/60"
+            onClick={() => {
+              toast.dismiss(toastId);
+              void (async () => {
+                await markAsRead(next.id);
+                await router.push(next.link);
+              })();
+            }}
+          >
+            <span className="text-sm font-semibold text-foreground">{next.title}</span>
+            <span className="text-sm text-muted-foreground">{next.body}</span>
+          </button>
+        ));
+      }
+    },
+    [markAsRead, router]
+  );
+
+  const handleRealtimeUpdate = useCallback((next: NotificationItemData) => {
+    setNotifications((prev) => {
+      if (next.is_read) {
+        return prev.filter((item) => item.id !== next.id);
+      }
+
+      const hasExisting = prev.some((item) => item.id === next.id);
+      if (hasExisting) {
+        return prev.map((item) => (item.id === next.id ? next : item));
+      }
+
+      return [next, ...prev];
+    });
+  }, []);
+
+  useNotificationRealtime({
+    session,
+    supabaseBrowserClient,
+    onInsert: handleRealtimeInsert,
+    onUpdate: handleRealtimeUpdate,
   });
 
   return (
