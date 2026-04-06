@@ -1,12 +1,13 @@
 import GlobalLayout from "@/components/layout/GlobalLayout";
-import "@/styles/tailwind.css";
-import type { AppProps } from "next/app";
-import Head from "next/head";
-import Script from "next/script";
-import { useRouter } from "next/router";
-import { ThemeProvider } from "next-themes";
+import NotificationsProvider from "@/components/notifications/NotificationsProvider";
 import { SessionProvider } from "@/components/session";
 import { DialogProvider, Toaster } from "@/components/ui";
+import "@/styles/tailwind.css";
+import { ThemeProvider } from "next-themes";
+import type { AppProps } from "next/app";
+import Head from "next/head";
+import { useRouter } from "next/router";
+import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 
 declare global {
@@ -79,13 +80,15 @@ export default function App({ Component, pageProps }: AppProps) {
 
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <SessionProvider>
-          <DialogProvider container={container}>
-            <GlobalLayout>
-              <Component {...pageProps} />
-            </GlobalLayout>
-            <Toaster />
-            <div ref={setContainer} className="z-[9999]" />
-          </DialogProvider>
+          <NotificationsProvider>
+            <DialogProvider container={container}>
+              <GlobalLayout>
+                <Component {...pageProps} />
+              </GlobalLayout>
+              <Toaster />
+              <div ref={setContainer} className="z-[9999]" />
+            </DialogProvider>
+          </NotificationsProvider>
         </SessionProvider>
       </ThemeProvider>
     </>
