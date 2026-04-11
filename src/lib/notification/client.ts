@@ -102,7 +102,7 @@ export const markAllNotificationAsRead = async ({
     throw new Error("로그인 정보가 없습니다.");
   }
 
-  const response = await fetch("/api/notifications", {
+  const response = await fetch("/api/notifications/read-all", {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -195,29 +195,3 @@ export const markNotificationsAsRead = async ({
 
   return true;
 };
-
-/*
-markNotificationAsRead(id)
-markNotificationsAsRead(ids)
-markAllNotificationsAsRead()
-
-src/pages/api/notifications/index.tsx
-  GET /api/notifications
-  - 목록 조회 전용
-  - unread, limit 같은 query filter만 담당
-
-src/pages/api/notifications/[notiId].tsx
-  GET /api/notifications/:notiId
-  PATCH /api/notifications/:notiId
-  - 단일 알림 조회
-  - 단일 알림 읽음 처리
-
-src/pages/api/notifications/read.ts
-  PATCH /api/notifications/read
-  - 여러 개 ids 읽음 처리
-  - body: { ids: string[] }
-
-src/pages/api/notifications/read-all.ts
-  PATCH /api/notifications/read-all
-  - 현재 사용자의 unread 전체 읽음 처리
-*/

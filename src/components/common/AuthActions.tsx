@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import { Button } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications";
 import NotificationsProvider from "@/components/notifications/NotificationsProvider";
 import { useSession } from "@/components/session";
-import { pushSafely, replaceSafely } from "@/lib/navigation/client";
+import { Button } from "@/components/ui";
 import { isPrivateAvatarApiSrc } from "@/lib/avatar/path";
-import { getUserName, getAvatarUrl } from "@/lib/user/profile";
+import { pushSafely, replaceSafely } from "@/lib/navigation/client";
+import { getAvatarUrl, getUserName } from "@/lib/user/profile";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { useState } from "react";
 
 export default function AuthActions() {
   const { session, supabaseBrowserClient } = useSession();
@@ -58,6 +58,23 @@ export default function AuthActions() {
           <NotificationsProvider>
             <NotificationBell />
           </NotificationsProvider>
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="hidden h-auto w-fit shrink-0 rounded-full border-transparent bg-transparent px-2 py-2 shadow-none hover:bg-muted/40 dark:border-transparent dark:bg-transparent sm:inline-flex sm:h-7 sm:border-input sm:bg-input/30 sm:px-2.5 sm:py-0 sm:shadow-none sm:hover:bg-input/50"
+          >
+            <Link href="/notifications">알림함</Link>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="h-auto w-fit shrink-0 rounded-full border-transparent bg-transparent px-2 py-2 shadow-none hover:bg-muted/40 dark:border-transparent dark:bg-transparent sm:h-7 sm:border-input sm:bg-input/30 sm:px-2.5 sm:py-0 sm:shadow-none sm:hover:bg-input/50"
+          >
+            <Link href="/my">마이페이지</Link>
+          </Button>
           <div className="hidden min-w-0 max-w-full items-center gap-2 rounded-full border border-transparent bg-transparent px-1 py-1 text-sm shadow-none dark:border-transparent dark:bg-transparent sm:inline-flex sm:border-border/60 sm:bg-white/70 sm:px-3 sm:py-1.5 sm:shadow-sm dark:sm:border-white/10 dark:sm:bg-neutral-900/70">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-transparent bg-transparent text-xs font-semibold text-primary sm:border-border/60 sm:bg-muted">
               <Image
@@ -77,14 +94,6 @@ export default function AuthActions() {
               {userName} 님
             </span>
           </div>
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="h-auto w-fit shrink-0 rounded-full border-transparent bg-transparent px-2 py-2 shadow-none hover:bg-muted/40 dark:border-transparent dark:bg-transparent sm:h-7 sm:border-input sm:bg-input/30 sm:px-2.5 sm:py-0 sm:shadow-none sm:hover:bg-input/50"
-          >
-            <Link href="/my">마이페이지</Link>
-          </Button>
           <Button
             variant="outline"
             size="sm"
