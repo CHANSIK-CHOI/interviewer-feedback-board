@@ -5,18 +5,14 @@ import { useSession } from "@/components/session";
 import { Button, useAlert } from "@/components/ui";
 import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
 import { formatDateTime } from "@/lib/feedback/presentation";
-import {
-  getAllNotifications,
-  markAllNotificationAsRead,
-  markNotificationAsRead,
-} from "@/lib/notification";
+import { listNotifications } from "@/lib/notification/server";
+import { markAllNotificationAsRead, markNotificationAsRead } from "@/lib/notification";
 import {
   NOTIFICATION_TONE_BY_TYPE,
   NOTIFICATION_TONE_STYLE,
   NOTIFICATION_TYPE_LABEL,
 } from "@/lib/notification/presentation";
 import { cn } from "@/lib/shared/cn";
-import { SupabaseError } from "@/types/common";
 import { NotificationItemData } from "@/types/notification";
 import { Bell, CheckCheck } from "lucide-react";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
@@ -58,14 +54,10 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     };
   }
 
-  const { data, error }: { data: NotificationItemData[] | null; error: SupabaseError } =
-    await authContext.supabaseServerUserClient
-      .from("notifications")
-      .select("id, type, title, body, link, is_read, read_at, created_at")
-      .eq("recipient_user_id", authContext.userId)
-      .order("created_at", {
-        ascending: false,
-      });
+  const { data, error } = await listNotifications({
+    supabaseClient: authContext.supabaseServerUserClient,
+    userId: authContext.userId,
+  });
 
   return {
     props: {
@@ -109,43 +101,6 @@ export default function NotificationsPage({
     setNotifications([]);
   }, [isInitSessionComplete, session]);
 
-  useEffect(() => {
-    if (!isInitSessionComplete || !session) return;
-    if (isSsrAuthenticated && initialAlertMessage === null) return;
-
-    const controller = new AbortController();
-
-    void (async () => {
-      try {
-        const accessToken = await getAccessTokenOrThrow();
-        const data = await getAllNotifications({
-          accessToken,
-          signal: controller.signal,
-        });
-
-        if (controller.signal.aborted) return;
-        setNotifications(data);
-      } catch (error) {
-        if (controller.signal.aborted) return;
-
-        const message = error instanceof Error ? error.message : "알림 목록을 불러오지 못했습니다.";
-        openAlert({
-          description: message,
-        });
-        setNotifications([]);
-      }
-    })();
-
-    return () => controller.abort();
-  }, [
-    getAccessTokenOrThrow,
-    initialAlertMessage,
-    isInitSessionComplete,
-    isSsrAuthenticated,
-    openAlert,
-    session,
-  ]);
-
   const handleRealtimeInsert = useCallback((next: NotificationItemData) => {
     setNotifications((prev) => {
       if (prev.some((item) => item.id === next.id)) {
@@ -174,7 +129,17 @@ export default function NotificationsPage({
     onUpdate: handleRealtimeUpdate,
   });
 
-  const isSignedIn = Boolean(session) || isSsrAuthenticated;
+  const isSignedIn = useMemo(() => {
+    if (session) {
+      return true;
+    }
+
+    if (!isInitSessionComplete) {
+      return isSsrAuthenticated;
+    }
+
+    return false;
+  }, [isInitSessionComplete, isSsrAuthenticated, session]);
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.is_read).length,
@@ -216,7 +181,6 @@ export default function NotificationsPage({
             : {
                 ...item,
                 is_read: true,
-                read_at: new Date().toISOString(),
               }
         )
       );
@@ -254,7 +218,6 @@ export default function NotificationsPage({
             ? {
                 ...prevItem,
                 is_read: true,
-                read_at: new Date().toISOString(),
               }
             : prevItem
         )

@@ -1,7 +1,6 @@
 import { ApiRequestAuthResult, resolveApiRequestAuth } from "@/lib/auth/request";
+import { listNotifications } from "@/lib/notification/server";
 import { toStrictBoolean, toStrictNumber } from "@/lib/shared/normalize";
-import { SupabaseError } from "@/types/common";
-import { NotificationItemData } from "@/types/notification";
 import { NotificationsResponse } from "@/types/response";
 import type { NextApiRequest, NextApiResponse } from "next";
 
@@ -31,24 +30,12 @@ export default async function handler(
   const limitValue = toStrictNumber(limit);
 
   try {
-    let query = supabaseServerUserClient
-      .from("notifications")
-      .select("id, type, title, body, link, is_read, created_at")
-      .eq("recipient_user_id", userId)
-      .order("created_at", {
-        ascending: false,
-      });
-
-    if (isUnRead) {
-      query = query.eq("is_read", false);
-    }
-
-    if (limitValue !== null && limitValue > 0) {
-      query.limit(limitValue);
-    }
-
-    const { data, error }: { data: NotificationItemData[] | null; error: SupabaseError } =
-      await query;
+    const { data, error } = await listNotifications({
+      supabaseClient: supabaseServerUserClient,
+      userId,
+      unread: isUnRead ?? false,
+      limit: limitValue,
+    });
 
     if (error || !data) {
       return res.status(500).json({

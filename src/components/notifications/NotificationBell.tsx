@@ -71,19 +71,6 @@ export default function NotificationBell() {
                 알림함으로 이동
               </Link>
             </Button>
-            {/* <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-full px-3 text-xs"
-              disabled={unreadCount === 0}
-              onClick={() => {
-                void markAllAsRead();
-              }}
-            >
-              <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
-              모두 읽음
-            </Button> */}
           </div>
         </div>
 

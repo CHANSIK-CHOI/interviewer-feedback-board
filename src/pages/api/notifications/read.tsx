@@ -1,4 +1,5 @@
 import { ApiRequestAuthResult, resolveApiRequestAuth } from "@/lib/auth/request";
+import { NOTIFICATION_SELECT_COLUMNS } from "@/lib/notification/server";
 import { NotificationRow } from "@/types/notification";
 import { NotificationsResponse } from "@/types/response";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -61,7 +62,7 @@ export default async function handler(
     const { data, error } = await supabaseServerUserClient
       .from("notifications")
       .update({ is_read: true })
-      .select("id, type, title, body, link, is_read, created_at")
+      .select(NOTIFICATION_SELECT_COLUMNS)
       .in("id", ids)
       .eq("recipient_user_id", userId)
       .eq("is_read", false);
