@@ -1,4 +1,4 @@
-import { getAllNotifications } from "@/lib/notification";
+import { getAllNotifications } from "@/lib/notification/client";
 import type { NotificationItemData } from "@/types/notification";
 import type { Session } from "@supabase/supabase-js";
 import type { Dispatch, SetStateAction } from "react";

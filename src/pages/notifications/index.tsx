@@ -5,8 +5,8 @@ import { useSession } from "@/components/session";
 import { Button, useAlert } from "@/components/ui";
 import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
 import { formatDateTime } from "@/lib/feedback/presentation";
+import { markAllNotificationAsRead, markNotificationAsRead } from "@/lib/notification/client";
 import { listNotifications } from "@/lib/notification/server";
-import { markAllNotificationAsRead, markNotificationAsRead } from "@/lib/notification";
 import {
   NOTIFICATION_TONE_BY_TYPE,
   NOTIFICATION_TONE_STYLE,

@@ -3,7 +3,7 @@ import {
   markAllNotificationAsRead,
   markNotificationAsRead,
   markNotificationsAsRead,
-} from "@/lib/notification";
+} from "@/lib/notification/client";
 import type { NotificationItemData, NotificationRow } from "@/types/notification";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback } from "react";
