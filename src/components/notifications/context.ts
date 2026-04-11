@@ -1,10 +1,12 @@
+import type { NotificationItemData, NotificationRow } from "@/types/notification";
 import { createContext, useContext } from "react";
-import type { NotificationItemData } from "@/types/notification";
 
 type NotificationsContextValue = {
   notifications: NotificationItemData[];
+  notifiBellErrorMsg: string | null;
   markAllAsRead: () => Promise<void>;
-  markAsRead: (id: string) => Promise<void>;
+  markIdsAsRead: (ids: NotificationRow["id"][]) => Promise<void>;
+  markAsRead: (id: NotificationRow["id"]) => Promise<void>;
 };
 
 export const NotificationsContext = createContext<NotificationsContextValue | null>(null);

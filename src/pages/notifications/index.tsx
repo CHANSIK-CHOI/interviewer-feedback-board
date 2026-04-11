@@ -1,4 +1,6 @@
 import { PageMeta } from "@/components/common";
+import { NotificationIcon } from "@/components/notifications/NotificationIcon";
+import { useNotificationRealtime } from "@/components/notifications/useNotificationRealtime";
 import { useSession } from "@/components/session";
 import { Button, useAlert } from "@/components/ui";
 import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
@@ -8,21 +10,19 @@ import {
   markAllNotificationAsRead,
   markNotificationAsRead,
 } from "@/lib/notification";
-import { useNotificationRealtime } from "@/components/notifications/useNotificationRealtime";
+import {
+  NOTIFICATION_TONE_BY_TYPE,
+  NOTIFICATION_TONE_STYLE,
+  NOTIFICATION_TYPE_LABEL,
+} from "@/lib/notification/presentation";
 import { cn } from "@/lib/shared/cn";
 import { SupabaseError } from "@/types/common";
 import { NotificationItemData } from "@/types/notification";
 import { Bell, CheckCheck } from "lucide-react";
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
-import {
-  NotificationIcon,
-  NOTIFICATION_TONE_BY_TYPE,
-  NOTIFICATION_TONE_STYLE,
-  NOTIFICATION_TYPE_LABEL,
-} from "@/components/notifications/presentation";
 
 type NotificationFilter = "all" | "unread" | "read";
 
@@ -125,11 +125,10 @@ export default function NotificationsPage({
 
         if (controller.signal.aborted) return;
         setNotifications(data);
-      } catch (fetchError) {
+      } catch (error) {
         if (controller.signal.aborted) return;
 
-        const message =
-          fetchError instanceof Error ? fetchError.message : "알림을 불러오지 못했습니다.";
+        const message = error instanceof Error ? error.message : "알림 목록을 불러오지 못했습니다.";
         openAlert({
           description: message,
         });
@@ -208,7 +207,7 @@ export default function NotificationsPage({
 
     try {
       const accessToken = await getAccessTokenOrThrow();
-      await markAllNotificationAsRead(accessToken);
+      await markAllNotificationAsRead({ accessToken });
 
       setNotifications((prev) =>
         prev.map((item) =>
@@ -221,10 +220,14 @@ export default function NotificationsPage({
               }
         )
       );
-    } catch (markAllError) {
-      console.error(markAllError);
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "알림을 모두 읽음 처리하지 못했습니다.\n다시 시도해주세요.";
       openAlert({
-        description: "알림을 모두 읽음 처리하지 못했습니다.\n다시 시도해주세요.",
+        description: message,
       });
     } finally {
       setIsMarkingAllAsRead(false);
@@ -258,8 +261,12 @@ export default function NotificationsPage({
       );
     } catch (error) {
       console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "알림을 읽음 처리하지 못했습니다.\n다시 시도해주세요.";
       openAlert({
-        description: "알림을 읽음 처리하지 못했습니다.\n다시 시도해주세요.",
+        description: message,
       });
     } finally {
       await router.push(item.link);

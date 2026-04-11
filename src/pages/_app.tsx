@@ -1,5 +1,4 @@
 import GlobalLayout from "@/components/layout/GlobalLayout";
-import NotificationsProvider from "@/components/notifications/NotificationsProvider";
 import { SessionProvider } from "@/components/session";
 import { DialogProvider, Toaster } from "@/components/ui";
 import "@/styles/tailwind.css";
@@ -81,13 +80,11 @@ export default function App({ Component, pageProps }: AppProps) {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <SessionProvider>
           <DialogProvider container={container}>
-            <NotificationsProvider>
-              <GlobalLayout>
-                <Component {...pageProps} />
-              </GlobalLayout>
-              <Toaster />
-              <div ref={setContainer} className="z-[9999]" />
-            </NotificationsProvider>
+            <GlobalLayout>
+              <Component {...pageProps} />
+            </GlobalLayout>
+            <Toaster />
+            <div ref={setContainer} className="z-[9999]" />
           </DialogProvider>
         </SessionProvider>
       </ThemeProvider>

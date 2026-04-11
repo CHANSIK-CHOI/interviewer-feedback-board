@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications";
+import NotificationsProvider from "@/components/notifications/NotificationsProvider";
 import { useSession } from "@/components/session";
 import { pushSafely, replaceSafely } from "@/lib/navigation/client";
 import { isPrivateAvatarApiSrc } from "@/lib/avatar/path";
@@ -54,7 +55,9 @@ export default function AuthActions() {
         </Button>
       ) : (
         <>
-          <NotificationBell />
+          <NotificationsProvider>
+            <NotificationBell />
+          </NotificationsProvider>
           <div className="hidden min-w-0 max-w-full items-center gap-2 rounded-full border border-transparent bg-transparent px-1 py-1 text-sm shadow-none dark:border-transparent dark:bg-transparent sm:inline-flex sm:border-border/60 sm:bg-white/70 sm:px-3 sm:py-1.5 sm:shadow-sm dark:sm:border-white/10 dark:sm:bg-neutral-900/70">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-transparent bg-transparent text-xs font-semibold text-primary sm:border-border/60 sm:bg-muted">
               <Image

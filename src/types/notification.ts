@@ -184,5 +184,5 @@ export type NotificationReadResult = Pick<NotificationRow, "id" | "is_read" | "r
 
 export type NotificationItemData = Omit<
   NotificationRow,
-  "recipient_user_id" | "actor_user_id" | "feedback_id" | "comment_id" | "metadata"
+  "recipient_user_id" | "actor_user_id" | "feedback_id" | "comment_id" | "metadata" | "read_at"
 >;

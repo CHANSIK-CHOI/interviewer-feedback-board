@@ -1,12 +1,15 @@
-import type { Session } from "@supabase/supabase-js";
-import { useEffect } from "react";
 import { getAllNotifications } from "@/lib/notification";
-import type { SetNotificationsState } from "./state";
+import type { NotificationItemData } from "@/types/notification";
+import type { Session } from "@supabase/supabase-js";
+import type { Dispatch, SetStateAction } from "react";
+import { useEffect, useState } from "react";
+
+type SetNotifications = Dispatch<SetStateAction<NotificationItemData[]>>;
 
 type UseNotificationUnreadSyncParams = {
   session: Session | null;
   getAccessTokenOrThrow: () => Promise<string>;
-  setNotifications: SetNotificationsState;
+  setNotifications: SetNotifications;
 };
 
 export function useNotificationUnreadSync({
@@ -14,6 +17,7 @@ export function useNotificationUnreadSync({
   getAccessTokenOrThrow,
   setNotifications,
 }: UseNotificationUnreadSyncParams) {
+  const [notifiBellErrorMsg, setNotifiBellErrorMsg] = useState<string | null>(null);
   useEffect(() => {
     if (!session) {
       setNotifications([]);
@@ -28,15 +32,18 @@ export function useNotificationUnreadSync({
         const data = await getAllNotifications({
           accessToken,
           signal: controller.signal,
-          unread: true,
+          limit: 20,
+          // unread: true,
         });
-
+        console.log({ data });
         if (controller.signal.aborted) return;
         setNotifications(data);
+        setNotifiBellErrorMsg(null);
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error(error);
         setNotifications([]);
+        setNotifiBellErrorMsg("알림 목록을 불러오지 못했습니다.");
       }
     })();
 
@@ -44,4 +51,6 @@ export function useNotificationUnreadSync({
       controller.abort();
     };
   }, [session, getAccessTokenOrThrow, setNotifications]);
+
+  return { notifiBellErrorMsg };
 }

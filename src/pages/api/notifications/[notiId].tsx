@@ -34,7 +34,7 @@ export default async function handler(
       const { data, error }: { data: NotificationItemData | null; error: SupabaseError } =
         await supabaseServerUserClient
           .from("notifications")
-          .select("id, type, title, body, link, is_read, read_at, created_at")
+          .select("id, type, title, body, link, is_read, created_at")
           .eq("recipient_user_id", userId)
           .eq("id", notiId)
           .order("created_at", {
@@ -88,7 +88,7 @@ export default async function handler(
       const { data, error } = await supabaseServerUserClient
         .from("notifications")
         .update({ is_read: true })
-        .select("id, type, title, body, link, is_read, read_at, created_at")
+        .select("id, type, title, body, link, is_read, created_at")
         .eq("recipient_user_id", userId)
         .eq("is_read", false)
         .eq("id", notiId)

@@ -1,18 +1,18 @@
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@/components/ui";
 import { formatDateTime } from "@/lib/feedback/presentation";
-import { cn } from "@/lib/shared/cn";
-import { Bell, CheckCheck } from "lucide-react";
-import Link from "next/link";
-import { useMemo, useState } from "react";
 import {
-  NotificationIcon,
   NOTIFICATION_TONE_BY_TYPE,
   NOTIFICATION_TONE_STYLE,
-} from "./presentation";
+} from "@/lib/notification/presentation";
+import { cn } from "@/lib/shared/cn";
+import { Bell } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useNotifications } from "./context";
+import { NotificationIcon } from "./NotificationIcon";
 
 export default function NotificationBell() {
-  const { notifications, markAllAsRead, markAsRead } = useNotifications();
+  const { notifications, markIdsAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
 
   const unreadCount = useMemo(
@@ -20,13 +20,21 @@ export default function NotificationBell() {
     [notifications]
   );
 
-  const handleClickNotiItemLink = async (id: string) => {
+  const handleClickNotiItemLink = async () => {
     setOpen(false);
-    await markAsRead(id);
+  };
+
+  const handleOpenChangePopover = (open: boolean) => {
+    setOpen(open);
+    if (open) {
+      const unreadIds = notifications.filter((noti) => !noti.is_read).map((unread) => unread.id);
+      if (unreadIds.length == 0) return;
+      markIdsAsRead(unreadIds);
+    }
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChangePopover}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -63,7 +71,7 @@ export default function NotificationBell() {
                 알림함으로 이동
               </Link>
             </Button>
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               size="sm"
@@ -75,7 +83,7 @@ export default function NotificationBell() {
             >
               <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
               모두 읽음
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -101,7 +109,7 @@ export default function NotificationBell() {
                 <Link
                   key={item.id}
                   href={item.link}
-                  onClick={() => handleClickNotiItemLink(item.id)}
+                  onClick={handleClickNotiItemLink}
                   className={cn(
                     "group flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition",
                     item.is_read

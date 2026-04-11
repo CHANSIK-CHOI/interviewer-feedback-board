@@ -1,5 +1,5 @@
 import { ApiRequestAuthResult, resolveApiRequestAuth } from "@/lib/auth/request";
-import { toStrictBoolean } from "@/lib/shared/normalize";
+import { toStrictBoolean, toStrictNumber } from "@/lib/shared/normalize";
 import { SupabaseError } from "@/types/common";
 import { NotificationItemData } from "@/types/notification";
 import { NotificationsResponse } from "@/types/response";
@@ -28,11 +28,13 @@ export default async function handler(
   if (method == "GET") {
     const unread = req.query.unread;
     const isUnRead = toStrictBoolean(unread);
+    const limit = req.query.limit;
+    const limitValue = toStrictNumber(limit);
 
     try {
       let query = supabaseServerUserClient
         .from("notifications")
-        .select("id, type, title, body, link, is_read, read_at, created_at")
+        .select("id, type, title, body, link, is_read, created_at")
         .eq("recipient_user_id", userId)
         .order("created_at", {
           ascending: false,
@@ -40,6 +42,10 @@ export default async function handler(
 
       if (isUnRead) {
         query = query.eq("is_read", false);
+      }
+
+      if (limitValue !== null && limitValue > 0) {
+        query.limit(limitValue);
       }
 
       const { data, error }: { data: NotificationItemData[] | null; error: SupabaseError } =
@@ -83,7 +89,7 @@ export default async function handler(
       const { data, error } = await supabaseServerUserClient
         .from("notifications")
         .update({ is_read: true })
-        .select("id, type, title, body, link, is_read, read_at, created_at")
+        .select("id, type, title, body, link, is_read, created_at")
         .eq("recipient_user_id", userId)
         .eq("is_read", false);
 

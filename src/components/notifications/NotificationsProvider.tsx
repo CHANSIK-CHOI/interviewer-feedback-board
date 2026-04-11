@@ -1,7 +1,7 @@
-import { ReactNode, useCallback, useState } from "react";
-import { useRouter } from "next/router";
-import { toast } from "sonner";
 import { NotificationItemData } from "@/types/notification";
+import { useRouter } from "next/router";
+import { ReactNode, useCallback, useState } from "react";
+import { toast } from "sonner";
 import { useSession } from "../session";
 import { useAlert } from "../ui";
 import { NotificationsContext } from "./context";
@@ -29,13 +29,13 @@ export default function NotificationsProvider({ children }: NotificationsProvide
   const [notifications, setNotifications] = useState<NotificationItemData[]>([]);
   const { openAlert } = useAlert();
 
-  useNotificationUnreadSync({
+  const { notifiBellErrorMsg } = useNotificationUnreadSync({
     session,
     getAccessTokenOrThrow,
     setNotifications,
   });
 
-  const { markAllAsRead, markAsRead } = useNotificationActions({
+  const { markAllAsRead, markIdsAsRead, markAsRead } = useNotificationActions({
     getAccessTokenOrThrow,
     openAlert,
     setNotifications,
@@ -75,16 +75,13 @@ export default function NotificationsProvider({ children }: NotificationsProvide
 
   const handleRealtimeUpdate = useCallback((next: NotificationItemData) => {
     setNotifications((prev) => {
-      if (next.is_read) {
-        return prev.filter((item) => item.id !== next.id);
-      }
-
       const hasExisting = prev.some((item) => item.id === next.id);
+
       if (hasExisting) {
         return prev.map((item) => (item.id === next.id ? next : item));
       }
 
-      return [next, ...prev];
+      return [next, ...prev].slice(0, 20);
     });
   }, []);
 
@@ -99,7 +96,9 @@ export default function NotificationsProvider({ children }: NotificationsProvide
     <NotificationsContext.Provider
       value={{
         notifications,
+        notifiBellErrorMsg,
         markAllAsRead,
+        markIdsAsRead,
         markAsRead,
       }}
     >

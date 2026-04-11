@@ -1,10 +1,3 @@
-import {
-  CircleAlert,
-  MessageSquareText,
-  RefreshCcw,
-  ShieldCheck,
-} from "lucide-react";
-import { cn } from "@/lib/shared/cn";
 import type { NotificationType } from "@/types/notification";
 
 export type NotificationTone = "info" | "success" | "warning" | "danger";
@@ -33,24 +26,3 @@ export const NOTIFICATION_TONE_STYLE: Record<NotificationTone, string> = {
   warning: "bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300",
   danger: "bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300",
 };
-
-type NotificationIconProps = {
-  tone: NotificationTone;
-  className?: string;
-};
-
-export function NotificationIcon({ tone, className }: NotificationIconProps) {
-  if (tone === "success") {
-    return <ShieldCheck className={cn("h-4 w-4", className)} />;
-  }
-
-  if (tone === "warning") {
-    return <RefreshCcw className={cn("h-4 w-4", className)} />;
-  }
-
-  if (tone === "danger") {
-    return <CircleAlert className={cn("h-4 w-4", className)} />;
-  }
-
-  return <MessageSquareText className={cn("h-4 w-4", className)} />;
-}
