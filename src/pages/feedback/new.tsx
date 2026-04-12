@@ -1,14 +1,4 @@
-import React, { useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form";
 import { PageMeta } from "@/components/common";
-import { useSession } from "@/components/session";
-import {
-  FEEDBACK_FORM_ERROR_MESSAGES,
-  NEW_FEEDBACK_DEFAULT_VALUES,
-  NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE,
-} from "@/constants";
-import { getUserCompany, getUserName, getAvatarUrl } from "@/lib/user/profile";
-import type { FeedbackFormValues } from "@/types/forms";
 import {
   FeedbackFormDetailSection,
   FeedbackFormProfileSection,
@@ -16,10 +6,20 @@ import {
   FeedbackFormTagsSection,
   FeedbackNewHeaderSection,
 } from "@/components/feedback";
+import { useSession } from "@/components/session";
 import { useAlert } from "@/components/ui";
+import {
+  FEEDBACK_FORM_ERROR_MESSAGES,
+  NEW_FEEDBACK_DEFAULT_VALUES,
+  NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE,
+} from "@/constants";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
-import { useRouter } from "next/router";
+import { getAvatarUrl, getUserCompany, getUserName } from "@/lib/user/profile";
+import type { FeedbackFormValues } from "@/types/forms";
 import { EditFeedbackResponse } from "@/types/response";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 
 const newFeedbackErrorMessages = new Set<string>(Object.values(FEEDBACK_FORM_ERROR_MESSAGES));
 

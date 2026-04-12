@@ -1,15 +1,16 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import { FEEDBACK_FORM_ERROR_MESSAGES, NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE } from "@/constants";
 import {
   ApiRequestAuthOptions,
   ApiRequestAuthResult,
   resolveApiRequestAuth,
 } from "@/lib/auth/request";
-import type { FeedbackFormValues } from "@/types/forms";
-import { FEEDBACK_FORM_ERROR_MESSAGES, NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE } from "@/constants";
+import { notifyAdmins } from "@/lib/notification/server";
 import { toNullableTrimmedString, toStrictBoolean, toTrimmedString } from "@/lib/shared/normalize";
-import { EditFeedbackResponse } from "@/types/response";
-import { FeedbackPublicBase } from "@/types/feedback";
 import { SupabaseError } from "@/types/common";
+import { FeedbackPublicBase } from "@/types/feedback";
+import type { FeedbackFormValues } from "@/types/forms";
+import { EditFeedbackResponse } from "@/types/response";
+import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
   req: NextApiRequest,
@@ -111,6 +112,24 @@ export default async function handler(
     if (error || !data) {
       console.error("Create feedback insert failed", error);
       return res.status(500).json({ data: null, error: NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE });
+    }
+
+    try {
+      await notifyAdmins({
+        type: "feedback_submitted",
+        actorUserId: userId,
+        feedbackId: data.id,
+        feedbackSummary: summary,
+        metadata: {
+          feedback_status: "pending",
+        },
+      });
+    } catch (notificationError) {
+      const message =
+        notificationError instanceof Error
+          ? notificationError.message
+          : "알림 처리 중 오류가 발생했습니다.";
+      console.error(message);
     }
 
     return res.status(201).json({ data, error: null });
