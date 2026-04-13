@@ -342,7 +342,8 @@ REVALIDATE_SECRET=
 2. [아키텍처와 인증/인가 흐름](https://velog.io/@ckstlr0828/Next.js-Supabase-프로젝트-아키텍처와-인증인가-흐름)
 3. [피드백 상태 전이와 관리자 검토 워크플로우 구현](https://velog.io/@ckstlr0828/Next.js-Supabase-프로젝트-피드백-상태-전이와-관리자-검토-워크플로우-구현)
 4. [service_role과 anon key, 정말 적재적소에 쓰고 있을까?](https://velog.io/@ckstlr0828/Next.js-Supabase-servicerole과-anon-key-정말-적재적소에-쓰고-있을까)
-5. [[Next.js + Supabase 프로젝트] 승인 이력 기반 코멘트 기능 설계하기](https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EC%8A%B9%EC%9D%B8-%EC%9D%B4%EB%A0%A5-%EA%B8%B0%EB%B0%98-%EC%BD%94%EB%A9%98%ED%8A%B8-%EA%B8%B0%EB%8A%A5-%EC%84%A4%EA%B3%84%ED%95%98%EA%B8%B0)
+5. [승인 이력 기반 코멘트 기능 설계하기](https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EC%8A%B9%EC%9D%B8-%EC%9D%B4%EB%A0%A5-%EA%B8%B0%EB%B0%98-%EC%BD%94%EB%A9%98%ED%8A%B8-%EA%B8%B0%EB%8A%A5-%EC%84%A4%EA%B3%84%ED%95%98%EA%B8%B0)
+6. [상태 변화와 코멘트 흐름을 놓치지 않게 알림 기능 설계하기](https://velog.io/@ckstlr0828/Next.js-Supabase-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EC%83%81%ED%83%9C-%EB%B3%80%ED%99%94%EC%99%80-%EC%BD%94%EB%A9%98%ED%8A%B8-%ED%9D%90%EB%A6%84%EC%9D%84-%EB%86%93%EC%B9%98%EC%A7%80-%EC%95%8A%EA%B2%8C-%EC%95%8C%EB%A6%BC-%EA%B8%B0%EB%8A%A5-%EC%84%A4%EA%B3%84%ED%95%98%EA%B8%B0)
 
 ---
 
