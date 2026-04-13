@@ -1,37 +1,8 @@
-import { expect, test, type Browser, type Page } from "@playwright/test";
-
-const reviewerAccount = {
-  email: "reviewer@gmail.com",
-  password: "Reviewer1!",
-};
-
-const adminAccount = {
-  email: "admin@gmail.com",
-  password: "adminadmin1!",
-};
+import { expect, test, type Page } from "@playwright/test";
+import { adminAccount, reviewerAccount } from "../utils/accounts";
+import { loginByEmail } from "../utils/browser-auth";
 
 const createUniqueLabel = (prefix: string) => `${prefix} ${Date.now()}`;
-
-async function login(page: Page, account: { email: string; password: string }) {
-  await page.goto("/login");
-
-  await page.getByPlaceholder("someone@email.com").fill(account.email);
-  await page.getByPlaceholder("비밀번호를 입력하세요").fill(account.password);
-
-  const sessionSyncPromise = page.waitForResponse(
-    (response) =>
-      response.url().endsWith("/api/auth/session") &&
-      response.request().method() === "POST" &&
-      response.status() === 200,
-    { timeout: 30_000 }
-  );
-
-  await Promise.all([
-    sessionSyncPromise,
-    page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 }),
-    page.getByRole("main").getByRole("button", { name: "로그인", exact: true }).click(),
-  ]);
-}
 
 async function acceptAlert(page: Page, description: string, expectedPathname?: string) {
   const dialog = page.getByRole("alertdialog").filter({ hasText: description }).last();
@@ -66,12 +37,13 @@ async function cleanupFeedback(page: Page) {
   const deleteButton = headerSection.getByRole("button", { name: "삭제", exact: true });
 
   if (!(await deleteButton.isVisible().catch(() => false))) {
-    return;
+    return false;
   }
 
   await deleteButton.click();
   await confirmDialog(page, "피드백 삭제 확인", "삭제");
   await acceptAlert(page, "피드백을 삭제했습니다.", "/feedback");
+  return true;
 }
 
 test.describe("reviewer/admin feedback workflow", () => {
@@ -92,7 +64,7 @@ test.describe("reviewer/admin feedback workflow", () => {
     let feedbackPath: string | null = null;
 
     try {
-      await login(reviewerPage, reviewerAccount);
+      await loginByEmail(reviewerPage, reviewerAccount);
 
       await reviewerPage.goto("/feedback/new");
       await expect(reviewerPage.getByRole("heading", { name: "피드백 작성" })).toBeVisible();
@@ -100,8 +72,12 @@ test.describe("reviewer/admin feedback workflow", () => {
       await reviewerPage.getByText("5점", { exact: true }).click();
       await reviewerPage.getByLabel("한줄평").fill(initialSummary);
       await reviewerPage.getByLabel("강점").fill("Playwright로 reviewer 작성 플로우를 검증합니다.");
-      await reviewerPage.getByLabel("질문/궁금한 점").fill("수정 이후 승인 상태 전이가 정상인지 확인합니다.");
-      await reviewerPage.getByLabel("개선 제안").fill("관리자 승인과 코멘트 작성까지 한 흐름으로 검증합니다.");
+      await reviewerPage
+        .getByLabel("질문/궁금한 점")
+        .fill("수정 이후 승인 상태 전이가 정상인지 확인합니다.");
+      await reviewerPage
+        .getByLabel("개선 제안")
+        .fill("관리자 승인과 코멘트 작성까지 한 흐름으로 검증합니다.");
       await reviewerPage.getByText("# 문제 해결력", { exact: true }).click();
 
       await reviewerPage.getByRole("button", { name: "제출하기" }).click();
@@ -130,7 +106,7 @@ test.describe("reviewer/admin feedback workflow", () => {
 
       await expect(reviewerPage.getByRole("heading", { name: editedSummary })).toBeVisible();
 
-      await login(adminPage, adminAccount);
+      await loginByEmail(adminPage, adminAccount);
       await adminPage.goto("/admin/feedback");
 
       const adminCard = adminPage.locator("article").filter({ hasText: editedSummary }).first();
@@ -153,7 +129,10 @@ test.describe("reviewer/admin feedback workflow", () => {
         .locator("section")
         .filter({ has: reviewerPage.getByRole("heading", { name: "코멘트", exact: true }) })
         .first();
-      const commentItem = commentsSection.locator("article").filter({ hasText: commentBody }).first();
+      const commentItem = commentsSection
+        .locator("article")
+        .filter({ hasText: commentBody })
+        .first();
 
       await expect(commentItem).toBeVisible();
       await commentItem.getByRole("button", { name: "수정", exact: true }).click();
@@ -170,8 +149,9 @@ test.describe("reviewer/admin feedback workflow", () => {
       await confirmDialog(reviewerPage, "코멘트 삭제 확인", "삭제");
       await expect(updatedCommentItem).toHaveCount(0);
 
-      await cleanupFeedback(reviewerPage);
-      feedbackPath = null;
+      if (await cleanupFeedback(reviewerPage)) {
+        feedbackPath = null;
+      }
     } finally {
       if (feedbackPath) {
         await reviewerPage.goto(feedbackPath).catch(() => null);

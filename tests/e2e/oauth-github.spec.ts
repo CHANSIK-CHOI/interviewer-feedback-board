@@ -124,9 +124,14 @@ async function completeGitHubOAuth(page: Page, email: string, password: string) 
 
     if (
       currentUrl.pathname.includes("two-factor") ||
-      (await page.locator('input[name="app_otp"]').isVisible().catch(() => false))
+      (await page
+        .locator('input[name="app_otp"]')
+        .isVisible()
+        .catch(() => false))
     ) {
-      throw new Error("GitHub 테스트 계정에 2FA가 걸려 있어 자동 OAuth 테스트를 진행할 수 없습니다.");
+      throw new Error(
+        "GitHub 테스트 계정에 2FA가 걸려 있어 자동 OAuth 테스트를 진행할 수 없습니다."
+      );
     }
 
     const isGoogleBackedGitHubLogin = await clickGithubContinueWithGoogleIfNeeded(page);

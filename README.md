@@ -290,6 +290,10 @@ npm run dev
 npm run dev
 npm run lint
 npm run build
+npm run test
+npm run test:unit
+npm run test:api
+npm run test:e2e
 npm run seed:feedback
 npm run seed:notifications
 npm run reset:avatars
