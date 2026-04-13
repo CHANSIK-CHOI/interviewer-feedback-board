@@ -10,7 +10,7 @@ import { FeedbackCommentRow } from "./feedback-comment";
   수신자: 모든 관리자
   타입: feedback_resubmitted
 
-  관리자가 승인 또는 반려
+  관리자가 승인 또는 반려 - 완료
   수신자: 피드백 작성자
   타입: feedback_approved 또는 feedback_rejected
 
@@ -23,7 +23,7 @@ import { FeedbackCommentRow } from "./feedback-comment";
   수신자: 피드백 작성자
   타입: feedback_comment
   
-  답글 작성, parent_comment_id is not null
+  답글 작성, parent_comment_id is not null - 완료
   수신자: 부모 코멘트 작성자 1명
   타입: feedback_reply
   단, 답글 작성자와 부모 코멘트 작성자가 같으면 알림 생성 안 함
@@ -63,8 +63,11 @@ export type NotificationMetadata = {
   actor_user_id on delete set null
   행동한 사용자가 없어져도 알림 자체는 남기고 actor만 비움
 
-  feedback_id, comment_id on delete set null
-  원본 피드백/코멘트가 삭제돼도 알림 자체는 남길 수 있게 함
+  feedback_id on delete cascade
+  원본 피드백이 삭제되면 해당 피드백 관련 알림도 같이 삭제
+
+  comment_id on delete set null
+  코멘트만 삭제되면 알림 자체는 남기고 comment_id만 비움
 */
 
 /*

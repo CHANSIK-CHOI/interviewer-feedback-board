@@ -4,6 +4,7 @@ import {
   ApiRequestAuthResult,
   resolveApiRequestAuth,
 } from "@/lib/auth/request";
+import { notifyRecipient } from "@/lib/notification/server";
 import { getSupabaseServerAdminClient } from "@/lib/supabase/server";
 import { getUserName } from "@/lib/user/profile";
 import type { SupabaseError } from "@/types/common";
@@ -20,6 +21,8 @@ const REVIEWABLE_STATUSES: ReviewableFeedbackStatus[] = ["pending", "revised_pen
 const REOPENABLE_STATUSES: ReopenableFeedbackStatus[] = ["approved", "rejected"];
 
 type ReviewTargetRow = {
+  author_id: FeedbackPublicRow["author_id"];
+  summary: FeedbackPublicRow["summary"];
   status: FeedbackPublicRow["status"];
   review_queue_status: ReviewableFeedbackStatus | null;
   revision_count: number;
@@ -116,7 +119,7 @@ export default async function handler(
     error: feedbackError,
   }: { data: ReviewTargetRow | null; error: SupabaseError } = await supabaseServerAdminClient
     .from("feedbacks")
-    .select("status, review_queue_status, revision_count")
+    .select("author_id, summary, status, review_queue_status, revision_count")
     .eq("id", feedbackId)
     .maybeSingle();
 
@@ -189,6 +192,27 @@ export default async function handler(
 
   if (!reviewedFeedback) {
     return res.status(409).json({ data: null, error: "이미 다른 관리자에 의해 처리되었습니다." });
+  }
+
+  if (isReviewAction) {
+    try {
+      await notifyRecipient({
+        type: action === "approve" ? "feedback_approved" : "feedback_rejected",
+        actorUserId: auth.context.userId,
+        recipientUserId: feedbackRow.author_id,
+        feedbackId,
+        feedbackSummary: feedbackRow.summary,
+        metadata: {
+          feedback_status: reviewedFeedback.status,
+        },
+      });
+    } catch (notificationError) {
+      const message =
+        notificationError instanceof Error
+          ? notificationError.message
+          : "알림 처리 중 오류가 발생했습니다.";
+      console.error(message);
+    }
   }
 
   return res.status(200).json({

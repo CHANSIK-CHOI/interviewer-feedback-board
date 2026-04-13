@@ -19,6 +19,7 @@ export type NotificationContent = Pick<
   | "body"
   | "link"
   | "feedback_id"
+  | "comment_id"
   | "actor_user_id"
   | "is_read"
   | "recipient_user_id"
@@ -40,7 +41,7 @@ function buildFeedbackLink({
   feedback_id,
   comment_id,
 }: {
-  feedback_id: NotificationRow["id"];
+  feedback_id: NonNullable<NotificationRow["feedback_id"]>;
   comment_id?: FeedbackCommentRow["id"] | null;
 }) {
   const feedbackLink = `/feedback/${feedback_id}`;
@@ -55,10 +56,17 @@ export async function buildNotificationContent({
   feedback_summary,
   comment_id,
 }: BuildNotificationContentParams): Promise<NotificationContent> {
-  const actorName = actor_user_id ? await getAuthUserNameById(actor_user_id) : "알 수 없는 사용자";
+  const actorName =
+    (actor_user_id ? await getAuthUserNameById(actor_user_id) : null) ?? "알 수 없는 사용자";
   const feedbackSummary = resolveFeedbackSummary(feedback_summary);
 
-  const commonData = { feedback_id, recipient_user_id, actor_user_id, is_read: false };
+  const commonData = {
+    feedback_id,
+    comment_id: comment_id ?? null,
+    recipient_user_id,
+    actor_user_id,
+    is_read: false,
+  };
 
   switch (type) {
     case "feedback_submitted":
@@ -66,7 +74,7 @@ export async function buildNotificationContent({
         ...commonData,
         type,
         title: "새 피드백 승인 요청",
-        body: `${actorName}님의 ${feedbackSummary}를 등록했습니다.`,
+        body: `${actorName}님의 ${feedbackSummary}가 등록되었습니다.`,
         link: "/admin/feedback",
       };
     case "feedback_resubmitted":
@@ -74,7 +82,7 @@ export async function buildNotificationContent({
         ...commonData,
         type,
         title: "피드백 재승인 요청",
-        body: `${actorName}님의 ${feedbackSummary}를 수정해 다시 검토를 요청했습니다.`,
+        body: `${actorName}님이 ${feedbackSummary}를 수정해 다시 검토를 요청했습니다.`,
         link: "/admin/feedback",
       };
     case "feedback_approved":
@@ -98,7 +106,7 @@ export async function buildNotificationContent({
         ...commonData,
         type,
         title: "새 코멘트가 도착했어요",
-        body: `${actorName}님의 ${feedbackSummary}에 코멘트를 남겼습니다.`,
+        body: `${actorName}님이 ${feedbackSummary}에 코멘트를 남겼습니다.`,
         link: buildFeedbackLink({ feedback_id, comment_id }),
       };
     case "feedback_reply":
@@ -106,7 +114,7 @@ export async function buildNotificationContent({
         ...commonData,
         type,
         title: "내 코멘트에 답글이 달렸어요",
-        body: `${actorName}님의 코멘트에 답글을 남겼습니다.`,
+        body: `${actorName}님이 내 코멘트에 답글을 남겼습니다.`,
         link: buildFeedbackLink({ feedback_id, comment_id }),
       };
   }

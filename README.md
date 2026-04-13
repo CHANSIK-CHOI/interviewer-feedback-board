@@ -1,6 +1,6 @@
 # 인터뷰어 피드백 보드 (Next.js Page Router + Supabase)
 
-> 권한 기반 승인 워크플로우와 승인 이후 코멘트 상호작용을 구현한 포트폴리오 프로젝트
+> 권한 기반 승인 워크플로우, 코멘트 상호작용, 실시간 알림 흐름을 구현한 포트폴리오 프로젝트
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -15,12 +15,13 @@
 
 이 프로젝트는 인터뷰어가 피드백을 작성하고, 관리자가 검토 후 공개하는 **권한 기반 피드백 보드**입니다.
 
-공개 목록과 사용자별 비공개 데이터를 분리하고, 작성 → 검토 → 공개로 이어지는 상태 전이를 API에서 강제하는 흐름을 구현했습니다. 여기에 더해, 공개 이후에는 작성자와 관리자가 실제로 대화를 이어갈 수 있는 **코멘트 / 답글 기능**을 추가해 상호작용을 보강했습니다.
+공개 목록과 사용자별 비공개 데이터를 분리하고, 작성 → 검토 → 공개로 이어지는 상태 전이를 API에서 강제하는 흐름을 구현했습니다. 여기에 더해, 공개 이후에는 작성자와 관리자가 실제로 대화를 이어갈 수 있는 **코멘트 / 답글 기능**과 승인·코멘트 이벤트를 놓치지 않도록 돕는 **알림함 / 토스트 알림**을 추가해 서비스 흐름을 보강했습니다.
 
 - **핵심 목표**
   - 단순 CRUD를 넘어서, 실제 서비스와 유사한 **승인 프로세스**를 구현
   - 사용자/관리자 역할에 따른 **데이터 가시성 분리**
   - 최초 승인 이후 열리는 **코멘트 스레드와 관리자 응답 구조** 설계
+  - 피드백 작성, 검토, 코멘트 응답이 자연스럽게 이어지는 **알림 UX** 구성
   - `getStaticProps` + 온디맨드 재검증 + API Routes + Supabase를 조합한 **실무형 풀스택 구조** 구성
 
 ---
@@ -43,6 +44,7 @@
 - 프로필 / 아바타 반영
 - 목록 카드에 코멘트 수 표시
 - 수정 중인 승인 피드백은 공개 목록에서 `revised_pending` 프리뷰 카드로 안내
+- 알림함에서 읽지 않은 알림 확인 및 읽음 처리
 
 ### Auth / Profile
 
@@ -59,6 +61,7 @@
 - 본인 피드백 수정
 - 본인 글의 승인 여부 및 승인 대기 상태 확인
 - 최초 승인 이후 본인 피드백 상세에서 코멘트 / 답글 작성
+- 승인 / 반려 / 코멘트 / 답글 알림 확인
 
 ### Admin
 
@@ -67,6 +70,7 @@
 - 승인(`approve`), 반려(`reject`), 재검토(`reopen`)
 - 승인 대기 건수 확인
 - 피드백 상세에서 코멘트 스레드 열람 및 관리
+- 신규 피드백 / 재승인 요청 / 작성자 코멘트 알림 확인
 
 ### Comment / Interaction
 
@@ -75,6 +79,15 @@
 - 작성자와 관리자만 코멘트 / 1단계 답글 작성 가능
 - 본인 코멘트 수정, 본인 또는 관리자 삭제
 - `reopen` 이후에도 기존 코멘트는 유지되며 작성자 / 관리자만 열람 가능
+- 알림 링크로 피드백 상세의 특정 코멘트 / 답글 위치로 이동
+
+### Notification
+
+- 피드백 작성 / 재승인 요청 시 관리자에게 알림 생성
+- 승인 / 반려 시 작성자에게 알림 생성
+- 코멘트 / 답글 작성 시 상대 역할 또는 부모 코멘트 작성자에게 알림 생성
+- Supabase Realtime 기반 토스트 알림과 헤더 알림함 연동
+- 알림 읽음 처리 및 전체 읽음 처리
 
 ---
 
@@ -107,6 +120,13 @@
 - 답글은 1단계까지만 허용
 - 비공개 상태로 돌아가도 기존 코멘트는 유지되며 작성자 / 관리자만 계속 열람 가능
 
+### Notification 정책
+
+- 알림은 수신자 본인만 조회 및 읽음 처리 가능
+- 일반 사용자는 알림을 직접 생성하거나 삭제할 수 없고, 서버 API에서 필요한 이벤트에 맞춰 생성
+- 피드백이 삭제되면 해당 피드백에 연결된 알림도 함께 삭제
+- 코멘트만 삭제된 경우에는 알림은 유지하되 원본 코멘트 참조만 비움
+
 ---
 
 ## 5) 기술 스택
@@ -114,7 +134,7 @@
 - **Frontend**: Next.js 14 (Page Router), React 18, TypeScript
 - **UI**: Tailwind CSS, shadcn/ui, Radix UI, Sonner, lucide-react
 - **Backend(BFF)**: Next.js API Routes
-- **Auth/DB/Storage**: Supabase
+- **Auth/DB/Storage/Realtime**: Supabase
 - **Deploy**: Vercel
 
 ---
@@ -125,9 +145,11 @@
 [Client (Next.js Pages)]
     ├─ / (프로젝트 소개 및 주요 진입점)
     ├─ SessionProvider (세션/권한 동기화)
+    ├─ NotificationsProvider (알림 초기 조회 + Realtime 구독)
     ├─ /feedback (공개 데이터 SSG + 수정 중 프리뷰 + 사용자/관리자 데이터 병합 렌더링)
     ├─ /feedback/[id] (상세 + 코멘트 스레드)
     ├─ /feedback/new, /feedback/edit/[id] (피드백 작성 / 수정)
+    ├─ /notifications (알림함)
     ├─ /my, /my/withdraw (프로필 관리 / 회원 탈퇴)
     └─ /admin/feedback (관리자 전체 목록 + 검토 UI)
 
@@ -136,6 +158,7 @@
     ├─ /api/user-roles
     ├─ /api/feedbacks/*
     ├─ /api/feedbacks/:id/comments*
+    ├─ /api/notifications/*
     ├─ /api/avatar/*
     └─ /api/revalidate-list
 
@@ -143,7 +166,8 @@
     ├─ auth.users
     ├─ user_roles
     ├─ feedbacks
-    └─ feedback_comments
+    ├─ feedback_comments
+    └─ notifications
 ```
 
 ---
@@ -170,6 +194,7 @@ src/
 - `user_roles` → 사용자 role (`reviewer`, `admin`)
 - `feedbacks` → 피드백 본문, 상태, 공개 여부, 승인 이력
 - `feedback_comments` → 코멘트 / 1단계 답글
+- `notifications` → 피드백 / 코멘트 이벤트 기반 알림
 
 ### 주요 컬럼
 
@@ -177,6 +202,9 @@ src/
 - `feedbacks.review_queue_status` → 재검토 큐 문맥
 - `feedbacks.comments_unlocked_at` → 최초 승인 이후 코멘트 스레드 개방 여부
 - `feedback_comments.parent_comment_id` → 1단계 답글 구조
+- `notifications.type` → 알림 종류
+- `notifications.is_read`, `notifications.read_at` → 알림 읽음 상태
+- `notifications.feedback_id`, `notifications.comment_id` → 알림이 가리키는 피드백 / 코멘트 참조
 
 ### RLS 방향
 
@@ -184,6 +212,7 @@ src/
 - 비공개 / 미승인 피드백은 작성자와 관리자만 조회 가능
 - 코멘트는 승인 이력이 있는 피드백에서만 읽을 수 있으며, 비공개 상태에서는 작성자와 관리자만 조회 가능
 - 새 코멘트 작성은 현재 승인된 공개 상태에서만 허용
+- 알림은 수신자 본인만 조회하고 읽음 처리 가능
 
 ---
 
@@ -212,6 +241,15 @@ src/
 | PATCH  | `/api/feedbacks/:id/comments/:commentId` | 본인 코멘트 수정                  | 본인 작성자              |
 | DELETE | `/api/feedbacks/:id/comments/:commentId` | 본인 코멘트 삭제 또는 관리자 삭제 | 본인 작성자 또는 admin   |
 
+### Notifications
+
+| Method | Endpoint                      | 설명                   | 권한   |
+| ------ | ----------------------------- | ---------------------- | ------ |
+| GET    | `/api/notifications`          | 내 알림 목록 조회      | 로그인 |
+| PATCH  | `/api/notifications/read`     | 선택한 알림 읽음 처리  | 로그인 |
+| PATCH  | `/api/notifications/read-all` | 내 알림 전체 읽음 처리 | 로그인 |
+| PATCH  | `/api/notifications/:notiId`  | 단일 알림 읽음 처리    | 로그인 |
+
 ### Auth / User / Avatar
 
 | Method | Endpoint              | 설명                                           | 권한   |
@@ -234,6 +272,7 @@ src/
 - `GET /api/feedbacks/mine`의 기본 조회 상태는 `pending,revised_pending`입니다.
 - `admin`이 `GET /api/feedbacks/mine`을 호출하면 목록 대신 `data: null`을 반환합니다.
 - 코멘트는 첫 승인 이후부터 활성화되며, 새 작성은 현재 승인된 공개 상태에서만 가능합니다.
+- 알림은 피드백 작성, 승인/반려, 코멘트/답글 작성 흐름에서 서버 API가 생성합니다.
 - `POST /api/revalidate-list`는 `x-revalidate-secret` 헤더 또는 `?secret=` 쿼리가 필요합니다.
 
 ---
@@ -252,6 +291,7 @@ npm run dev
 npm run lint
 npm run build
 npm run seed:feedback
+npm run seed:notifications
 npm run reset:avatars
 ```
 
@@ -279,6 +319,7 @@ REVALIDATE_SECRET=
 - 권한 모델과 상태 전이를 API 단에서 강제하고, UI는 해당 정책을 반영하는 구조로 설계했습니다.
 - `/feedback`는 공개 데이터와 권한 데이터를 분리 수집한 뒤 하나의 리스트로 병합해, 사용자 역할에 따라 다른 보드를 보여주도록 구성했습니다.
 - 코멘트 기능을 추가하면서 공개/비공개 전환이 있는 서비스에서의 상호작용 정책, RLS, 승인 이력(`comments_unlocked_at`) 설계를 함께 다뤘습니다.
+- 알림 기능을 추가하면서 단순히 데이터를 저장하는 것보다 “사용자가 다음 행동을 놓치지 않도록 연결하는 흐름”이 중요하다는 점을 함께 고려했습니다.
 - 단순한 CRUD를 넘어 인증/인가, 데이터 가시성, 동시성 경합, 관리자 응답 흐름 같은 실서비스 이슈를 직접 구현해본 프로젝트입니다.
 
 ---
@@ -287,7 +328,7 @@ REVALIDATE_SECRET=
 
 - React Suspense를 학습한 뒤 `/feedback` 목록 페이지에 역할별 비동기 경계를 적용해보고 싶습니다. 전체 공개 게시물, 작성자가 확인할 수 있는 승인 대기 게시물, 관리자가 확인할 수 있는 검토용 전체 게시물을 분리 로딩해 사용자에게 필요한 데이터를 더 자연스럽게 보여주는 방향으로 UX를 개선할 계획입니다.
 - Suspense뿐 아니라 Recoil, React Query(TanStack Query) 같은 상태 관리 / 서버 상태 라이브러리도 함께 스터디 중입니다. 현재 권한 모델과 승인 워크플로우에 어떤 방식이 더 적합한지 비교해본 뒤, 데이터 패칭 구조 개선에 반영해보려 합니다.
-- 장기적으로는 코멘트 알림, 관리자 응답 히스토리, 실시간 반영 같은 상호작용 기능도 확장해보고 싶습니다.
+- 장기적으로는 이메일 알림, 관리자 응답 히스토리, 알림 보관 정책처럼 서비스 운영 관점의 기능도 확장해보고 싶습니다.
 
 ---
 

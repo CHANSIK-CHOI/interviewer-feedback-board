@@ -1,4 +1,4 @@
-import type { FeedbackPublicBase } from "@/types/feedback";
+import type { FeedbackPublicBase, FeedbackPublicRow } from "@/types/feedback";
 import type {
   FeedbackComment,
   FeedbackCommentCreatePayload,
@@ -10,14 +10,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type FeedbackCommentsFeedbackTargetRow = {
   id: FeedbackPublicBase["id"];
   author_id: FeedbackPublicBase["author_id"];
-  status: "pending" | "approved" | "rejected" | "revised_pending";
+  summary: FeedbackPublicRow["summary"];
+  status: FeedbackPublicRow["status"];
   is_public: boolean;
   comments_unlocked_at: string | null;
 };
 
 export type FeedbackCommentParentRow = Pick<
   FeedbackCommentRow,
-  "id" | "feedback_id" | "parent_comment_id"
+  "id" | "feedback_id" | "parent_comment_id" | "author_id"
 >;
 
 export type FeedbackCommentReplyTargetValidationError =
@@ -75,7 +76,7 @@ export const findFeedbackCommentsFeedbackTarget = async ({
 }): Promise<{ data: FeedbackCommentsFeedbackTargetRow | null; error: SupabaseError }> => {
   return await supabaseClient
     .from("feedbacks")
-    .select("id, author_id, status, is_public, comments_unlocked_at")
+    .select("id, author_id, summary, status, is_public, comments_unlocked_at")
     .eq("id", feedbackId)
     .maybeSingle();
 };
@@ -89,7 +90,7 @@ export const findFeedbackCommentParent = async ({
 }): Promise<{ data: FeedbackCommentParentRow | null; error: SupabaseError }> => {
   return await supabaseClient
     .from("feedback_comments")
-    .select("id, feedback_id, parent_comment_id")
+    .select("id, feedback_id, parent_comment_id, author_id")
     .eq("id", parentCommentId)
     .maybeSingle();
 };
@@ -103,6 +104,7 @@ export const validateFeedbackCommentReplyTarget = async ({
   feedbackId: FeedbackPublicBase["id"];
   parentCommentId: FeedbackCommentParentRow["id"];
 }): Promise<{
+  parentRow: FeedbackCommentParentRow | null;
   validationError: FeedbackCommentReplyTargetValidationError | null;
   error: SupabaseError;
 }> => {
@@ -113,6 +115,7 @@ export const validateFeedbackCommentReplyTarget = async ({
 
   if (error) {
     return {
+      parentRow: null,
       validationError: null,
       error,
     };
@@ -120,6 +123,7 @@ export const validateFeedbackCommentReplyTarget = async ({
 
   if (!parentRow) {
     return {
+      parentRow: null,
       validationError: "PARENT_NOT_FOUND",
       error: null,
     };
@@ -127,6 +131,7 @@ export const validateFeedbackCommentReplyTarget = async ({
 
   if (parentRow.feedback_id !== feedbackId) {
     return {
+      parentRow,
       validationError: "DIFFERENT_FEEDBACK",
       error: null,
     };
@@ -134,12 +139,14 @@ export const validateFeedbackCommentReplyTarget = async ({
 
   if (parentRow.parent_comment_id) {
     return {
+      parentRow,
       validationError: "NESTED_REPLY_NOT_ALLOWED",
       error: null,
     };
   }
 
   return {
+    parentRow,
     validationError: null,
     error: null,
   };

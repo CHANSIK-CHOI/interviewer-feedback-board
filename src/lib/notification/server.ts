@@ -56,6 +56,7 @@ type NotifyAdminsParams = {
   feedbackSummary?: FeedbackPublicRow["summary"];
   commentId?: FeedbackCommentRow["id"];
   metadata?: NotificationRow["metadata"];
+  excludeUserIds?: NotificationRow["recipient_user_id"][];
 };
 
 type InsertedNotificationId = Pick<NotificationRow, "id">;
@@ -67,6 +68,7 @@ export const notifyAdmins = async ({
   feedbackSummary,
   commentId,
   metadata = {},
+  excludeUserIds = [],
 }: NotifyAdminsParams): Promise<InsertedNotificationId[]> => {
   const supabaseServerAdminClient = getSupabaseServerAdminClient();
   if (!supabaseServerAdminClient) {
@@ -85,9 +87,10 @@ export const notifyAdmins = async ({
     throw new Error("Admin 권한 유저의 데이터를 가져오지 못했습니다.");
   }
 
+  const excludedUserIds = new Set([actorUserId, ...excludeUserIds]);
   const adminUserIds = (roleData ?? [])
     .map((row) => row.user_id)
-    .filter((adminUserId) => adminUserId !== actorUserId);
+    .filter((adminUserId) => !excludedUserIds.has(adminUserId));
 
   if (adminUserIds.length === 0) {
     return [];
@@ -127,58 +130,38 @@ export const notifyAdmins = async ({
   return insertedNotifications;
 };
 
-type NotifyAuthorParams = {
+type NotifyRecipientParams = {
   type: NotificationType;
   actorUserId: NonNullable<NotificationRow["actor_user_id"]>;
-  recipient_user_id: NonNullable<NotificationRow["recipient_user_id"]>;
+  recipientUserId: NonNullable<NotificationRow["recipient_user_id"]>;
   feedbackId: NonNullable<NotificationRow["feedback_id"]>;
   feedbackSummary?: FeedbackPublicRow["summary"];
   commentId?: FeedbackCommentRow["id"];
   metadata?: NotificationRow["metadata"];
 };
 
-export const notifyAuthor = async ({
+export const notifyRecipient = async ({
   type,
-  actorUserId, // 작성한 관리자의 id
-  recipient_user_id, // 받을 작성자의 id
+  actorUserId,
+  recipientUserId,
   feedbackId,
   feedbackSummary,
   commentId,
   metadata = {},
-}: NotifyAuthorParams): Promise<InsertedNotificationId[]> => {
+}: NotifyRecipientParams): Promise<InsertedNotificationId[]> => {
+  if (recipientUserId === actorUserId) {
+    return [];
+  }
+
   const supabaseServerAdminClient = getSupabaseServerAdminClient();
   if (!supabaseServerAdminClient) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   }
 
-  const { data: userData, error: userError } =
-    await supabaseServerAdminClient.auth.admin.getUserById(recipient_user_id);
-
-  const { data: roleData, error: roleError } = await supabaseServerAdminClient
-    .from("user_roles")
-    .select("user_id")
-    .eq("role", "admin")
-    .eq("user_id", actorUserId);
-  // const {
-  //   data: roleData,
-  //   error: roleError,
-  // }: {
-  //   data: { user_id: NotificationRow["recipient_user_id"] }[] | null;
-  //   error: SupabaseError;
-  // } = await supabaseServerAdminClient.from("user_roles").select("user_id").eq("role", "admin");
-
-  if (roleError || !roleData || roleData.length === 0) {
-    throw new Error("작성한 유저가 관리자인지 확인하지 못했습니다.");
-  }
-
-  if (userError || !userData.user) {
-    throw new Error("작성자 유저의 데이터를 가져오지 못했습니다.");
-  }
-
   const buildNotificationData = await buildNotificationContent({
     type,
     feedback_id: feedbackId,
-    recipient_user_id: userData.user.id,
+    recipient_user_id: recipientUserId,
     actor_user_id: actorUserId,
     feedback_summary: feedbackSummary,
     comment_id: commentId,

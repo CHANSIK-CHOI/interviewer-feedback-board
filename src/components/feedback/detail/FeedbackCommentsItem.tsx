@@ -143,7 +143,10 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
   };
 
   return (
-    <article className="rounded-2xl border border-border/60 bg-white/70 p-5 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
+    <article
+      id={`feedback-comment-${comment.id}`}
+      className="scroll-mt-24 rounded-2xl border border-border/60 bg-white/70 p-5 shadow-sm dark:border-white/10 dark:bg-neutral-900/70"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted">
           <Image

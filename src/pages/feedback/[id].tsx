@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/router";
 import { Button } from "@/components/ui";
 import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
 import { isPrivateAvatarApiSrc, isSvgImageSrc } from "@/lib/avatar/path";
@@ -97,8 +98,13 @@ export default function FeedbackDetailPage({
   isAdmin,
   initialComments,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const router = useRouter();
   const [currentDetailFeedback, setCurrentDetailFeedback] = useState<FeedbackDetailRow>(detailFeedback);
   const [currentReviewerName, setCurrentReviewerName] = useState<string | null>(reviewerName);
+  const targetCommentId =
+    router.isReady && typeof router.query.commentId === "string"
+      ? router.query.commentId
+      : null;
 
   const handleReviewed = (result: ReviewFeedbackResultWithReviewerName) => {
     setCurrentDetailFeedback((prev) => ({
@@ -290,6 +296,7 @@ export default function FeedbackDetailPage({
           isAuthor={isAuthor}
           isAdmin={isAdmin}
           initialComments={initialComments}
+          targetCommentId={targetCommentId}
         />
       </div>
     </>

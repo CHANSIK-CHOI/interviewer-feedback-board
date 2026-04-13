@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import FeedbackCommentsComposer from "@/components/feedback/detail/FeedbackCommentsComposer";
 import FeedbackCommentsForm from "@/components/feedback/detail/FeedbackCommentsForm";
 import FeedbackCommentsItem from "@/components/feedback/detail/FeedbackCommentsItem";
@@ -16,6 +17,7 @@ type FeedbackCommentsProps = {
   isAuthor: boolean;
   isAdmin: boolean;
   initialComments: FeedbackComment[];
+  targetCommentId?: FeedbackComment["id"] | null;
 };
 
 type FeedbackCommentsComponent = ((props: FeedbackCommentsProps) => JSX.Element) & {
@@ -31,6 +33,7 @@ const FeedbackComments: FeedbackCommentsComponent = function FeedbackComments({
   isAuthor,
   isAdmin,
   initialComments,
+  targetCommentId,
 }: FeedbackCommentsProps) {
   return (
     <FeedbackCommentsProvider
@@ -39,7 +42,7 @@ const FeedbackComments: FeedbackCommentsComponent = function FeedbackComments({
       isAdmin={isAdmin}
       initialComments={initialComments}
     >
-      <FeedbackCommentsContent />
+      <FeedbackCommentsContent targetCommentId={targetCommentId} />
     </FeedbackCommentsProvider>
   );
 };
@@ -52,11 +55,30 @@ FeedbackComments.Form = FeedbackCommentsForm;
 
 export default FeedbackComments;
 
-function FeedbackCommentsContent() {
+type FeedbackCommentsContentProps = {
+  targetCommentId?: FeedbackComment["id"] | null;
+};
+
+function FeedbackCommentsContent({ targetCommentId }: FeedbackCommentsContentProps) {
   const stateValue = useFeedbackCommentsState();
   const metaValue = useFeedbackCommentsMeta();
   const { comments, firstDepthCommentIds, firstDepthCount, replyCount } = stateValue;
   const { hasCommentsBeenUnlocked, canEveryoneReadComments } = metaValue;
+
+  useEffect(() => {
+    if (!targetCommentId) {
+      return;
+    }
+
+    const targetElement = document.getElementById(`feedback-comment-${targetCommentId}`);
+    if (!targetElement) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [targetCommentId, comments]);
 
   return (
     <section className="rounded-2xl border border-border/60 bg-background/80 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900/70">

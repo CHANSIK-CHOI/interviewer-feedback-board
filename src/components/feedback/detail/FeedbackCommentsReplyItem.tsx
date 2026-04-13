@@ -65,7 +65,10 @@ export default function FeedbackCommentsReplyItem({
   });
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-background/80 p-4 dark:border-white/10 dark:bg-neutral-950/40">
+    <div
+      id={`feedback-comment-${reply.id}`}
+      className="scroll-mt-24 rounded-2xl border border-border/60 bg-background/80 p-4 dark:border-white/10 dark:bg-neutral-950/40"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
           <CornerDownRight className="size-3.5" />

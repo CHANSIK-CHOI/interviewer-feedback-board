@@ -7,10 +7,11 @@ import {
   normalizeCreateFeedbackCommentPayload,
   validateCommentBody,
   validateFeedbackCommentReplyTarget,
+  type FeedbackCommentParentRow,
   type FeedbackCommentReplyTargetValidationError,
   type FeedbackCommentsFeedbackTargetRow,
 } from "@/lib/feedback/comment";
-import { notifyAdmins, notifyAuthor } from "@/lib/notification/server";
+import { notifyAdmins, notifyRecipient } from "@/lib/notification/server";
 import {
   getSupabaseServerAdminClient,
   getSupabaseServerAnonClient,
@@ -245,6 +246,8 @@ async function handleCreateComment(
     return res.status(400).json({ data: null, error: bodyValidationError });
   }
 
+  let parentComment: FeedbackCommentParentRow | null = null;
+
   if (parentCommentId) {
     if (!supabaseServerAdminClient) {
       return res
@@ -252,7 +255,11 @@ async function handleCreateComment(
         .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
     }
 
-    const { validationError, error: replyTargetError } = await validateFeedbackCommentReplyTarget({
+    const {
+      parentRow,
+      validationError,
+      error: replyTargetError,
+    } = await validateFeedbackCommentReplyTarget({
       supabaseClient: supabaseServerAdminClient,
       feedbackId,
       parentCommentId,
@@ -274,6 +281,8 @@ async function handleCreateComment(
         .status(replyTargetValidationError.status)
         .json({ data: null, error: replyTargetValidationError.error });
     }
+
+    parentComment = parentRow;
   }
 
   const authorName = getUserName(authData.user ?? undefined);
@@ -305,38 +314,48 @@ async function handleCreateComment(
     });
   }
   try {
-    const { data: targetFeedbackRow, error: targetFeedbackError } = await supabaseServerUserClient
-      .from("feedbacks")
-      .select("author_id, summary, status")
-      .eq("id", feedbackId)
-      .maybeSingle();
-
-    if (targetFeedbackError || !targetFeedbackRow) {
-      throw new Error("해당하는 피드백의 데이터를 가져오지 못했습니다.");
-    }
+    const metadata = {
+      feedback_status: feedback.status,
+      parent_comment_id: createdComment.parent_comment_id,
+    };
+    const parentAuthorId = parentComment?.author_id ?? null;
+    const shouldNotifyParentCommentAuthor = Boolean(
+      parentAuthorId && parentAuthorId !== userId
+    );
 
     // 작성자가 코멘트 작성한 경우 -> 관리자에게 알림
-    if (!auth.context.isAdmin && targetFeedbackRow.author_id === userId) {
+    if (!auth.context.isAdmin && feedback.author_id === userId) {
       await notifyAdmins({
         type: "feedback_comment",
-        actorUserId: targetFeedbackRow.author_id,
+        actorUserId: userId,
         feedbackId,
-        feedbackSummary: targetFeedbackRow.summary,
-        metadata: {
-          feedback_status: targetFeedbackRow.status,
-        },
+        feedbackSummary: feedback.summary,
+        commentId: createdComment.id,
+        metadata,
+        excludeUserIds: shouldNotifyParentCommentAuthor && parentAuthorId ? [parentAuthorId] : [],
       });
-    } else {
+    } else if (feedback.author_id !== userId && feedback.author_id !== parentAuthorId) {
       // 관리자가 코멘트 작성한 경우 -> 작성자에게 알림
-      await notifyAuthor({
+      await notifyRecipient({
         type: "feedback_comment",
         actorUserId: userId,
-        recipient_user_id: targetFeedbackRow.author_id,
+        recipientUserId: feedback.author_id,
         feedbackId,
-        feedbackSummary: targetFeedbackRow.summary,
-        metadata: {
-          feedback_status: targetFeedbackRow.status,
-        },
+        feedbackSummary: feedback.summary,
+        commentId: createdComment.id,
+        metadata,
+      });
+    }
+
+    if (shouldNotifyParentCommentAuthor && parentAuthorId) {
+      await notifyRecipient({
+        type: "feedback_reply",
+        actorUserId: userId,
+        recipientUserId: parentAuthorId,
+        feedbackId,
+        feedbackSummary: feedback.summary,
+        commentId: createdComment.id,
+        metadata,
       });
     }
   } catch (notificationError) {
