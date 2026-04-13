@@ -1,26 +1,27 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import type { AuthContext } from "@/lib/auth/server";
 import { resolveApiRequestAuth } from "@/lib/auth/request";
-import {
-  getSupabaseServerAdminClient,
-  getSupabaseServerAnonClient,
-  resolveSupabaseServerReader,
-} from "@/lib/supabase/server";
+import type { AuthContext } from "@/lib/auth/server";
 import {
   FEEDBACK_COMMENT_COLUMNS,
   findFeedbackCommentsFeedbackTarget,
   listFeedbackComments,
   normalizeCreateFeedbackCommentPayload,
-  type FeedbackCommentReplyTargetValidationError,
-  type FeedbackCommentsFeedbackTargetRow,
   validateCommentBody,
   validateFeedbackCommentReplyTarget,
+  type FeedbackCommentReplyTargetValidationError,
+  type FeedbackCommentsFeedbackTargetRow,
 } from "@/lib/feedback/comment";
+import { notifyAdmins, notifyAuthor } from "@/lib/notification/server";
+import {
+  getSupabaseServerAdminClient,
+  getSupabaseServerAnonClient,
+  resolveSupabaseServerReader,
+} from "@/lib/supabase/server";
 import { getAvatarUrl, getUserName } from "@/lib/user/profile";
+import type { SupabaseError } from "@/types/common";
 import type { FeedbackCommentRow } from "@/types/feedback-comment";
 import type { FeedbackCommentListResponse, FeedbackCommentResponse } from "@/types/response";
-import type { SupabaseError } from "@/types/common";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { NextApiRequest, NextApiResponse } from "next";
 
 const COMMENT_CREATE_ERROR_MESSAGE = "코멘트 등록에 실패했습니다.";
 const COMMENT_READ_ERROR_MESSAGE = "댓글 조회에 실패했습니다.";
@@ -111,8 +112,7 @@ const loadFeedbackCommentTarget = async (
 
 const resolveOptionalApiAuthContext = async (req: NextApiRequest): Promise<AuthContext | null> => {
   const authHeader = req.headers.authorization;
-  const hasBearerAccessToken =
-    typeof authHeader === "string" && authHeader.startsWith("Bearer ");
+  const hasBearerAccessToken = typeof authHeader === "string" && authHeader.startsWith("Bearer ");
   if (!hasBearerAccessToken) {
     return null;
   }
@@ -186,9 +186,7 @@ async function handleGetComments(
   const readableSupabaseServerClient = resolveReadableCommentsClient(authContext);
   const isAuthenticatedRequester = Boolean(authContext);
   if (!readableSupabaseServerClient) {
-    return res
-      .status(500)
-      .json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
+    return res.status(500).json({ data: null, error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" });
   }
 
   const readPolicyError = resolveCommentReadPolicyError(feedback, isAuthenticatedRequester);
@@ -271,8 +269,7 @@ async function handleCreateComment(
     }
 
     if (validationError) {
-      const replyTargetValidationError =
-        resolveReplyTargetValidationErrorResponse(validationError);
+      const replyTargetValidationError = resolveReplyTargetValidationErrorResponse(validationError);
       return res
         .status(replyTargetValidationError.status)
         .json({ data: null, error: replyTargetValidationError.error });
@@ -306,6 +303,48 @@ async function handleCreateComment(
         ? `${COMMENT_CREATE_ERROR_MESSAGE}: ${errorMessage}`
         : COMMENT_CREATE_ERROR_MESSAGE,
     });
+  }
+  try {
+    const { data: targetFeedbackRow, error: targetFeedbackError } = await supabaseServerUserClient
+      .from("feedbacks")
+      .select("author_id, summary, status")
+      .eq("id", feedbackId)
+      .maybeSingle();
+
+    if (targetFeedbackError || !targetFeedbackRow) {
+      throw new Error("해당하는 피드백의 데이터를 가져오지 못했습니다.");
+    }
+
+    // 작성자가 코멘트 작성한 경우 -> 관리자에게 알림
+    if (!auth.context.isAdmin && targetFeedbackRow.author_id === userId) {
+      await notifyAdmins({
+        type: "feedback_comment",
+        actorUserId: targetFeedbackRow.author_id,
+        feedbackId,
+        feedbackSummary: targetFeedbackRow.summary,
+        metadata: {
+          feedback_status: targetFeedbackRow.status,
+        },
+      });
+    } else {
+      // 관리자가 코멘트 작성한 경우 -> 작성자에게 알림
+      await notifyAuthor({
+        type: "feedback_comment",
+        actorUserId: userId,
+        recipient_user_id: targetFeedbackRow.author_id,
+        feedbackId,
+        feedbackSummary: targetFeedbackRow.summary,
+        metadata: {
+          feedback_status: targetFeedbackRow.status,
+        },
+      });
+    }
+  } catch (notificationError) {
+    const message =
+      notificationError instanceof Error
+        ? notificationError.message
+        : "알림 처리 중 오류가 발생했습니다.";
+    console.error(message);
   }
 
   return res.status(201).json({

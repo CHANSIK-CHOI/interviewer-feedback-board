@@ -1,20 +1,21 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import {
+  FEEDBACK_FORBIDDEN_MESSAGE,
+  FEEDBACK_FORM_ERROR_MESSAGES,
+  FEEDBACK_NOT_FOUND_MESSAGE,
+  NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE,
+} from "@/constants";
 import {
   ApiRequestAuthOptions,
   ApiRequestAuthResult,
   resolveApiRequestAuth,
 } from "@/lib/auth/request";
+import { notifyAdmins } from "@/lib/notification/server";
+import { toNullableTrimmedString, toStrictBoolean, toTrimmedString } from "@/lib/shared/normalize";
 import type { SupabaseError } from "@/types/common";
 import type { FeedbackPublicBase, FeedbackPublicRow } from "@/types/feedback";
 import type { FeedbackFormValues } from "@/types/forms";
-import {
-  FEEDBACK_FORM_ERROR_MESSAGES,
-  FEEDBACK_FORBIDDEN_MESSAGE,
-  FEEDBACK_NOT_FOUND_MESSAGE,
-  NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE,
-} from "@/constants";
-import { toNullableTrimmedString, toStrictBoolean, toTrimmedString } from "@/lib/shared/normalize";
 import { EditFeedbackResponse } from "@/types/response";
+import type { NextApiRequest, NextApiResponse } from "next";
 
 type ExistingFeedbackRow = {
   id: FeedbackPublicRow["id"];
@@ -151,6 +152,24 @@ export default async function handler(
     if (error || !data) {
       console.error("Update feedback failed", error);
       return res.status(500).json({ data: null, error: NEW_FEEDBACK_FALLBACK_ERROR_MESSAGE });
+    }
+
+    try {
+      await notifyAdmins({
+        type: "feedback_resubmitted",
+        actorUserId: userId,
+        feedbackId: data.id,
+        feedbackSummary: summary,
+        metadata: {
+          feedback_status: nextStatus,
+        },
+      });
+    } catch (notificationError) {
+      const message =
+        notificationError instanceof Error
+          ? notificationError.message
+          : "알림 처리 중 오류가 발생했습니다.";
+      console.error(message);
     }
 
     return res.status(200).json({ data, error: null });

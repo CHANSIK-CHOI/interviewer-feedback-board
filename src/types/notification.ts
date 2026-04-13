@@ -2,11 +2,11 @@ import type { FeedbackPublicRow } from "@/types/feedback";
 import { FeedbackCommentRow } from "./feedback-comment";
 
 /*
-  작성자가 새 피드백 작성
+  작성자가 새 피드백 작성 - 완료
   수신자: 모든 관리자
   타입: feedback_submitted
 
-  작성자가 승인된 글 수정해서 재승인 필요
+  작성자가 승인된 글 수정해서 재승인 필요 - 완료
   수신자: 모든 관리자
   타입: feedback_resubmitted
 
@@ -14,12 +14,12 @@ import { FeedbackCommentRow } from "./feedback-comment";
   수신자: 피드백 작성자
   타입: feedback_approved 또는 feedback_rejected
 
-  코멘트 작성, parent_comment_id is null
+  코멘트 작성, parent_comment_id is null - 완료
   작성자가 코멘트 작성한 경우:
   수신자: 모든 관리자
   타입: feedback_comment
 
-  관리자가 코멘트 작성한 경우:
+  관리자가 코멘트 작성한 경우: - 완료
   수신자: 피드백 작성자
   타입: feedback_comment
   
