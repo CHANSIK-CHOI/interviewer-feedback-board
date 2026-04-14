@@ -1,13 +1,11 @@
 import React, { useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button, useAlert } from "@/components/ui";
 import { inputBaseStyle } from "@/constants";
 import { cn } from "@/lib/shared/cn";
 import { SendHorizontal, X } from "lucide-react";
-
-type FeedbackCommentsFormValues = {
-  commentText: string;
-};
+import { feedbackCommentFormSchema, type FeedbackCommentsFormValues } from "@/lib/forms/feedback";
 
 type FeedbackCommentsFormProps = {
   formId: string;
@@ -47,6 +45,7 @@ export default function FeedbackCommentsForm({
     formState: { errors, isSubmitting },
   } = useForm<FeedbackCommentsFormValues>({
     mode: "onSubmit",
+    resolver: zodResolver(feedbackCommentFormSchema),
     shouldUnregister: true,
     defaultValues: {
       commentText: defaultValue,
@@ -67,7 +66,7 @@ export default function FeedbackCommentsForm({
 
   const handleValidSubmit = async ({ commentText }: FeedbackCommentsFormValues) => {
     try {
-      await onSubmitText(commentText.trim());
+      await onSubmitText(commentText);
       reset({ commentText: defaultValue });
       onSuccess?.();
     } catch (error) {
@@ -97,13 +96,7 @@ export default function FeedbackCommentsForm({
         disabled={disabled || isSubmitting}
         className={cn(inputBaseStyle, "mt-3 resize-none", minHeightClassName)}
         maxLength={1000}
-        {...register("commentText", {
-          validate: {
-            required: (value) => !!value.trim() || "코멘트 내용을 입력해주세요.",
-            maxLength: (value) =>
-              value.trim().length <= 1000 || "코멘트는 1000자 이하로 작성해주세요.",
-          },
-        })}
+        {...register("commentText")}
       />
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">

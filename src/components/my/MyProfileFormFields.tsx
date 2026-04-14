@@ -34,10 +34,7 @@ export default function MyProfileFormFields({
           type="text"
           className={inputBaseStyle}
           placeholder="이름을 입력해주세요."
-          {...register("name", {
-            required: "이름을 입력해주세요.",
-            setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-          })}
+          {...register("name")}
         />
         {errors.name && <span className="text-xs text-destructive">{errors.name.message}</span>}
       </div>
@@ -63,13 +60,7 @@ export default function MyProfileFormFields({
           className={inputBaseStyle}
           placeholder="회사명을 입력해주세요."
           disabled={!isCompanyPublic}
-          {...register("company_name", {
-            setValueAs: (v) => (typeof v === "string" ? v.trim() : v),
-            validate: (v) =>
-              !isCompanyPublic ||
-              (typeof v === "string" && v.trim().length > 0) ||
-              "회사명을 입력해주세요",
-          })}
+          {...register("company_name")}
         />
         {errors.company_name ? (
           <p className="text-xs text-destructive">{errors.company_name?.message}</p>

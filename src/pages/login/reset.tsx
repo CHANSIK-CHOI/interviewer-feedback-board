@@ -2,15 +2,13 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageMeta } from "@/components/common";
 import { Button, useAlert } from "@/components/ui";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 import { useSession } from "@/components/session";
 import { replaceSafely } from "@/lib/navigation/client";
 import { inputBaseStyle } from "@/constants";
-
-type ResetPasswordFormValues = {
-  reset_password: string;
-};
+import { resetPasswordFormSchema, type ResetPasswordFormValues } from "@/lib/forms/auth";
 
 const RESET_PASSWORD_FORM_DEFAULT_VALUES: ResetPasswordFormValues = {
   reset_password: "",
@@ -35,6 +33,7 @@ export default function ResetPasswordPage() {
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordFormValues>({
     mode: "onSubmit",
+    resolver: zodResolver(resetPasswordFormSchema),
     defaultValues: RESET_PASSWORD_FORM_DEFAULT_VALUES,
   });
 
@@ -122,10 +121,7 @@ export default function ResetPasswordPage() {
                 className={inputBaseStyle}
                 type="password"
                 placeholder="8자 이상 입력하세요"
-                {...register("reset_password", {
-                  required: "필수 입력값입니다.",
-                  validate: (value) => !!value.trim() || "공백으로 입력할 수 없습니다.",
-                })}
+                {...register("reset_password")}
               />
               {errors.reset_password && (
                 <span className="text-xs text-destructive">{errors.reset_password.message}</span>

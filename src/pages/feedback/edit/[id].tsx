@@ -15,6 +15,7 @@ import {
   FEEDBACK_NOT_FOUND_MESSAGE,
 } from "@/constants";
 import type { FeedbackFormValues } from "@/types/forms";
+import { feedbackFormSchema } from "@/lib/forms/feedback";
 import {
   FeedbackFormDetailSection,
   FeedbackFormProfileSection,
@@ -24,6 +25,7 @@ import {
 } from "@/components/feedback";
 import { PageMeta } from "@/components/common";
 import { EditFeedbackResponse } from "@/types/response";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const feedbackEditErrorMessages = new Set<string>([
   ...Object.values(FEEDBACK_FORM_ERROR_MESSAGES),
@@ -102,6 +104,7 @@ export default function FeedbackEditPage({
 
   const formMethods = useForm<FeedbackFormValues>({
     mode: "onSubmit",
+    resolver: zodResolver(feedbackFormSchema),
     defaultValues,
   });
   const {

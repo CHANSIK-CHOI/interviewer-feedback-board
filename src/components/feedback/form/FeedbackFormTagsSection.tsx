@@ -32,9 +32,7 @@ export default function FeedbackFormTagsSection() {
                 type="checkbox"
                 value={tag}
                 className="sr-only"
-                {...register("tags", {
-                  validate: (v) => (v?.length ?? 0) > 0 || "키워드를 1개 이상 선택해주세요.",
-                })}
+                {...register("tags")}
               />
               # {tag}
             </label>

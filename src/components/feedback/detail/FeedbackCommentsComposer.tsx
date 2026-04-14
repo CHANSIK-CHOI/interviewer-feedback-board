@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
   useFeedbackCommentsActions,
@@ -8,10 +9,10 @@ import { Button, useAlert } from "@/components/ui";
 import { inputBaseStyle } from "@/constants";
 import { cn } from "@/lib/shared/cn";
 import { SendHorizontal } from "lucide-react";
-
-type FeedbackCommentsComposerValues = {
-  newCommentText: string;
-};
+import {
+  feedbackCommentComposerSchema,
+  type FeedbackCommentsComposerValues,
+} from "@/lib/forms/feedback";
 
 export default function FeedbackCommentsComposer() {
   const { openAlert } = useAlert();
@@ -28,6 +29,7 @@ export default function FeedbackCommentsComposer() {
     formState: { errors, isSubmitting },
   } = useForm<FeedbackCommentsComposerValues>({
     mode: "onSubmit",
+    resolver: zodResolver(feedbackCommentComposerSchema),
     shouldUnregister: true,
     defaultValues: {
       newCommentText: "",
@@ -47,7 +49,7 @@ export default function FeedbackCommentsComposer() {
 
   const handleValidSubmit = async ({ newCommentText }: FeedbackCommentsComposerValues) => {
     try {
-      await createComment(newCommentText.trim());
+      await createComment(newCommentText);
       reset({ newCommentText: "" });
     } catch (error) {
       openAlert({
@@ -77,17 +79,13 @@ export default function FeedbackCommentsComposer() {
           disabled={!canWrite || isSubmitting}
           className={cn(inputBaseStyle, "mt-3 min-h-[160px] resize-none")}
           maxLength={1000}
-          {...register("newCommentText", {
-            validate: {
-              required: (value) => !!value.trim() || "코멘트 내용을 입력해주세요.",
-              maxLength: (value) =>
-                value.trim().length <= 1000 || "코멘트는 1000자 이하로 작성해주세요.",
-            },
-          })}
+          {...register("newCommentText")}
         />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">{newCommentTextValue.trim().length}/1000자</p>
+            <p className="text-xs text-muted-foreground">
+              {newCommentTextValue.trim().length}/1000자
+            </p>
             {errors.newCommentText && (
               <p className="text-xs text-destructive">{errors.newCommentText.message}</p>
             )}

@@ -18,10 +18,7 @@ export default function FeedbackFormDetailSection() {
             type="text"
             placeholder="짧은 요약을 작성해주세요"
             className={inputBaseStyle}
-            {...register("summary", {
-              required: "한줄평을 입력해주세요.",
-              setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-            })}
+            {...register("summary")}
           />
           {errors.summary && (
             <span className="text-xs text-destructive">{errors.summary.message}</span>
@@ -33,9 +30,7 @@ export default function FeedbackFormDetailSection() {
             placeholder="좋았던 점을 구체적으로 적어주세요"
             rows={3}
             className={inputBaseStyle}
-            {...register("strengths", {
-              setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-            })}
+            {...register("strengths")}
           />
         </label>
         <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
@@ -44,9 +39,7 @@ export default function FeedbackFormDetailSection() {
             placeholder="추가로 궁금한 부분이 있나요?"
             rows={3}
             className={inputBaseStyle}
-            {...register("questions", {
-              setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-            })}
+            {...register("questions")}
           />
         </label>
         <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
@@ -55,9 +48,7 @@ export default function FeedbackFormDetailSection() {
             placeholder="개선하면 좋을 점이 있나요?"
             rows={3}
             className={inputBaseStyle}
-            {...register("suggestions", {
-              setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-            })}
+            {...register("suggestions")}
           />
         </label>
       </div>

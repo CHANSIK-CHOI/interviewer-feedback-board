@@ -15,10 +15,12 @@ import {
 } from "@/constants";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { getAvatarUrl, getUserCompany, getUserName } from "@/lib/user/profile";
+import { feedbackFormSchema } from "@/lib/forms/feedback";
 import type { FeedbackFormValues } from "@/types/forms";
 import { EditFeedbackResponse } from "@/types/response";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 
 const newFeedbackErrorMessages = new Set<string>(Object.values(FEEDBACK_FORM_ERROR_MESSAGES));
@@ -31,6 +33,7 @@ export default function FeedbackNewPage() {
 
   const formMethods = useForm<FeedbackFormValues>({
     mode: "onSubmit",
+    resolver: zodResolver(feedbackFormSchema),
     defaultValues: NEW_FEEDBACK_DEFAULT_VALUES,
   });
   const {

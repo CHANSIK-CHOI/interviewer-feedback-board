@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { PageMeta } from "@/components/common";
 import { Button, useAlert, useConfirm } from "@/components/ui";
@@ -8,21 +9,18 @@ import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { useRouter } from "next/router";
 import { inputBaseStyle } from "@/constants";
 import { getAuthProviderLabel, getAuthProviders } from "@/lib/auth/provider";
+import {
+  createWithdrawFormSchema,
+  WITHDRAW_CONFIRM_TEXT,
+  type WithdrawFormValues,
+} from "@/lib/forms/my";
 import { WithdrawResponse } from "@/types/response";
-
-type WithdrawFormValues = {
-  confirm_text: string;
-  password: string;
-  isAgreementChecked: boolean;
-};
 
 const WITHDRAW_FORM_DEFAULT_VALUES: WithdrawFormValues = {
   confirm_text: "",
   password: "",
   isAgreementChecked: false,
 };
-
-const WITHDRAW_CONFIRM_TEXT = "회원탈퇴";
 
 export default function WithdrawPage() {
   const { openAlert } = useAlert();
@@ -42,6 +40,7 @@ export default function WithdrawPage() {
     formState: { errors, isSubmitting },
   } = useForm<WithdrawFormValues>({
     mode: "onSubmit",
+    resolver: zodResolver(createWithdrawFormSchema(isEmailProviderLinked)),
     defaultValues: WITHDRAW_FORM_DEFAULT_VALUES,
   });
 
@@ -78,7 +77,7 @@ export default function WithdrawPage() {
         return;
       }
 
-      const password = values.password.trim();
+      const password = values.password;
       const { error: reauthError } = await supabaseBrowserClient.auth.signInWithPassword({
         email: user.email,
         password,
@@ -125,8 +124,7 @@ export default function WithdrawPage() {
     } catch (error) {
       console.error(error);
       openAlert({
-        description:
-          error instanceof Error ? error.message : "로그인 상태를 확인해주세요.",
+        description: error instanceof Error ? error.message : "로그인 상태를 확인해주세요.",
       });
     }
   };
@@ -202,12 +200,7 @@ export default function WithdrawPage() {
                 className={inputBaseStyle}
                 type="text"
                 placeholder={`정확히 '${WITHDRAW_CONFIRM_TEXT}'를 입력해주세요.`}
-                {...register("confirm_text", {
-                  required: "확인 문구를 입력해주세요.",
-                  validate: (value) =>
-                    value.trim() === WITHDRAW_CONFIRM_TEXT ||
-                    `확인 문구는 '${WITHDRAW_CONFIRM_TEXT}'와 일치해야 합니다.`,
-                })}
+                {...register("confirm_text")}
               />
               {errors.confirm_text && (
                 <span className="text-xs text-destructive">{errors.confirm_text.message}</span>
@@ -227,9 +220,7 @@ export default function WithdrawPage() {
                   className={inputBaseStyle}
                   type="password"
                   placeholder="현재 비밀번호를 입력해주세요."
-                  {...register("password", {
-                    validate: (value) => value.trim().length > 0 || "비밀번호를 입력해 주세요.",
-                  })}
+                  {...register("password")}
                 />
                 {errors.password && (
                   <span className="text-xs text-destructive">{errors.password.message}</span>
@@ -241,9 +232,7 @@ export default function WithdrawPage() {
               <input
                 type="checkbox"
                 className="mt-0.5 h-4 w-4 accent-destructive"
-                {...register("isAgreementChecked", {
-                  validate: (value) => value || "주의사항을 확인하고 동의해주세요.",
-                })}
+                {...register("isAgreementChecked")}
               />
               <span>탈퇴 시 내 계정 데이터가 삭제되고 복구할 수 없다는 점에 동의합니다.</span>
             </label>

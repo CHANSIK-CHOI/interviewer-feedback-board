@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 import { useBoolean, useUnmount } from "usehooks-ts";
@@ -14,6 +15,7 @@ import {
 import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { getAuthProviders } from "@/lib/auth/provider";
 import { getUserCompany, getUserName, getAvatarUrl } from "@/lib/user/profile";
+import { myProfileFormSchema } from "@/lib/forms/my";
 import type { MyProfileForm } from "@/types/forms";
 
 export const useMyProfileController = () => {
@@ -37,6 +39,7 @@ export const useMyProfileController = () => {
 
   const formMethods = useForm<MyProfileForm>({
     mode: "onSubmit",
+    resolver: zodResolver(myProfileFormSchema),
     defaultValues: {
       company_name: sessionCompanyName,
       is_company_public: sessionIsCompanyPublic,
@@ -126,9 +129,9 @@ export const useMyProfileController = () => {
     if (isSubmitting) return;
     if (!supabaseBrowserClient || !session?.user) return;
 
-    const nextName = values.name.trim();
+    const nextName = values.name;
     let nextAvatar = values.avatar || AVATAR_PLACEHOLDER_SRC;
-    const nextCompanyName = values.company_name.trim();
+    const nextCompanyName = values.company_name;
     const nextIsCompanyPublic = values.is_company_public;
 
     if (pendingAvatarFile) {

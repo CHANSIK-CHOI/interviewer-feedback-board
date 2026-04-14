@@ -12,7 +12,7 @@ export {
   FEEDBACK_DELETE_FORBIDDEN_MESSAGE,
 } from "./feedback";
 export { chipButtonBaseStyle, inputBaseStyle } from "./ui";
-export { EMAIL_PATTERN, PHONE_PATTERN, USER_ID_PATTERN } from "./validation";
+export { USER_ID_PATTERN } from "./validation";
 export {
   AVATAR_ALLOWED_MIME_TYPES,
   AVATAR_MAX_FILE_SIZE,

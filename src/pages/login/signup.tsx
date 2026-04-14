@@ -1,19 +1,15 @@
 import React from "react";
 import Link from "next/link";
 import { GithubLoginBtn, PageMeta } from "@/components/common";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { EMAIL_PATTERN, inputBaseStyle } from "@/constants";
+import { inputBaseStyle } from "@/constants";
 import { useRouter } from "next/router";
 import { Button, useAlert } from "@/components/ui";
 import { useSession } from "@/components/session";
 import { markSignUpRoleSyncSkip } from "@/lib/auth/signup-flow";
 import { replaceSafely } from "@/lib/navigation/client";
-
-type SignupFormValues = {
-  signup_name?: string;
-  signup_email: string;
-  signup_password: string;
-};
+import { signupFormSchema, type SignupFormValues } from "@/lib/forms/auth";
 
 const SIGNUP_FORM_DEFAULT_VALUES: SignupFormValues = {
   signup_name: "",
@@ -52,6 +48,7 @@ export default function SignupPage() {
     formState: { errors, isSubmitting },
   } = useForm<SignupFormValues>({
     mode: "onSubmit",
+    resolver: zodResolver(signupFormSchema),
     defaultValues: SIGNUP_FORM_DEFAULT_VALUES,
   });
 
@@ -133,9 +130,7 @@ export default function SignupPage() {
                 className={inputBaseStyle}
                 type="text"
                 placeholder="홍길동"
-                {...register("signup_name", {
-                  setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-                })}
+                {...register("signup_name")}
               />
             </div>
 
@@ -147,14 +142,7 @@ export default function SignupPage() {
                 className={inputBaseStyle}
                 type="email"
                 placeholder="someone@email.com"
-                {...register("signup_email", {
-                  required: "필수 입력값입니다.",
-                  setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-                  pattern: {
-                    value: EMAIL_PATTERN,
-                    message: "유효한 이메일 형식이 아닙니다.",
-                  },
-                })}
+                {...register("signup_email")}
               />
               {errors.signup_email && (
                 <span className="text-xs text-destructive">{errors.signup_email.message}</span>
@@ -172,14 +160,7 @@ export default function SignupPage() {
                 className={inputBaseStyle}
                 type="password"
                 placeholder="비밀번호를 입력하세요"
-                {...register("signup_password", {
-                  required: "필수 입력값입니다.",
-                  validate: {
-                    notBlank: (value) => !!value.trim() || "공백으로 입력할 수 없습니다.",
-                    minLength: (value) =>
-                      value.trim().length >= 8 || "비밀번호는 8자 이상 입력해주세요.",
-                  },
-                })}
+                {...register("signup_password")}
               />
               {errors.signup_password && (
                 <span className="text-xs text-destructive">{errors.signup_password.message}</span>

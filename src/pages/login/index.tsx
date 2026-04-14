@@ -1,17 +1,14 @@
 import React from "react";
 import Link from "next/link";
 import { GithubLoginBtn, PageMeta } from "@/components/common";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { EMAIL_PATTERN, inputBaseStyle } from "@/constants";
+import { inputBaseStyle } from "@/constants";
 import { useRouter } from "next/router";
 import { Button, useAlert } from "@/components/ui";
 import { useSession } from "@/components/session";
 import { getSafeNextPath, replaceSafely } from "@/lib/navigation/client";
-
-type LoginFormValues = {
-  login_email: string;
-  login_password: string;
-};
+import { loginFormSchema, type LoginFormValues } from "@/lib/forms/auth";
 
 const LOGIN_FORM_DEFAULT_VALUES: LoginFormValues = {
   login_email: "",
@@ -43,6 +40,7 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     mode: "onSubmit",
+    resolver: zodResolver(loginFormSchema),
     defaultValues: LOGIN_FORM_DEFAULT_VALUES,
   });
 
@@ -99,14 +97,7 @@ export default function LoginPage() {
                 className={inputBaseStyle}
                 type="email"
                 placeholder="someone@email.com"
-                {...register("login_email", {
-                  required: "필수 입력값입니다.",
-                  setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-                  pattern: {
-                    value: EMAIL_PATTERN,
-                    message: "유효한 이메일 형식이 아닙니다.",
-                  },
-                })}
+                {...register("login_email")}
               />
               {errors.login_email && (
                 <span className="text-xs text-destructive">{errors.login_email.message}</span>
@@ -124,15 +115,7 @@ export default function LoginPage() {
                 className={inputBaseStyle}
                 type="password"
                 placeholder="비밀번호를 입력하세요"
-                {...register("login_password", {
-                  required: "필수 입력값입니다.",
-                  setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-                  validate: {
-                    notBlank: (value) => !!value.trim() || "공백으로 입력할 수 없습니다.",
-                    minLength: (value) =>
-                      value.trim().length >= 8 || "비밀번호는 8자 이상 입력해주세요.",
-                  },
-                })}
+                {...register("login_password")}
               />
               {errors.login_password && (
                 <span className="text-xs text-destructive">{errors.login_password.message}</span>

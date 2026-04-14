@@ -30,10 +30,7 @@ export default function FeedbackFormRatingSection() {
               type="radio"
               value={value}
               className="sr-only"
-              {...register("rating", {
-                setValueAs: (v) => Number(v),
-                validate: (v) => v > 0 || "평점을 선택해주세요.",
-              })}
+              {...register("rating")}
             />
             {value}점
           </label>

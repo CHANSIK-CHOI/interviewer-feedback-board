@@ -2,13 +2,11 @@ import React from "react";
 import Link from "next/link";
 import { PageMeta } from "@/components/common";
 import { Button, useAlert } from "@/components/ui";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { EMAIL_PATTERN, inputBaseStyle } from "@/constants";
+import { inputBaseStyle } from "@/constants";
 import { useSession } from "@/components/session";
-
-type ForgotPasswordFormValues = {
-  forgot_email: string;
-};
+import { forgotPasswordFormSchema, type ForgotPasswordFormValues } from "@/lib/forms/auth";
 
 const FORGOT_PASSWORD_FORM_DEFAULT_VALUES: ForgotPasswordFormValues = {
   forgot_email: "",
@@ -31,6 +29,7 @@ export default function ForgotPasswordPage() {
     formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordFormValues>({
     mode: "onSubmit",
+    resolver: zodResolver(forgotPasswordFormSchema),
     defaultValues: FORGOT_PASSWORD_FORM_DEFAULT_VALUES,
   });
 
@@ -93,14 +92,7 @@ export default function ForgotPasswordPage() {
                 className={inputBaseStyle}
                 type="email"
                 placeholder="someone@email.com"
-                {...register("forgot_email", {
-                  required: "필수 입력값입니다.",
-                  setValueAs: (value) => (typeof value === "string" ? value.trim() : value),
-                  pattern: {
-                    value: EMAIL_PATTERN,
-                    message: "유효한 이메일 형식이 아닙니다.",
-                  },
-                })}
+                {...register("forgot_email")}
               />
               {errors.forgot_email && (
                 <span className="text-xs text-destructive">{errors.forgot_email.message}</span>
