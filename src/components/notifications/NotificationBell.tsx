@@ -7,26 +7,27 @@ import {
 import { cn } from "@/lib/shared/cn";
 import { Bell } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useBoolean } from "usehooks-ts";
 import { useNotifications } from "./context";
 import { NotificationIcon } from "./NotificationIcon";
 
 export default function NotificationBell() {
   const { notifications, markIdsAsRead } = useNotifications();
-  const [open, setOpen] = useState(false);
+  const { value: open, setFalse: closePopover, setValue: setOpen } = useBoolean(false);
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.is_read).length,
     [notifications]
   );
 
-  const handleClickNotiItemLink = async () => {
-    setOpen(false);
+  const handleClickNotiItemLink = () => {
+    closePopover();
   };
 
-  const handleOpenChangePopover = (open: boolean) => {
-    setOpen(open);
-    if (open) {
+  const handleOpenChangePopover = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) {
       const unreadIds = notifications.filter((noti) => !noti.is_read).map((unread) => unread.id);
       if (unreadIds.length == 0) return;
       markIdsAsRead(unreadIds);
@@ -67,7 +68,7 @@ export default function NotificationBell() {
               size="sm"
               className="h-8 rounded-full px-3 text-xs"
             >
-              <Link href="/notifications" onClick={() => setOpen(false)}>
+              <Link href="/notifications" onClick={closePopover}>
                 알림함으로 이동
               </Link>
             </Button>

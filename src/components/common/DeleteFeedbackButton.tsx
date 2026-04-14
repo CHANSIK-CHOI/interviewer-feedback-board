@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/router";
+import { useBoolean } from "usehooks-ts";
 import { useSession } from "@/components/session";
 import { replaceSafely } from "@/lib/navigation/client";
 import { DeleteFeedbackResult, deleteFeedback } from "@/lib/feedback/client";
@@ -24,7 +25,11 @@ export default function DeleteFeedbackButton({
   const { openAlert } = useAlert();
   const { openConfirm } = useConfirm();
   const { getAccessTokenOrThrow } = useSession();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    value: isSubmitting,
+    setFalse: stopSubmitting,
+    setTrue: startSubmitting,
+  } = useBoolean(false);
 
   const handleDelete = async () => {
     if (disabled || isSubmitting) return;
@@ -38,7 +43,7 @@ export default function DeleteFeedbackButton({
 
     if (!isConfirmed) return;
 
-    setIsSubmitting(true);
+    startSubmitting();
 
     try {
       const accessToken = await getAccessTokenOrThrow();
@@ -63,7 +68,7 @@ export default function DeleteFeedbackButton({
         description: error instanceof Error ? error.message : "피드백 삭제에 실패했습니다.",
       });
     } finally {
-      setIsSubmitting(false);
+      stopSubmitting();
     }
   };
 

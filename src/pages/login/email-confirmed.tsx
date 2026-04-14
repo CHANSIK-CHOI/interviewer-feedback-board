@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+import { useTimeout } from "usehooks-ts";
 import { PageMeta } from "@/components/common";
 import { useSession } from "@/components/session";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
@@ -10,22 +11,15 @@ export default function EmailConfirmedPage() {
   const router = useRouter();
   const { session, supabaseBrowserClient } = useSession();
   const isHandledRef = useRef(false);
+  const fallbackDelay = router.isReady && supabaseBrowserClient ? 5000 : null;
 
-  useEffect(() => {
-    if (!router.isReady || !supabaseBrowserClient) return;
+  useTimeout(() => {
+    if (isHandledRef.current) return;
 
-    const fallbackTimer = window.setTimeout(() => {
-      if (isHandledRef.current) return;
-
-      const loginHref = buildLoginHref(router.query.next, DEFAULT_NEXT_PATH);
-      isHandledRef.current = true;
-      void replaceSafely(router, loginHref);
-    }, 5000);
-
-    return () => {
-      window.clearTimeout(fallbackTimer);
-    };
-  }, [router, router.isReady, router.query.next, supabaseBrowserClient]);
+    const loginHref = buildLoginHref(router.query.next, DEFAULT_NEXT_PATH);
+    isHandledRef.current = true;
+    void replaceSafely(router, loginHref);
+  }, fallbackDelay);
 
   useEffect(() => {
     if (!router.isReady || !supabaseBrowserClient || !session?.user || isHandledRef.current) return;

@@ -19,6 +19,7 @@ import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useBoolean } from "usehooks-ts";
 
 type NotificationFilter = "all" | "unread" | "read";
 
@@ -80,7 +81,11 @@ export default function NotificationsPage({
   const { openAlert } = useAlert();
   const [filter, setFilter] = useState<NotificationFilter>("all");
   const [notifications, setNotifications] = useState<NotificationItemData[]>(initialNotifications);
-  const [isMarkingAllAsRead, setIsMarkingAllAsRead] = useState(false);
+  const {
+    value: isMarkingAllAsRead,
+    setFalse: stopMarkingAllAsRead,
+    setTrue: startMarkingAllAsRead,
+  } = useBoolean(false);
 
   useEffect(() => {
     if (initialAlertMessage && !isAlertedRef.current) {
@@ -168,7 +173,7 @@ export default function NotificationsPage({
   const handleMarkAllAsRead = async () => {
     if (!session || unreadCount === 0 || isMarkingAllAsRead) return;
 
-    setIsMarkingAllAsRead(true);
+    startMarkingAllAsRead();
 
     try {
       const accessToken = await getAccessTokenOrThrow();
@@ -194,7 +199,7 @@ export default function NotificationsPage({
         description: message,
       });
     } finally {
-      setIsMarkingAllAsRead(false);
+      stopMarkingAllAsRead();
     }
   };
 

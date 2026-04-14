@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
+import { useBoolean } from "usehooks-ts";
 import { useSession } from "@/components/session";
 import { ReviewFeedbackParams, reviewFeedback } from "@/lib/feedback/client";
 import type {
@@ -29,12 +30,16 @@ export default function ReviewControls({
 }: ReviewControlsProps) {
   const { openAlert } = useAlert();
   const { getAccessTokenOrThrow } = useSession();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    value: isSubmitting,
+    setFalse: stopSubmitting,
+    setTrue: startSubmitting,
+  } = useBoolean(false);
 
   const handleReview = async (action: ReviewFeedbackAction) => {
     if (disabled || isSubmitting) return;
 
-    setIsSubmitting(true);
+    startSubmitting();
 
     try {
       const accessToken = await getAccessTokenOrThrow();
@@ -70,7 +75,7 @@ export default function ReviewControls({
         description: error instanceof Error ? error.message : "피드백 검토 처리에 실패했습니다.",
       });
     } finally {
-      setIsSubmitting(false);
+      stopSubmitting();
     }
   };
 

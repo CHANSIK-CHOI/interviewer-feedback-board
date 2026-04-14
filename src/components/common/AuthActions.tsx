@@ -8,12 +8,12 @@ import { getAvatarUrl, getUserName } from "@/lib/user/profile";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useBoolean } from "usehooks-ts";
 
 export default function AuthActions() {
   const { session, supabaseBrowserClient } = useSession();
   const router = useRouter();
-  const [isLogging, setIsLogging] = useState(false);
+  const { value: isLogging, setFalse: stopLogging, setTrue: startLogging } = useBoolean(false);
 
   const handleLogout = async () => {
     if (!supabaseBrowserClient) return;
@@ -29,11 +29,11 @@ export default function AuthActions() {
   };
   const handleClickLogin = async () => {
     if (isLogging) return;
-    setIsLogging(true);
+    startLogging();
     try {
       await pushSafely(router, "/login");
     } finally {
-      setIsLogging(false);
+      stopLogging();
     }
   };
 

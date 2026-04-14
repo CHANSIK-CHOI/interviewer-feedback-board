@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useBoolean } from "usehooks-ts";
 import { MessageCircle, PencilLine, Reply, Shield, Trash2, UserRound } from "lucide-react";
 import {
   useFeedbackCommentsActions,
@@ -37,7 +38,7 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
   const { commentById, replyIdsByParentId } = stateValue;
   const { feedbackAuthorId, canWrite, currentUserId, isAdmin } = metaValue;
   const { createReply, updateComment, deleteComment } = actionsValue;
-  const [isReplyOpen, setIsReplyOpen] = useState(false);
+  const { value: isReplyOpen, setFalse: closeReply, toggle: toggleReply } = useBoolean(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
@@ -50,10 +51,10 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
 
   useEffect(() => {
     if (!canWrite) {
-      setIsReplyOpen(false);
+      closeReply();
       setEditingCommentId(null);
     }
-  }, [canWrite]);
+  }, [canWrite, closeReply]);
 
   if (!comment) {
     return null;
@@ -78,7 +79,7 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
 
   const handleToggleReply = () => {
     setEditingCommentId(null);
-    setIsReplyOpen((prev) => !prev);
+    toggleReply();
   };
 
   const handleStartEdit = ({ author_id, id }: FeedbackCommentIdentity) => {
@@ -91,14 +92,11 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
       return;
     }
 
-    setIsReplyOpen(false);
+    closeReply();
     setEditingCommentId(id);
   };
 
-  const handleDelete = async (
-    { author_id, id }: FeedbackCommentIdentity,
-    replyLength: number
-  ) => {
+  const handleDelete = async ({ author_id, id }: FeedbackCommentIdentity, replyLength: number) => {
     if (
       !canDeleteFeedbackComment({
         canWrite,
@@ -131,7 +129,7 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
         setEditingCommentId(null);
       }
       if (id === comment.id) {
-        setIsReplyOpen(false);
+        closeReply();
       }
     } catch (error) {
       openAlert({
@@ -154,9 +152,7 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
             alt={`${comment.author_name} avatar`}
             width={44}
             height={44}
-            unoptimized={
-              isSvgImageSrc(commentAvatarSrc) || isPrivateAvatarApiSrc(commentAvatarSrc)
-            }
+            unoptimized={isSvgImageSrc(commentAvatarSrc) || isPrivateAvatarApiSrc(commentAvatarSrc)}
             className="h-full w-full object-cover"
           />
         </div>
@@ -272,8 +268,8 @@ export default function FeedbackCommentsItem({ commentId }: FeedbackCommentsItem
               placeholder="답글은 한 단계까지만 허용됩니다."
               submitLabel="답글 등록"
               onSubmitText={(replyText) => createReply(comment.id, replyText)}
-              onSuccess={() => setIsReplyOpen(false)}
-              onCancel={() => setIsReplyOpen(false)}
+              onSuccess={closeReply}
+              onCancel={closeReply}
               cancelLabel="닫기"
               disabled={!canWrite || Boolean(deletingCommentId)}
               className="mt-4 border border-dashed border-border/60 bg-background/80 dark:border-white/10 dark:bg-neutral-950/40"

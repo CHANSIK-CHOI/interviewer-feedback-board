@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type React from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
+import { useBoolean, useUnmount } from "usehooks-ts";
 import { useSession } from "@/components/session";
 import { useAlert } from "@/components/ui";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
@@ -20,7 +21,11 @@ export const useMyProfileController = () => {
   const { session, supabaseBrowserClient, isInitSessionComplete, getAccessTokenOrThrow } =
     useSession();
   const router = useRouter();
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const {
+    value: isUploadingAvatar,
+    setFalse: stopUploadingAvatar,
+    setTrue: startUploadingAvatar,
+  } = useBoolean(false);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const [pendingAvatarPreviewUrl, setPendingAvatarPreviewUrl] = useState<string | null>(null);
 
@@ -60,13 +65,11 @@ export const useMyProfileController = () => {
     });
   }, [reset, sessionAvatar, sessionUserName, sessionCompanyName, sessionIsCompanyPublic]);
 
-  useEffect(() => {
-    return () => {
-      if (pendingAvatarPreviewUrl) {
-        URL.revokeObjectURL(pendingAvatarPreviewUrl);
-      }
-    };
-  }, [pendingAvatarPreviewUrl]);
+  useUnmount(() => {
+    if (pendingAvatarPreviewUrl) {
+      URL.revokeObjectURL(pendingAvatarPreviewUrl);
+    }
+  });
 
   const clearPendingAvatar = () => {
     setPendingAvatarFile(null);
@@ -129,7 +132,7 @@ export const useMyProfileController = () => {
     const nextIsCompanyPublic = values.is_company_public;
 
     if (pendingAvatarFile) {
-      setIsUploadingAvatar(true);
+      startUploadingAvatar();
       try {
         const accessToken = await getAccessTokenOrThrow();
         const { avatarUrl }: AvatarUploadResult = await uploadAvatarToSupabase(
@@ -146,7 +149,7 @@ export const useMyProfileController = () => {
         });
         return;
       } finally {
-        setIsUploadingAvatar(false);
+        stopUploadingAvatar();
       }
     }
 

@@ -1,20 +1,17 @@
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AuthActions } from "@/components/common";
 import { Button, Switch } from "@/components/ui";
 import { useTheme } from "next-themes";
+import { useIsClient } from "usehooks-ts";
 
 const GITHUB_REPO_URL = "https://github.com/CHANSIK-CHOI/interviewer-feedback-board";
 
 export default function GlobalLayout({ children }: { children: ReactNode }) {
-  const [isThemeMounted, setIsThemeMounted] = useState(false);
+  const isThemeMounted = useIsClient();
   const { resolvedTheme, setTheme } = useTheme();
   const isDarkMode = resolvedTheme === "dark";
-
-  useEffect(() => {
-    setIsThemeMounted(true);
-  }, []);
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-clip bg-background text-foreground">

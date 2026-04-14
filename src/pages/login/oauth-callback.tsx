@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+import { useTimeout } from "usehooks-ts";
 import { PageMeta } from "@/components/common";
 import { useSession } from "@/components/session";
 import { markSignUpRoleSyncSkip } from "@/lib/auth/signup-flow";
@@ -9,23 +10,15 @@ import { ApplyRoleUiStateParams } from "@/components/session/useSession";
 
 export default function OAuthCallbackPage() {
   const router = useRouter();
-  const { session, supabaseBrowserClient, applyRoleUiState, getAccessTokenOrThrow } =
-    useSession();
+  const { session, supabaseBrowserClient, applyRoleUiState, getAccessTokenOrThrow } = useSession();
   const isHandledRef = useRef(false);
+  const fallbackDelay = router.isReady && supabaseBrowserClient ? 5000 : null;
 
-  useEffect(() => {
-    if (!router.isReady || !supabaseBrowserClient) return;
-
-    const fallbackTimer = window.setTimeout(() => {
-      if (isHandledRef.current) return;
-      isHandledRef.current = true;
-      void replaceSafely(router, "/login");
-    }, 5000);
-
-    return () => {
-      window.clearTimeout(fallbackTimer);
-    };
-  }, [router, router.isReady, supabaseBrowserClient]);
+  useTimeout(() => {
+    if (isHandledRef.current) return;
+    isHandledRef.current = true;
+    void replaceSafely(router, "/login");
+  }, fallbackDelay);
 
   useEffect(() => {
     if (!router.isReady || !session?.user || isHandledRef.current) return;
