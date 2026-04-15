@@ -2,6 +2,8 @@ import { AVATAR_MAX_FILE_SIZE } from "@/constants";
 import { getNormalizedAvatarMimeType } from "@/lib/avatar/mime";
 import { AvatarMimeType } from "@/types/avatar";
 import { ApiResponse } from "@/types/common";
+import { parseApiResponse } from "@/lib/api/response";
+import { avatarUploadDataSchema } from "@/lib/api/schemas";
 
 export const assertValidAvatarFile = (file: File) => {
   const mimeType: AvatarMimeType | null = getNormalizedAvatarMimeType(file.type);
@@ -44,9 +46,7 @@ export async function uploadAvatarToSupabase(
     body: formData,
   });
 
-  const result: AvatarUploadResponse = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: AvatarUploadResponse = await parseApiResponse(response, avatarUploadDataSchema);
 
   if (result.error !== null) {
     const errorMessage = result.error ?? "아바타 업로드에 실패했습니다.";

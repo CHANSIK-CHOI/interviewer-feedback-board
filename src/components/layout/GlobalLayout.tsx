@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AuthActions } from "@/components/common";
+import AuthActions from "@/components/common/AuthActions";
 import { Button, Switch } from "@/components/ui";
 import { useTheme } from "next-themes";
 import { useIsClient } from "usehooks-ts";

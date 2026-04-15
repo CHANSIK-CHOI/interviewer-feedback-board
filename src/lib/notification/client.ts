@@ -1,5 +1,7 @@
 import type { NotificationItemData, NotificationRow } from "@/types/notification";
 import type { NotificationResponse, NotificationsResponse } from "@/types/response";
+import { parseApiResponse } from "@/lib/api/response";
+import { notificationItemDataOrNullSchema, notificationItemDataSchema } from "@/lib/api/schemas";
 
 type GetAllNotificationsParams = {
   accessToken: string | null;
@@ -38,9 +40,11 @@ export const getAllNotifications = async ({
     signal,
   });
 
-  const result: NotificationsResponse = await response
-    .json()
-    .catch(() => ({ data: null, error: "서버 응답을 확인하지 못했습니다." }));
+  const result: NotificationsResponse = await parseApiResponse(
+    response,
+    notificationItemDataSchema.array(),
+    "서버 응답을 확인하지 못했습니다."
+  );
 
   if (!response.ok || result.error !== null) {
     throw new Error(result.error ?? "알림 목록을 불러오지 못했습니다.");
@@ -75,9 +79,11 @@ export const getNotification = async ({
     signal,
   });
 
-  const result: NotificationResponse = await response
-    .json()
-    .catch(() => ({ data: null, error: "서버 응답을 확인하지 못했습니다." }));
+  const result: NotificationResponse = await parseApiResponse(
+    response,
+    notificationItemDataOrNullSchema,
+    "서버 응답을 확인하지 못했습니다."
+  );
 
   if (response.status === 404) {
     throw new Error(result.error ?? "해당 알림을 찾을 수 없습니다.");
@@ -110,9 +116,11 @@ export const markAllNotificationAsRead = async ({
     },
   });
 
-  const result: NotificationsResponse = await response
-    .json()
-    .catch(() => ({ data: null, error: "서버 응답을 확인하지 못했습니다." }));
+  const result: NotificationsResponse = await parseApiResponse(
+    response,
+    notificationItemDataSchema.array(),
+    "서버 응답을 확인하지 못했습니다."
+  );
 
   if (!response.ok || result.error !== null) {
     throw new Error(result.error ?? "알림을 모두 읽음 처리하지 못했습니다.\n다시 시도해주세요.");
@@ -147,9 +155,11 @@ export const markNotificationAsRead = async ({
     },
   });
 
-  const result: NotificationResponse = await response
-    .json()
-    .catch(() => ({ data: null, error: "서버 응답을 확인하지 못했습니다." }));
+  const result: NotificationResponse = await parseApiResponse(
+    response,
+    notificationItemDataOrNullSchema,
+    "서버 응답을 확인하지 못했습니다."
+  );
 
   if (!response.ok || result.error !== null) {
     throw new Error(result.error ?? "알림을 읽음 처리하지 못했습니다.\n다시 시도해주세요.");
@@ -185,9 +195,11 @@ export const markNotificationsAsRead = async ({
     }),
   });
 
-  const result: NotificationsResponse = await response
-    .json()
-    .catch(() => ({ data: null, error: "서버 응답을 확인하지 못했습니다." }));
+  const result: NotificationsResponse = await parseApiResponse(
+    response,
+    notificationItemDataSchema.array(),
+    "서버 응답을 확인하지 못했습니다."
+  );
 
   if (!response.ok || result.error !== null) {
     throw new Error(result.error ?? "알림을 읽음 처리하지 못했습니다.\n다시 시도해주세요.");

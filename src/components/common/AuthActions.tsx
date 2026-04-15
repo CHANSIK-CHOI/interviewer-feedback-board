@@ -1,5 +1,3 @@
-import { NotificationBell } from "@/components/notifications";
-import NotificationsProvider from "@/components/notifications/NotificationsProvider";
 import { useSession } from "@/components/session";
 import { Button } from "@/components/ui";
 import { isPrivateAvatarApiSrc } from "@/lib/avatar/path";
@@ -7,8 +5,16 @@ import { pushSafely, replaceSafely } from "@/lib/navigation/client";
 import { getAvatarUrl, getUserName } from "@/lib/user/profile";
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { useBoolean } from "usehooks-ts";
+
+const HeaderNotifications = dynamic(
+  () => import("@/components/notifications/HeaderNotifications"),
+  {
+    ssr: false,
+  }
+);
 
 export default function AuthActions() {
   const { session, supabaseBrowserClient } = useSession();
@@ -55,17 +61,7 @@ export default function AuthActions() {
         </Button>
       ) : (
         <>
-          <NotificationsProvider>
-            <NotificationBell />
-          </NotificationsProvider>
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="hidden h-auto w-fit shrink-0 rounded-full border-transparent bg-transparent px-2 py-2 shadow-none hover:bg-muted/40 dark:border-transparent dark:bg-transparent sm:inline-flex sm:h-7 sm:border-input sm:bg-input/30 sm:px-2.5 sm:py-0 sm:shadow-none sm:hover:bg-input/50"
-          >
-            <Link href="/notifications">알림함</Link>
-          </Button>
+          <HeaderNotifications />
 
           <Button
             asChild

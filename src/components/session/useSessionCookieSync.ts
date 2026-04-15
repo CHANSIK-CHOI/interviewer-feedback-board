@@ -1,5 +1,30 @@
 import { useEffect, useRef } from "react";
-import { SessionCookieSyncResponse } from "@/types/response";
+import type { SessionCookieSyncResponse } from "@/types/response";
+
+const parseSessionCookieSyncResponse = async (
+  response: Response
+): Promise<SessionCookieSyncResponse> => {
+  const payload: unknown = await response.json().catch(() => null);
+
+  if (!payload || typeof payload !== "object") {
+    return { data: null, error: "Invalid response" };
+  }
+
+  const { data, error } = payload as { data?: unknown; error?: unknown };
+  if (typeof error === "string") {
+    return { data: null, error };
+  }
+
+  if (error !== null) {
+    return { data: null, error: "Invalid response" };
+  }
+
+  if (data && typeof data === "object" && (data as { success?: unknown }).success === true) {
+    return { data: { success: true }, error: null };
+  }
+
+  return { data: null, error: "Invalid response" };
+};
 
 export function useSessionCookieSync(accessToken: string | null) {
   const syncedSessionCookieTokenRef = useRef<string | null>(null);
@@ -25,9 +50,7 @@ export function useSessionCookieSync(accessToken: string | null) {
         },
       });
 
-      const payload: SessionCookieSyncResponse = await response
-        .json()
-        .catch(() => ({ data: null, error: "Invalid response" }));
+      const payload: SessionCookieSyncResponse = await parseSessionCookieSyncResponse(response);
       if (payload.error !== null) {
         throw new Error(payload.error ?? "Failed to sync session cookie");
       }

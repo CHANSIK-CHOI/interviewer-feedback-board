@@ -7,6 +7,8 @@ import { useAlert } from "@/components/ui";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { getFeedbackDetailById } from "@/lib/feedback/server";
 import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
+import { parseApiResponse } from "@/lib/api/response";
+import { idDataSchema } from "@/lib/api/schemas";
 import {
   AVATAR_PLACEHOLDER_SRC,
   FEEDBACK_FORM_ERROR_MESSAGES,
@@ -135,9 +137,7 @@ export default function FeedbackEditPage({
         body: JSON.stringify(values),
       });
 
-      const result: EditFeedbackResponse = await response
-        .json()
-        .catch(() => ({ data: null, error: "Invalid response" }));
+      const result: EditFeedbackResponse = await parseApiResponse(response, idDataSchema);
 
       if (!response.ok || result.error) {
         throw new Error(result.error ?? FEEDBACK_EDIT_FALLBACK_ERROR_MESSAGE);

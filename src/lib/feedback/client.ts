@@ -11,7 +11,19 @@ import type {
   FeedbackCommentCreatePayload,
   FeedbackCommentUpdatePayload,
 } from "@/types/feedback-comment";
-import type { FeedbackMineResponse, FeedbackResponse, PendingCountResponse } from "@/types/response";
+import type {
+  FeedbackMineResponse,
+  FeedbackResponse,
+  PendingCountResponse,
+} from "@/types/response";
+import { parseApiResponse } from "@/lib/api/response";
+import {
+  feedbackCommentDataSchema,
+  idDataSchema,
+  pendingCountDataSchema,
+  reviewQueueFeedbackListDataSchema,
+  reviewFeedbackResultDataSchema,
+} from "@/lib/api/schemas";
 
 export type {
   ReviewFeedbackAction,
@@ -48,9 +60,7 @@ export async function getPendingFeedbackCount({
     signal,
   });
 
-  const result: PendingCountResponse = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: PendingCountResponse = await parseApiResponse(response, pendingCountDataSchema);
 
   if (!response.ok || result.error !== null) {
     throw new Error(result.error ?? "Failed to fetch pending count");
@@ -80,9 +90,10 @@ export async function getMyFeedbacks({
     signal,
   });
 
-  const result: FeedbackMineResponse = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: FeedbackMineResponse = await parseApiResponse(
+    response,
+    reviewQueueFeedbackListDataSchema
+  );
 
   if (result.error !== null) {
     throw new Error(result.error ?? "Select failed Owner Pending Data");
@@ -116,9 +127,10 @@ export async function getAdminReviewFeedbacks({
     signal,
   });
 
-  const result: FeedbackResponse<AdminReviewFeedback[]> = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: FeedbackResponse<AdminReviewFeedback[]> = await parseApiResponse(
+    response,
+    reviewQueueFeedbackListDataSchema
+  );
 
   if (result.error !== null) {
     throw new Error(result.error ?? "Failed to fetch admin review feedbacks");
@@ -155,9 +167,10 @@ export async function reviewFeedback({
     body: JSON.stringify({ action }),
   });
 
-  const result: ApiResponse<ReviewFeedbackResultWithReviewerName> = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: ApiResponse<ReviewFeedbackResultWithReviewerName> = await parseApiResponse(
+    response,
+    reviewFeedbackResultDataSchema
+  );
 
   if (result.error !== null) {
     throw new Error(result.error ?? "피드백 검토 처리에 실패했습니다.");
@@ -194,9 +207,7 @@ export async function deleteFeedback({
     },
   });
 
-  const result: ApiResponse<DeleteFeedbackResult> = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: ApiResponse<DeleteFeedbackResult> = await parseApiResponse(response, idDataSchema);
 
   if (result.error !== null) {
     throw new Error(result.error ?? "피드백 삭제에 실패했습니다.");
@@ -233,9 +244,10 @@ export async function createFeedbackComment({
     body: JSON.stringify(payload),
   });
 
-  const result: ApiResponse<FeedbackComment> = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: ApiResponse<FeedbackComment> = await parseApiResponse(
+    response,
+    feedbackCommentDataSchema
+  );
 
   if (result.error !== null) {
     throw new Error(result.error ?? "코멘트 등록에 실패했습니다.");
@@ -277,9 +289,10 @@ export async function updateFeedbackComment({
     }
   );
 
-  const result: ApiResponse<FeedbackComment> = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: ApiResponse<FeedbackComment> = await parseApiResponse(
+    response,
+    feedbackCommentDataSchema
+  );
 
   if (result.error !== null) {
     throw new Error(result.error ?? "코멘트 수정에 실패했습니다.");
@@ -321,9 +334,10 @@ export async function deleteFeedbackComment({
     }
   );
 
-  const result: ApiResponse<DeleteFeedbackCommentResult> = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: ApiResponse<DeleteFeedbackCommentResult> = await parseApiResponse(
+    response,
+    idDataSchema
+  );
 
   if (result.error !== null) {
     throw new Error(result.error ?? "코멘트 삭제에 실패했습니다.");

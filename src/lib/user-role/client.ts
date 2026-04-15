@@ -6,6 +6,40 @@ export type SyncUserRoleResult = {
   isNewUser: boolean;
 };
 
+const parseUserRoleSyncResponse = async (response: Response): Promise<UserRoleSyncResponse> => {
+  const payload: unknown = await response.json().catch(() => null);
+
+  if (!payload || typeof payload !== "object") {
+    return { data: null, error: "Invalid response" };
+  }
+
+  const { data, error } = payload as { data?: unknown; error?: unknown };
+  if (typeof error === "string") {
+    return { data: null, error };
+  }
+
+  if (error !== null) {
+    return { data: null, error: "Invalid response" };
+  }
+
+  if (!data || typeof data !== "object") {
+    return { data: null, error: "Invalid response" };
+  }
+
+  const { role, isNewUser } = data as { role?: unknown; isNewUser?: unknown };
+  if ((role === "admin" || role === "reviewer") && typeof isNewUser === "boolean") {
+    return {
+      data: {
+        role,
+        isNewUser,
+      },
+      error: null,
+    };
+  }
+
+  return { data: null, error: "Invalid response" };
+};
+
 export async function syncUserRole(accessToken: string): Promise<SyncUserRoleResult> {
   if (!accessToken) {
     throw new Error("Missing access token");
@@ -19,9 +53,7 @@ export async function syncUserRole(accessToken: string): Promise<SyncUserRoleRes
     },
   });
 
-  const result: UserRoleSyncResponse = await response
-    .json()
-    .catch(() => ({ data: null, error: "Invalid response" }));
+  const result: UserRoleSyncResponse = await parseUserRoleSyncResponse(response);
 
   if (result.error !== null) {
     throw new Error(result.error ?? "Failed Post user roles");

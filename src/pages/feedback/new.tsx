@@ -16,6 +16,8 @@ import {
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { getAvatarUrl, getUserCompany, getUserName } from "@/lib/user/profile";
 import { feedbackFormSchema } from "@/lib/forms/feedback";
+import { parseApiResponse } from "@/lib/api/response";
+import { idDataSchema } from "@/lib/api/schemas";
 import type { FeedbackFormValues } from "@/types/forms";
 import { EditFeedbackResponse } from "@/types/response";
 import { useRouter } from "next/router";
@@ -90,9 +92,7 @@ export default function FeedbackNewPage() {
         body: JSON.stringify(values),
       });
 
-      const result: EditFeedbackResponse = await response
-        .json()
-        .catch(() => ({ data: null, error: "Invalid response" }));
+      const result: EditFeedbackResponse = await parseApiResponse(response, idDataSchema);
 
       if (!response.ok || result.error) {
         throw new Error(result.error ?? "피드백 등록 실패");

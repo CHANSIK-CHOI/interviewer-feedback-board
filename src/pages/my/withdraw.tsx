@@ -14,6 +14,8 @@ import {
   WITHDRAW_CONFIRM_TEXT,
   type WithdrawFormValues,
 } from "@/lib/forms/my";
+import { parseApiResponse } from "@/lib/api/response";
+import { successDataSchema } from "@/lib/api/schemas";
 import { WithdrawResponse } from "@/types/response";
 
 const WITHDRAW_FORM_DEFAULT_VALUES: WithdrawFormValues = {
@@ -101,10 +103,7 @@ export default function WithdrawPage() {
         },
       });
 
-      const result: WithdrawResponse = await response.json().catch(() => ({
-        data: null,
-        error: "Invalid response",
-      }));
+      const result: WithdrawResponse = await parseApiResponse(response, successDataSchema);
       if (!response.ok || result.error) {
         openAlert({
           description: result.error ?? "회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
