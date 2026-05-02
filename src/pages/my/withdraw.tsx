@@ -2,12 +2,13 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { GetServerSidePropsContext } from "next";
+import { useRouter } from "next/router";
 import { PageMeta } from "@/components/common";
 import { Button, useAlert, useConfirm } from "@/components/ui";
 import { useSession } from "@/components/session";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
-import { useRouter } from "next/router";
-import { inputBaseStyle } from "@/constants";
+import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
 import { getAuthProviderLabel, getAuthProviders } from "@/lib/auth/provider";
 import {
   createWithdrawFormSchema,
@@ -17,6 +18,22 @@ import {
 import { parseApiResponse } from "@/lib/api/response";
 import { successDataSchema } from "@/lib/api/schemas";
 import { WithdrawResponse } from "@/types/response";
+import { inputBaseStyle } from "@/constants";
+
+export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+  const accessToken = context.req.cookies["sb-access-token"];
+  if (!accessToken) {
+    return { redirect: { destination: buildLoginHref("/my/withdraw"), permanent: false } };
+  }
+
+  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
+  const { context: authContext, error: authError } = authResult;
+  if (authError || !authContext) {
+    return { redirect: { destination: buildLoginHref("/my/withdraw"), permanent: false } };
+  }
+
+  return { props: {} };
+};
 
 const WITHDRAW_FORM_DEFAULT_VALUES: WithdrawFormValues = {
   confirm_text: "",

@@ -7,6 +7,7 @@ import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/s
 import { formatDateTime } from "@/lib/feedback/presentation";
 import { markAllNotificationAsRead, markNotificationAsRead } from "@/lib/notification/client";
 import { listNotifications } from "@/lib/notification/server";
+import { buildLoginHref } from "@/lib/navigation/client";
 import {
   NOTIFICATION_TONE_BY_TYPE,
   NOTIFICATION_TONE_STYLE,
@@ -26,33 +27,20 @@ type NotificationFilter = "all" | "unread" | "read";
 type NotificationsPageProps = {
   initialNotifications: NotificationItemData[];
   initialAlertMessage: string | null;
-  isSsrAuthenticated: boolean;
 };
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
   const accessToken = context.req.cookies["sb-access-token"];
 
   if (!accessToken) {
-    return {
-      props: {
-        initialNotifications: [],
-        initialAlertMessage: null,
-        isSsrAuthenticated: false,
-      } satisfies NotificationsPageProps,
-    };
+    return { redirect: { destination: buildLoginHref("/notifications"), permanent: false } };
   }
 
   const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
   const { context: authContext, error: authError } = authResult;
 
   if (authError || !authContext) {
-    return {
-      props: {
-        initialNotifications: [],
-        initialAlertMessage: null,
-        isSsrAuthenticated: false,
-      } satisfies NotificationsPageProps,
-    };
+    return { redirect: { destination: buildLoginHref("/notifications"), permanent: false } };
   }
 
   const { data, error } = await listNotifications({
@@ -64,7 +52,6 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     props: {
       initialNotifications: data ?? [],
       initialAlertMessage: error?.message ?? null,
-      isSsrAuthenticated: true,
     } satisfies NotificationsPageProps,
   };
 };
@@ -72,12 +59,10 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 export default function NotificationsPage({
   initialNotifications,
   initialAlertMessage,
-  isSsrAuthenticated,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const isAlertedRef = useRef(false);
   const router = useRouter();
-  const { session, isInitSessionComplete, getAccessTokenOrThrow, supabaseBrowserClient } =
-    useSession();
+  const { session, getAccessTokenOrThrow, supabaseBrowserClient } = useSession();
   const { openAlert } = useAlert();
   const [filter, setFilter] = useState<NotificationFilter>("all");
   const [notifications, setNotifications] = useState<NotificationItemData[]>(initialNotifications);
@@ -99,12 +84,6 @@ export default function NotificationsPage({
   useEffect(() => {
     setNotifications(initialNotifications);
   }, [initialNotifications]);
-
-  useEffect(() => {
-    if (!isInitSessionComplete || session) return;
-
-    setNotifications([]);
-  }, [isInitSessionComplete, session]);
 
   const handleRealtimeInsert = useCallback((next: NotificationItemData) => {
     setNotifications((prev) => {
@@ -133,18 +112,6 @@ export default function NotificationsPage({
     onInsert: handleRealtimeInsert,
     onUpdate: handleRealtimeUpdate,
   });
-
-  const isSignedIn = useMemo(() => {
-    if (session) {
-      return true;
-    }
-
-    if (!isInitSessionComplete) {
-      return isSsrAuthenticated;
-    }
-
-    return false;
-  }, [isInitSessionComplete, isSsrAuthenticated, session]);
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.is_read).length,
@@ -342,23 +309,7 @@ export default function NotificationsPage({
         </section>
 
         <section className="grid gap-4">
-          {!isSignedIn && (
-            <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-background/80 p-6 text-center shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <Bell className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  로그인 후 알림을 확인할 수 있어요
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  세션이 확인되면 여기서 읽음 상태까지 함께 볼 수 있습니다.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {isSignedIn && filteredNotifications.length === 0 && (
+          {filteredNotifications.length === 0 && (
             <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-background/80 p-6 text-center shadow-sm dark:border-white/10 dark:bg-neutral-900/70">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                 <Bell className="h-5 w-5" />
@@ -376,8 +327,7 @@ export default function NotificationsPage({
             </div>
           )}
 
-          {isSignedIn &&
-            filteredNotifications.map((item) => {
+          {filteredNotifications.map((item) => {
               const tone = NOTIFICATION_TONE_BY_TYPE[item.type];
 
               return (

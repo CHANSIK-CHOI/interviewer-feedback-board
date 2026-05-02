@@ -20,10 +20,27 @@ import { parseApiResponse } from "@/lib/api/response";
 import { idDataSchema } from "@/lib/api/schemas";
 import type { FeedbackFormValues } from "@/types/forms";
 import { EditFeedbackResponse } from "@/types/response";
+import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
+import { GetServerSidePropsContext } from "next";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
+
+export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+  const accessToken = context.req.cookies["sb-access-token"];
+  if (!accessToken) {
+    return { redirect: { destination: buildLoginHref("/feedback/new"), permanent: false } };
+  }
+
+  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
+  const { context: authContext, error: authError } = authResult;
+  if (authError || !authContext) {
+    return { redirect: { destination: buildLoginHref("/feedback/new"), permanent: false } };
+  }
+
+  return { props: {} };
+};
 
 const newFeedbackErrorMessages = new Set<string>(Object.values(FEEDBACK_FORM_ERROR_MESSAGES));
 
