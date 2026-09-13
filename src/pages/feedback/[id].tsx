@@ -13,6 +13,7 @@ import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
 import { hasFeedbackBeenUpdated } from "@/lib/feedback/list";
 import { getAuthUserNameById } from "@/lib/user/profile.server";
 import {
+  createSupabaseServerUserClient,
   getSupabaseServerAnonClient,
   resolveSupabaseServerReader,
 } from "@/lib/supabase/server";
@@ -30,51 +31,59 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
   const accessToken = context.req.cookies["sb-access-token"];
   const supabaseServerAnonClient = getSupabaseServerAnonClient();
-  let authContext: AuthContext | null = null;
 
-  if (accessToken) {
-    const authResult = await resolveAuthContextByAccessToken(accessToken);
-    authContext = authResult.context;
-  }
-
+  // createSupabaseServerUserClient는 동기 함수라 토큰 검증을 기다리지 않고 만들 수 있다.
+  // 덕분에 인증과 본문 조회를 같은 라운드에 보낼 수 있다.
   const feedbackReader = resolveSupabaseServerReader({
-    supabaseServerUserClient: authContext?.supabaseServerUserClient ?? null,
+    supabaseServerUserClient: accessToken
+      ? createSupabaseServerUserClient(accessToken)
+      : null,
     supabaseServerAnonClient,
   });
 
   try {
-    const detailFeedback = await getFeedbackDetailById(id, {
-      supabaseClient: feedbackReader,
-    });
+    // 라운드 1 — 인증(+권한)과 본문 조회를 동시에.
+    // 유효하지 않은 토큰이면 이 조회가 401로 예외를 던지므로 null로 받아 아래에서 다시 읽는다.
+    const [authResult, detailFeedbackResult] = await Promise.all([
+      accessToken ? resolveAuthContextByAccessToken(accessToken) : null,
+      getFeedbackDetailById(id, { supabaseClient: feedbackReader }).catch(() => null),
+    ]);
+
+    const authContext: AuthContext | null = authResult?.context ?? null;
+
+    // 만료·폐기된 토큰이면 위 조회가 실패한다.
+    // 공개 글까지 없는 글로 취급되지 않도록 익명 권한으로 한 번만 다시 읽는다.
+    const detailFeedback =
+      detailFeedbackResult ??
+      (accessToken && !authContext
+        ? await getFeedbackDetailById(id, { supabaseClient: supabaseServerAnonClient })
+        : null);
+
     if (!detailFeedback) {
       return { notFound: true };
     }
 
-    const reviewerName: string | null = detailFeedback.reviewed_by
-      ? await getAuthUserNameById(detailFeedback.reviewed_by).catch(() => null)
-      : null;
-
     const isAdmin = authContext?.isAdmin ?? false;
     const isAuthor = authContext?.userId === detailFeedback.author_id;
-    let feedbackWithEmail: FeedbackDetailRow = detailFeedback;
-    let initialComments: FeedbackComment[] = [];
+    const commentReader = authContext ? feedbackReader : supabaseServerAnonClient;
 
-    if (isAuthor || isAdmin) {
-      const email: string | null = await getFeedbackEmailById(id).catch(() => null);
-      if (email) {
-        feedbackWithEmail = {
-          ...detailFeedback,
-          email,
-        };
-      }
-    }
+    // 라운드 2 — 서로 의존하지 않는 세 조회를 동시에
+    const [reviewerName, email, initialComments] = await Promise.all([
+      detailFeedback.reviewed_by
+        ? getAuthUserNameById(detailFeedback.reviewed_by).catch(() => null)
+        : null,
+      isAuthor || isAdmin ? getFeedbackEmailById(id).catch(() => null) : null,
+      detailFeedback.comments_unlocked_at && commentReader
+        ? listFeedbackComments({
+            supabaseClient: commentReader,
+            feedbackId: id,
+          }).catch((): FeedbackComment[] => [])
+        : [],
+    ]);
 
-    if (detailFeedback.comments_unlocked_at && feedbackReader) {
-      initialComments = await listFeedbackComments({
-        supabaseClient: feedbackReader,
-        feedbackId: id,
-      }).catch(() => []);
-    }
+    const feedbackWithEmail: FeedbackDetailRow = email
+      ? { ...detailFeedback, email }
+      : detailFeedback;
 
     return {
       props: {
