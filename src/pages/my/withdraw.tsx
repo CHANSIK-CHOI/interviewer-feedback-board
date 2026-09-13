@@ -8,7 +8,7 @@ import { PageMeta } from "@/components/common";
 import { Button, useAlert, useConfirm } from "@/components/ui";
 import { useSession } from "@/components/session";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
-import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
+import { AuthIdentityResult, resolveAuthIdentityByAccessToken } from "@/lib/auth/server";
 import { getAuthProviderLabel, getAuthProviders } from "@/lib/auth/provider";
 import {
   createWithdrawFormSchema,
@@ -26,9 +26,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     return { redirect: { destination: buildLoginHref("/my/withdraw"), permanent: false } };
   }
 
-  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
-  const { context: authContext, error: authError } = authResult;
-  if (authError || !authContext) {
+  const authResult: AuthIdentityResult = await resolveAuthIdentityByAccessToken(accessToken);
+  const { identity: authIdentity, error: authError } = authResult;
+  if (authError || !authIdentity) {
     return { redirect: { destination: buildLoginHref("/my/withdraw"), permanent: false } };
   }
 

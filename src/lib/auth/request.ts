@@ -7,6 +7,11 @@ export type ApiRequestAuthOptions = {
   unauthorizedError?: string;
   requireAdmin?: boolean;
   forbiddenError?: string;
+  /**
+   * 세션 유효성을 Supabase Auth 서버에 직접 확인한다. 매 요청 왕복 1회가 추가된다.
+   * 되돌릴 수 없는 작업(탈퇴·삭제)에서만 켠다. 그 외에는 토큰 서명을 로컬 검증한다.
+   */
+  verifyWithAuthServer?: boolean;
 };
 
 export type ApiRequestAuthResult = {
@@ -25,6 +30,7 @@ export const resolveApiRequestAuth = async (
     unauthorizedError,
     requireAdmin = false,
     forbiddenError = "Forbidden",
+    verifyWithAuthServer = false,
   } = options;
   const authHeader = req.headers.authorization;
   const accessToken =
@@ -43,7 +49,9 @@ export const resolveApiRequestAuth = async (
     context,
     error: authError,
     status: authStatus,
-  }: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
+  }: AuthContextResult = await resolveAuthContextByAccessToken(accessToken, {
+    verifyWithAuthServer,
+  });
   if (authError || !context) {
     return {
       context: null,

@@ -3,7 +3,7 @@ import { FormProvider } from "react-hook-form";
 import { PageMeta } from "@/components/common";
 import { MyPageHeaderSection, MyProfileEditorSection } from "@/components/my";
 import { useMyProfileController } from "@/hooks/my/useMyProfileController";
-import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
+import { AuthIdentityResult, resolveAuthIdentityByAccessToken } from "@/lib/auth/server";
 import { buildLoginHref } from "@/lib/navigation/client";
 import { GetServerSidePropsContext } from "next";
 
@@ -13,9 +13,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     return { redirect: { destination: buildLoginHref("/my"), permanent: false } };
   }
 
-  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
-  const { context: authContext, error: authError } = authResult;
-  if (authError || !authContext) {
+  const authResult: AuthIdentityResult = await resolveAuthIdentityByAccessToken(accessToken);
+  const { identity: authIdentity, error: authError } = authResult;
+  if (authError || !authIdentity) {
     return { redirect: { destination: buildLoginHref("/my"), permanent: false } };
   }
 

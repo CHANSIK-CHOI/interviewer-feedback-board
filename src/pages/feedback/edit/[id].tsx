@@ -6,7 +6,7 @@ import { useSession } from "@/components/session";
 import { useAlert } from "@/components/ui";
 import { buildLoginHref, replaceSafely } from "@/lib/navigation/client";
 import { getFeedbackDetailById } from "@/lib/feedback/server";
-import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
+import { AuthIdentityResult, resolveAuthIdentityByAccessToken } from "@/lib/auth/server";
 import { parseApiResponse } from "@/lib/api/response";
 import { idDataSchema } from "@/lib/api/schemas";
 import {
@@ -51,9 +51,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     };
   }
 
-  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
-  const { context: authContext, error: authError } = authResult;
-  if (authError || !authContext) {
+  const authResult: AuthIdentityResult = await resolveAuthIdentityByAccessToken(accessToken);
+  const { identity: authIdentity, error: authError } = authResult;
+  if (authError || !authIdentity) {
     return {
       redirect: {
         destination: buildLoginHref(`/feedback/edit/${feedbackId}`),
@@ -64,10 +64,10 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
   try {
     const feedback = await getFeedbackDetailById(feedbackId, {
-      supabaseClient: authContext.supabaseServerUserClient,
+      supabaseClient: authIdentity.supabaseServerUserClient,
     });
 
-    if (!feedback || feedback.author_id !== authContext.userId) {
+    if (!feedback || feedback.author_id !== authIdentity.userId) {
       return { notFound: true };
     }
 

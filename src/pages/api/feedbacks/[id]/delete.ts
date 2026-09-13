@@ -38,6 +38,8 @@ export default async function handler(
   const auth: ApiRequestAuthResult = await resolveApiRequestAuth(req, {
     missingAccessTokenError: "로그인이 필요합니다.",
     unauthorizedError: "로그인 상태를 확인해주세요.",
+    // 되돌릴 수 없는 작업이므로 폐기된 세션을 즉시 걸러낸다 (왕복 1회 감수)
+    verifyWithAuthServer: true,
   } satisfies ApiRequestAuthOptions);
 
   if (auth.error || !auth.context) {

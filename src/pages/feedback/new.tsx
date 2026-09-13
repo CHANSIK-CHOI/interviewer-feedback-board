@@ -20,7 +20,7 @@ import { parseApiResponse } from "@/lib/api/response";
 import { idDataSchema } from "@/lib/api/schemas";
 import type { FeedbackFormValues } from "@/types/forms";
 import { EditFeedbackResponse } from "@/types/response";
-import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
+import { AuthIdentityResult, resolveAuthIdentityByAccessToken } from "@/lib/auth/server";
 import { GetServerSidePropsContext } from "next";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
@@ -33,9 +33,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     return { redirect: { destination: buildLoginHref("/feedback/new"), permanent: false } };
   }
 
-  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
-  const { context: authContext, error: authError } = authResult;
-  if (authError || !authContext) {
+  const authResult: AuthIdentityResult = await resolveAuthIdentityByAccessToken(accessToken);
+  const { identity: authIdentity, error: authError } = authResult;
+  if (authError || !authIdentity) {
     return { redirect: { destination: buildLoginHref("/feedback/new"), permanent: false } };
   }
 

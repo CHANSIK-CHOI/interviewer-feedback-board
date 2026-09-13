@@ -3,7 +3,7 @@ import { NotificationIcon } from "@/components/notifications/NotificationIcon";
 import { useNotificationRealtime } from "@/components/notifications/useNotificationRealtime";
 import { useSession } from "@/components/session";
 import { Button, useAlert } from "@/components/ui";
-import { AuthContextResult, resolveAuthContextByAccessToken } from "@/lib/auth/server";
+import { AuthIdentityResult, resolveAuthIdentityByAccessToken } from "@/lib/auth/server";
 import { formatDateTime } from "@/lib/feedback/presentation";
 import { markAllNotificationAsRead, markNotificationAsRead } from "@/lib/notification/client";
 import { listNotifications } from "@/lib/notification/server";
@@ -36,16 +36,16 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     return { redirect: { destination: buildLoginHref("/notifications"), permanent: false } };
   }
 
-  const authResult: AuthContextResult = await resolveAuthContextByAccessToken(accessToken);
-  const { context: authContext, error: authError } = authResult;
+  const authResult: AuthIdentityResult = await resolveAuthIdentityByAccessToken(accessToken);
+  const { identity: authIdentity, error: authError } = authResult;
 
-  if (authError || !authContext) {
+  if (authError || !authIdentity) {
     return { redirect: { destination: buildLoginHref("/notifications"), permanent: false } };
   }
 
   const { data, error } = await listNotifications({
-    supabaseClient: authContext.supabaseServerUserClient,
-    userId: authContext.userId,
+    supabaseClient: authIdentity.supabaseServerUserClient,
+    userId: authIdentity.userId,
   });
 
   return {
