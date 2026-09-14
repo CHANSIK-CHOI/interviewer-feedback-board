@@ -1,4 +1,8 @@
 export { default as FeedbackBox } from "./FeedbackBox";
+export {
+  default as FeedbackBoxSkeleton,
+  type FeedbackBoxSkeletonProps,
+} from "./FeedbackBoxSkeleton";
 export { default as NewFeedbackLinkBtn } from "./NewFeedbackLinkBtn";
 
 export { default as FeedbackNewHeaderSection } from "./new/FeedbackNewHeaderSection";
