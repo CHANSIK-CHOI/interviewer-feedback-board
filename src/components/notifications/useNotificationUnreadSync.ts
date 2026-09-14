@@ -35,7 +35,6 @@ export function useNotificationUnreadSync({
           limit: 20,
           // unread: true,
         });
-        console.log({ data });
         if (controller.signal.aborted) return;
         setNotifications(data);
         setNotifiBellErrorMsg(null);

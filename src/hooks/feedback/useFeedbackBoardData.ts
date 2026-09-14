@@ -1,20 +1,17 @@
-import { useEffect, useState } from "react";
 import {
   getAdminReviewFeedbacks,
   getMyFeedbacks,
   getPendingFeedbackCount,
 } from "@/lib/feedback/client";
 import type { AdminReviewFeedback, OwnerFeedback } from "@/types/feedback";
+import { useCallback, useEffect, useState } from "react";
 
-type AuthenticatedFetcher<T> = (params: {
-  accessToken: string;
-  signal: AbortSignal;
-}) => Promise<T>;
+type AuthenticatedFetcher<T> = (params: { accessToken: string; signal: AbortSignal }) => Promise<T>;
 
 type UseFeedbackBoardResourceParams<T> = {
   enabled: boolean;
   fallbackValue: T;
-  fetcher: AuthenticatedFetcher<T>;
+  fetcher: AuthenticatedFetcher<T> | null;
   getAccessTokenOrThrow: () => Promise<string>;
 };
 
@@ -25,6 +22,14 @@ type UseFeedbackBoardDataParams = {
   getAccessTokenOrThrow: () => Promise<string>;
 };
 
+export type UseFeedbackBoardResult<T> = {
+  data: T;
+  isFail: boolean;
+  isLoading: boolean;
+  /** 이 리소스만 다시 불러온다. 다른 리소스는 건드리지 않는다. */
+  refetch: () => void;
+};
+
 const EMPTY_OWNER_FEEDBACKS: OwnerFeedback[] = [];
 const EMPTY_ADMIN_REVIEW_FEEDBACKS: AdminReviewFeedback[] = [];
 
@@ -33,12 +38,22 @@ function useFeedbackBoardResource<T>({
   fallbackValue,
   fetcher,
   getAccessTokenOrThrow,
-}: UseFeedbackBoardResourceParams<T>) {
+}: UseFeedbackBoardResourceParams<T>): UseFeedbackBoardResult<T> {
   const [data, setData] = useState<T>(fallbackValue);
+  const [isFail, setIsFail] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // 값 자체는 쓰이지 않는다. 아래 effect 를 다시 실행시키는 방아쇠 역할만 한다.
+  const [reloadCount, setReloadCount] = useState(0);
+
+  const refetch = useCallback(() => {
+    setReloadCount((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || fetcher == null) {
       setData(fallbackValue);
+      setIsFail(false);
+      setIsLoading(false);
       return;
     }
 
@@ -46,6 +61,8 @@ function useFeedbackBoardResource<T>({
 
     void (async () => {
       try {
+        setIsLoading(true);
+        setIsFail(false);
         const accessToken = await getAccessTokenOrThrow();
         const nextData = await fetcher({
           accessToken,
@@ -56,15 +73,19 @@ function useFeedbackBoardResource<T>({
         setData(nextData);
       } catch (error) {
         if (controller.signal.aborted) return;
-        console.error(error);
+        setIsFail(true);
         setData(fallbackValue);
+        console.error(error);
+      } finally {
+        if (controller.signal.aborted) return;
+        setIsLoading(false);
       }
     })();
 
     return () => controller.abort();
-  }, [enabled, fallbackValue, fetcher, getAccessTokenOrThrow]);
+  }, [enabled, fallbackValue, fetcher, getAccessTokenOrThrow, reloadCount]);
 
-  return data;
+  return { data, isFail, isLoading, refetch };
 }
 
 export function useFeedbackBoardData({
@@ -86,7 +107,7 @@ export function useFeedbackBoardData({
   const ownerFeedbacks = useFeedbackBoardResource<OwnerFeedback[]>({
     enabled: isSignedIn,
     fallbackValue: EMPTY_OWNER_FEEDBACKS,
-    fetcher: getMyFeedbacks,
+    fetcher: hasAdminRole ? null : getMyFeedbacks,
     getAccessTokenOrThrow,
   });
 

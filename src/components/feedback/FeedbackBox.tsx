@@ -1,14 +1,13 @@
+import { Button } from "@/components/ui";
+import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
+import { isPrivateAvatarApiSrc, isSvgImageSrc } from "@/lib/avatar/path";
+import { hasFeedbackBeenUpdated } from "@/lib/feedback/list";
+import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
 import { cn } from "@/lib/shared/cn";
 import type { FeedbackListItem } from "@/types/feedback";
-import { formatDateTime, ratingStars, statusBadge, statusLabel } from "@/lib/feedback/presentation";
-import { isPrivateAvatarApiSrc, isSvgImageSrc } from "@/lib/avatar/path";
-import Image from "next/image";
-import React from "react";
-import { Button } from "@/components/ui";
-import Link from "next/link";
-import { AVATAR_PLACEHOLDER_SRC } from "@/constants";
-import { hasFeedbackBeenUpdated } from "@/lib/feedback/list";
 import { MessageCircle } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 type FeedbackBoxProps = {
   data: FeedbackListItem;
