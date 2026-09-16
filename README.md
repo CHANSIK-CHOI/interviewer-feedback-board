@@ -107,6 +107,8 @@
 
 ### 상태 전이 예시
 
+전체 전이는 [6-2. 피드백 상태 전이](#6-2-피드백-상태-전이) 그림을 참고해주세요.
+
 - 작성: `pending`
 - 관리자 승인: `pending | revised_pending → approved`
 - 관리자 반려: `pending | revised_pending → rejected`
@@ -121,6 +123,8 @@
 - 비공개 상태로 돌아가도 기존 코멘트는 유지되며 작성자 / 관리자만 계속 열람 가능
 
 ### Notification 정책
+
+생성과 전달 경로는 [6-4. 알림 생성과 전달](#6-4-알림-생성과-전달) 그림을 참고해주세요.
 
 - 알림은 수신자 본인만 조회 및 읽음 처리 가능
 - 일반 사용자는 알림을 직접 생성하거나 삭제할 수 없고, 서버 API에서 필요한 이벤트에 맞춰 생성
@@ -139,7 +143,17 @@
 
 ---
 
-## 6) 아키텍처 요약
+## 6) 아키텍처
+
+> 아래 그림을 클릭하면 인터랙티브 HTML로 열립니다. 노드 검색, 경로 추적(PATH), 챕터별 안내(Play story)를 지원하고, 노드의 `SRC` 배지를 누르면 해당 커밋의 소스 코드로 이동합니다.
+
+### 6-1. 전체 구조
+
+[![전체 구조](docs/architecture/01-overview.png)](https://next-js-page-router-fetch-api.vercel.app/architecture/01-overview.html)
+
+- 브라우저 → Next.js Pages → API Routes → Supabase로 이어지는 주 경로 하나를 중심으로 구성했습니다.
+- API Routes(BFF)는 access token 서명을 로컬에서 검증하고 HttpOnly 쿠키와 동기화합니다. Supabase Auth 서버 왕복은 탈퇴·삭제처럼 되돌릴 수 없는 작업에만 남겼습니다.
+- 피드백·코멘트 API가 `notifications` 행을 만들면 Supabase Realtime이 받는 사람의 `NotificationsProvider`로 전달합니다.
 
 ```text
 [Client (Next.js Pages)]
@@ -147,8 +161,9 @@
     ├─ SessionProvider (세션/권한 동기화)
     ├─ NotificationsProvider (알림 초기 조회 + Realtime 구독)
     ├─ /feedback (공개 데이터 SSG + 수정 중 프리뷰 + 사용자/관리자 데이터 병합 렌더링)
-    ├─ /feedback/[id] (상세 + 코멘트 스레드)
+    ├─ /feedback/[id] (상세 SSR + 코멘트 스레드)
     ├─ /feedback/new, /feedback/edit/[id] (피드백 작성 / 수정)
+    ├─ /login/* (로그인, 회원가입, 비밀번호 재설정, GitHub OAuth 콜백)
     ├─ /notifications (알림함)
     ├─ /my, /my/withdraw (프로필 관리 / 회원 탈퇴)
     └─ /admin/feedback (관리자 전체 목록 + 검토 UI)
@@ -163,12 +178,36 @@
     └─ /api/revalidate-list
 
 [Supabase]
-    ├─ auth.users
-    ├─ user_roles
-    ├─ feedbacks
-    ├─ feedback_comments
-    └─ notifications
+    ├─ Auth (auth.users, 이메일 / GitHub OAuth)
+    ├─ Postgres + RLS (user_roles, feedbacks, feedback_comments, notifications)
+    ├─ Storage (아바타 버킷)
+    └─ Realtime (notifications INSERT / UPDATE 구독)
 ```
+
+### 6-2. 피드백 상태 전이
+
+[![피드백 상태 전이](docs/architecture/02-feedback-status.png)](https://next-js-page-router-fetch-api.vercel.app/architecture/02-feedback-status.html)
+
+- `approve` / `reject`는 `pending`, `revised_pending`에서만 허용하고, `reopen`은 `approved` / `rejected`를 직전 검토 큐 상태로 되돌립니다.
+- 작성자가 수정하면 `pending`은 그대로 유지되고, 그 외 상태는 `revised_pending`으로 전환되며 `is_public=false`가 됩니다.
+- 상태 변경은 현재 `status`를 조건으로 건 update라서, 두 관리자가 동시에 처리하면 한쪽은 409를 받습니다.
+
+### 6-3. 상세 페이지 SSR 요청 흐름
+
+[![상세 페이지 SSR 요청 흐름](docs/architecture/03-detail-ssr.png)](https://next-js-page-router-fetch-api.vercel.app/architecture/03-detail-ssr.html)
+
+- 인증(+권한)과 본문 조회를 같은 라운드에 보내고, 검토자 이름·작성자 이메일·코멘트 조회를 두 번째 라운드에 묶어 순차 6회 왕복을 2라운드로 줄였습니다.
+- 토큰 서명은 `getClaims`로 로컬 검증하며 JWKS는 10분 캐시됩니다. 첫 검증 53ms, 이후 1ms 수준입니다.
+- 만료·폐기된 토큰이면 본문 조회가 실패하므로 익명 권한으로 한 번만 재조회해, 공개 글이 404로 가려지지 않게 했습니다.
+- 로컬 측정(9회 중앙값) 기준 상세 페이지 응답이 274ms에서 121ms로 줄었습니다.
+
+### 6-4. 알림 생성과 전달
+
+[![알림 생성과 전달](docs/architecture/04-notifications.png)](https://next-js-page-router-fetch-api.vercel.app/architecture/04-notifications.html)
+
+- 작성·재승인 요청·작성자 코멘트는 관리자 전원에게, 승인·반려는 작성자에게, 답글은 부모 코멘트 작성자에게 갑니다.
+- 알림 행은 서버 API만 만들고, 행동한 본인에게는 만들지 않습니다. 알림 생성이 실패해도 원래 요청은 성공으로 응답하고 로그만 남깁니다.
+- 브라우저는 자기 `recipient_user_id` 행만 Realtime으로 구독해 토스트와 헤더 알림함을 갱신합니다.
 
 ---
 
@@ -176,12 +215,34 @@
 
 ```text
 src/
-  components/      # UI/도메인 컴포넌트
-  pages/           # Page Router + API Routes
-  lib/             # auth, feedback, supabase 유틸
-  constants/       # 상수/문구/컬럼 정의
-  types/           # 타입 정의
-  scripts/         # 시드/스토리지 리셋 스크립트
+  pages/                    # Page Router 페이지 + API Routes
+    api/                    # auth, avatar, feedbacks, notifications, user-roles, revalidate-list
+    feedback/               # 목록(SSG), 상세(SSR), 작성, 수정
+    admin/feedback/         # 관리자 검토 목록
+    login/                  # 로그인, 회원가입, 비밀번호 재설정, OAuth 콜백
+    my/, notifications/     # 프로필·탈퇴, 알림함
+  components/
+    session/                # SessionProvider, 세션·쿠키 동기화 훅
+    notifications/          # NotificationsProvider, Realtime 구독, 알림 벨
+    feedback/               # 목록 카드, 작성 폼, 상세·코멘트 스레드
+    admin/, my/, common/    # 관리자 검토 UI, 프로필 편집, 공용 버튼
+    layout/, ui/            # 전역 레이아웃, Alert·Confirm·Dialog, shadcn 컴포넌트
+  hooks/                    # 페이지 단위 데이터·폼 컨트롤러 훅
+  lib/
+    auth/                   # 토큰 로컬 검증, API 요청 인증, 회원가입 흐름
+    feedback/               # 피드백·코멘트 서버 조회, 목록 병합, 표시 유틸
+    notification/           # 알림 생성·조회, 문구, 매퍼
+    supabase/               # anon / user / service role 클라이언트
+    api/, avatar/, forms/, user/, user-role/, navigation/, shared/, status/
+  constants/                # 컬럼 목록, 문구, 검증 규칙
+  types/                    # 도메인·API 응답 타입
+  scripts/                  # 시드, 아바타 스토리지 리셋
+  styles/                   # Tailwind 진입점
+  mock/                     # 로컬 목업 데이터
+tests/
+  unit/, api/, e2e/         # Playwright 기반 단위·API·E2E 테스트
+docs/architecture/          # README용 다이어그램 PNG
+public/architecture/        # 인터랙티브 다이어그램 HTML (배포 후 /architecture/*.html)
 ```
 
 ---
