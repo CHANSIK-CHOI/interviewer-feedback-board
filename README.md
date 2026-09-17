@@ -209,6 +209,14 @@
 - 알림 행은 서버 API만 만들고, 행동한 본인에게는 만들지 않습니다. 알림 생성이 실패해도 원래 요청은 성공으로 응답하고 로그만 남깁니다.
 - 브라우저는 자기 `recipient_user_id` 행만 Realtime으로 구독해 토스트와 헤더 알림함을 갱신합니다.
 
+### 6-5. 목록 페이지 데이터 흐름
+
+[![목록 페이지 데이터 흐름](docs/architecture/05-list-page.png)](https://next-js-page-router-fetch-api.vercel.app/architecture/05-list-page.html)
+
+- 승인·공개 글과 수정 중 프리뷰(`revised_pending`)는 `getStaticProps`가 미리 조회해 정적 HTML로 내려줍니다. 글 상태가 바뀌면 `POST /api/revalidate-list`가 secret을 확인한 뒤 페이지를 다시 생성합니다.
+- 비공개 데이터는 방문 후 브라우저가 역할에 맞게 요청합니다. 작성자는 내 글 1건, 관리자는 검토 큐와 대기 건수 2건이며, 관리자에게 쓰이지 않는 내 글 요청은 보내지 않습니다.
+- 받은 데이터는 id 기준으로 공개 목록 위에 병합합니다. 로딩·실패는 목록 배열에 섞지 않고 별도 상태 카드로 그리며, 실패한 리소스만 따로 다시 시도할 수 있습니다.
+
 ---
 
 ## 7) 폴더 구조
